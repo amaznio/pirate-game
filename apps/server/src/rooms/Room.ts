@@ -45,6 +45,8 @@ export interface Seat {
   socket: GameSocket | null;
   /** Set when the match starts. */
   playerId: PlayerId | null;
+  /** The player left on purpose: the token no longer restores this seat. */
+  abandoned: boolean;
   /** Tells the host this seat's client is connected (undoes registerClient). */
   disconnectFromHost: (() => void) | null;
 }
@@ -96,6 +98,7 @@ export class Room {
       name,
       socket,
       playerId: null,
+      abandoned: false,
       disconnectFromHost: null,
     };
     this.seats.set(seat.seatId, seat);
@@ -107,7 +110,7 @@ export class Room {
   /** Finds a seat by id and secret (constant-shape check, no hints on failure). */
   authenticate(seatId: string, token: string): Seat | null {
     const seat = this.seats.get(seatId);
-    return seat && seat.token === token ? seat : null;
+    return seat && !seat.abandoned && seat.token === token ? seat : null;
   }
 
   getSeat(seatId: string): Seat | undefined {
@@ -150,12 +153,47 @@ export class Room {
     seat.disconnectFromHost?.();
     seat.disconnectFromHost = null;
 
-    if (this.status === 'lobby' && this.hostSeatId === seatId) {
-      this.hostSeatId =
-        [...this.seats.values()].find((other) => other.socket)?.seatId ??
-        this.hostSeatId;
+    if (this.status === 'lobby') {
+      this.passHostOn(seatId);
     }
     this.broadcastLobby();
+  }
+
+  /**
+   * A player leaves for good. In the lobby their seat disappears; in a running
+   * match it stays (their ship is still in the fight) but nobody can reclaim it.
+   */
+  leave(seatId: string, socket: GameSocket): void {
+    const seat = this.seats.get(seatId);
+    if (!seat || seat.socket !== socket) {
+      return;
+    }
+    this.touch();
+    seat.abandoned = true;
+    seat.socket = null;
+    seat.disconnectFromHost?.();
+    seat.disconnectFromHost = null;
+
+    if (this.status === 'lobby') {
+      this.seats.delete(seatId);
+      this.passHostOn(seatId);
+    }
+    this.broadcastLobby();
+  }
+
+  /** If the host is gone, the first connected player takes over. */
+  private passHostOn(leavingSeatId: string): void {
+    if (this.hostSeatId !== leavingSeatId) {
+      return;
+    }
+    const next = [...this.seats.values()].find(
+      (other) => other.socket && other.seatId !== leavingSeatId,
+    );
+    this.hostSeatId = next?.seatId ?? (this.seats.has(leavingSeatId) ? leavingSeatId : null);
+  }
+
+  seatCount(): number {
+    return this.seats.size;
   }
 
   connectedCount(): number {

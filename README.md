@@ -88,6 +88,36 @@ Configuration (environment variables, see `apps/server/.env.example`):
 `GET /health` returns `{"status":"ok","rooms":N,...}` (use it as the Railway
 health check). The server stops cleanly on `SIGTERM`.
 
+## Playing
+
+Open the client and pick a mode on the menu:
+
+- **Play against the computer** (1 to 7 AI opponents) runs the whole match in
+  your browser; no server needed. Developer shortcuts still work: `?ais=3`,
+  `?ais=3&teams=teams`, `?ais=5&w=30&h=30` start such a match straight away.
+- **Play with friends** needs the game server. *Create a room* and share the
+  5-letter code, or the **Copy link** button (the link `?room=CODE` fills in the
+  code for whoever opens it). The host sets the AI count, free-for-all or teams
+  and the planning timer, then starts the match. Your seat is remembered, so a
+  refresh (or a dropped connection) puts you back in the match.
+
+To try online play on one machine run `pnpm dev`, then open the client in two
+different browsers (or `localhost` in one and `127.0.0.1` in the other; each
+origin is its own player, because the seat is saved per origin). For a second
+origin set `CLIENT_ORIGIN` on the server, e.g. `CLIENT_ORIGIN=* pnpm dev`.
+
+The client finds the server through `VITE_SERVER_URL` (see
+`apps/client/.env.example`). In development it defaults to port 3001 on the
+page's own host; a production build with no `VITE_SERVER_URL` simply has online
+play switched off.
+
+How the client plays online (`apps/client/src/online/`): `OnlineSession` owns
+the connection, the lobby and the remembered seat, and rejoins automatically
+after a drop; `SocketTransport` is the transport the match runs on. It shares
+your draft shortly after you stop editing, holds back a lock-in it could not
+send until the seat is restored, and never plays a turn twice when the server
+replays it after a reconnect.
+
 ## How it works
 
 ```

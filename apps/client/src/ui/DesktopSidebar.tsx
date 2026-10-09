@@ -15,7 +15,7 @@ const SHORTCUTS: ReadonlyArray<[string, string]> = [
 
 /** Right-hand column for wide screens: status, then the full planning UI. */
 export function DesktopSidebar() {
-  const { turn, status, planning, remaining, low } = useTurnClock();
+  const { turn, status, planning, timed, remaining, low } = useTurnClock();
   const showPreview = usePreviewSettings((state) => state.showPlanPreview);
   const setShowPreview = usePreviewSettings((state) => state.setShowPlanPreview);
 
@@ -26,10 +26,12 @@ export function DesktopSidebar() {
           <h1 className="text-lg font-black tracking-wide">Battle Navigation</h1>
           <span className="text-sm font-semibold tabular-nums">
             Turn {turn} ·{' '}
-            {planning ? (
+            {planning && timed ? (
               <span className={low ? 'text-hull' : ''}>
                 ⏱ {formatSeconds(remaining)}
               </span>
+            ) : planning ? (
+              'Planning'
             ) : (
               STATUS_LABEL[status]
             )}

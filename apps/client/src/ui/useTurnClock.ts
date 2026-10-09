@@ -26,6 +26,8 @@ export function useTurnClock() {
     turn,
     status,
     planning,
+    /** False when the match has no planning timer. */
+    timed: duration > 0,
     remaining,
     low: planning && remaining <= 10,
     fraction: duration > 0 ? Math.min(1, remaining / duration) : 0,

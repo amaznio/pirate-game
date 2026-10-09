@@ -2,8 +2,8 @@ import { useTurnClock } from './useTurnClock';
 
 /** Thin planning countdown bar; renders nothing outside planning. */
 export function TimerBar({ className = '' }: { className?: string }) {
-  const { planning, low, fraction } = useTurnClock();
-  if (!planning) {
+  const { planning, timed, low, fraction } = useTurnClock();
+  if (!planning || !timed) {
     return null;
   }
   return (

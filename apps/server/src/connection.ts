@@ -176,6 +176,16 @@ export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
     inMatch((room, seat) => room.acknowledge(seat.seatId));
   });
 
+  socket.on('room:leave', (ack) => {
+    if (binding) {
+      binding.room.leave(binding.seat.seatId, socket);
+      binding = null;
+    }
+    if (typeof ack === 'function') {
+      ack();
+    }
+  });
+
   socket.on('disconnect', () => {
     if (binding) {
       binding.room.disconnect(binding.seat.seatId, socket);

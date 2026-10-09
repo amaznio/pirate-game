@@ -617,3 +617,83 @@ describe('cleaning up', () => {
     server = await startServer();
   });
 });
+
+describe('leaving a room', () => {
+  it('removes the seat from the lobby and tells the others', async () => {
+    const host = track(await createRoom(server.port, 'Anne'));
+    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    await host.client.waitFor<LobbyState>('lobby:update', (lobby) => lobby.seats.length === 2);
+
+    guest.client.send('room:leave');
+
+    const lobby = await host.client.waitFor<LobbyState>(
+      'lobby:update',
+      (state) => state.seats.length === 1,
+    );
+    expect(lobby.seats[0].name).toBe('Anne');
+  });
+
+  it('hands the host role to the next player when the host leaves', async () => {
+    const host = track(await createRoom(server.port, 'Anne'));
+    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+
+    host.client.send('room:leave');
+
+    const lobby = await guest.client.waitFor<LobbyState>(
+      'lobby:update',
+      (state) => state.seats.length === 1,
+    );
+    expect(lobby.seats[0]).toMatchObject({ name: 'Bart', isHost: true });
+  });
+
+  it('does not let a seat that was given up be reclaimed', async () => {
+    const host = track(await createRoom(server.port, 'Anne'));
+    host.client.send('room:leave');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const back = await TestClient.connect(server.port);
+    clients.push(back);
+    const result = await back.request('room:rejoin', {
+      roomId: host.seat.roomId,
+      seatId: host.seat.seatId,
+      token: host.seat.token,
+    });
+
+    expect(result).toMatchObject({ ok: false });
+  });
+
+  it('drops a room once its last player has left', async () => {
+    const host = track(await createRoom(server.port, 'Anne'));
+    host.client.send('room:leave');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(server.rooms.sweep()).toBe(1);
+    expect(server.rooms.get(host.seat.roomId)).toBeUndefined();
+  });
+
+  it('lets a player who left start over in a new room', async () => {
+    const first = track(await createRoom(server.port, 'Anne'));
+    first.client.send('room:leave');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const again = await first.client.request<JoinResult>('room:create', { name: 'Anne' });
+
+    expectOk(again);
+    expect(again.roomId).not.toBe(first.seat.roomId);
+  });
+
+  it('keeps a running match going when a player leaves it', async () => {
+    const { host, guest } = await startedDuel();
+
+    guest.client.send('room:leave');
+    host.client.send('game:lockIn', plan([null, null, null, null]));
+
+    // The leaver's ship is still in the match, and the match carries on.
+    const lobby = await host.client.waitFor<LobbyState>(
+      'lobby:update',
+      (state) => state.seats.some((seat) => seat.name === 'Bart' && !seat.connected),
+    );
+    expect(lobby.status).toBe('playing');
+    expect(lobby.seats).toHaveLength(2);
+  });
+});

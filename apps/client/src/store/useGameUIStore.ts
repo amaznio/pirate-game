@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { GameStatus } from '@pirate/game-core/domain/GameState';
-import type { ClientSnapshot } from '@pirate/game-core/client/GameClient';
+import type { ClientSnapshot, GameClient } from '@pirate/game-core/client/GameClient';
 import type {
   ActionSlot,
   CannonQueue,
@@ -10,7 +10,6 @@ import type {
 } from '@pirate/game-core/domain/Action';
 import type { PlayerId } from '@pirate/game-core/domain/Entity';
 import { assignTeamStyles } from '../presentation/teamStyle';
-import { gameClient } from '../app/gameInstance';
 
 /** Another ship in the match, as the local player sees it (public info only). */
 export interface ShipSummary {
@@ -144,35 +143,80 @@ function snapshot({
   };
 }
 
+/** What the UI shows before any match is bound (it is never visible). */
+const EMPTY: GameUISnapshot = {
+  turn: 1,
+  status: 'planning',
+  hull: 0,
+  maxHull: 0,
+  selfColor: '#4f86c6',
+  spectating: false,
+  others: [],
+  tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 },
+  queue: [null, null, null, null],
+  cannonQueue: [],
+  ammo: 0,
+  auto: true,
+  requested: 'FORWARD',
+  lockedIn: false,
+  waitingFor: 0,
+  canPlan: false,
+  result: null,
+  deadline: null,
+  turnDurationSeconds: 0,
+};
+
+/** The match the UI is showing and controlling. */
+let currentClient: GameClient | null = null;
+let stopListening: (() => void) | null = null;
+
+/**
+ * Points the UI at a match (or at nothing). Everything on screen is a
+ * projection of this client, so switching matches is just binding a new one.
+ */
+export function bindGameClient(client: GameClient | null): void {
+  stopListening?.();
+  stopListening = null;
+  currentClient = client;
+
+  if (!client) {
+    useGameUIStore.setState({ ...EMPTY, activeSlot: null });
+    return;
+  }
+  useGameUIStore.setState({
+    ...snapshot(client.getSnapshot()),
+    activeSlot: null,
+  });
+  stopListening = client.subscribe((clientSnapshot) => {
+    const next = snapshot(clientSnapshot);
+    useGameUIStore.setState(
+      clientSnapshot.view.status === 'planning'
+        ? next
+        : { ...next, activeSlot: null },
+    );
+  });
+}
+
 export const useGameUIStore = create<GameUIStore>(() => ({
-  ...snapshot(gameClient.getSnapshot()),
+  ...EMPTY,
   activeSlot: null,
   panelOpen: true,
   setPanelOpen: (open) => useGameUIStore.setState({ panelOpen: open }),
   setActiveSlot: (slot) => useGameUIStore.setState({ activeSlot: slot }),
   queuePlayerAction: (action) => {
     const { activeSlot } = useGameUIStore.getState();
-    gameClient.queueToken(action, activeSlot ?? undefined);
+    currentClient?.queueToken(action, activeSlot ?? undefined);
     useGameUIStore.setState({ activeSlot: null });
   },
-  removePlayerAction: (index) => gameClient.removeToken(index),
-  toggleCannon: (phase, side) => gameClient.toggleCannon(phase, side),
+  removePlayerAction: (index) => currentClient?.removeToken(index),
+  toggleCannon: (phase, side) => currentClient?.toggleCannon(phase, side),
   clearPlayerActions: () => {
-    gameClient.clearDraft();
+    currentClient?.clearDraft();
     useGameUIStore.setState({ activeSlot: null });
   },
-  setAuto: (auto) => gameClient.setTokenGeneration({ auto }),
-  setRequested: (token) => gameClient.setTokenGeneration({ requested: token }),
-  lockIn: () => gameClient.lockIn(),
-  passTurn: () => gameClient.lockIn(),
-  restart: () => gameClient.restart(),
+  setAuto: (auto) => currentClient?.setTokenGeneration({ auto }),
+  setRequested: (token) => currentClient?.setTokenGeneration({ requested: token }),
+  lockIn: () => currentClient?.lockIn(),
+  passTurn: () => currentClient?.lockIn(),
+  restart: () => currentClient?.restart(),
 }));
-
-gameClient.subscribe((clientSnapshot) => {
-  const next = snapshot(clientSnapshot);
-  useGameUIStore.setState(
-    clientSnapshot.view.status === 'planning'
-      ? next
-      : { ...next, activeSlot: null },
-  );
-});

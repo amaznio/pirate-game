@@ -10,7 +10,7 @@ interface BattleHUDProps {
 
 /** Compact mobile HUD: every ship's hull on the left, turn and countdown on the right. */
 export function BattleHUD({ onHeightChange }: BattleHUDProps) {
-  const { turn, status, planning, remaining, low } = useTurnClock();
+  const { turn, status, planning, timed, remaining, low } = useTurnClock();
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -38,12 +38,14 @@ export function BattleHUD({ onHeightChange }: BattleHUDProps) {
         <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-ocean/80 px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur">
           <span className="text-parchment">Turn {turn}</span>
           <span className="text-parchment/50">·</span>
-          {planning ? (
+          {planning && timed ? (
             <span
               className={`tabular-nums ${low ? 'text-hull' : 'text-parchment/80'}`}
             >
               ⏱ {formatSeconds(remaining)}
             </span>
+          ) : planning ? (
+            <span className="text-parchment/80">Planning</span>
           ) : (
             <span className="text-parchment/80">{STATUS_LABEL[status]}</span>
           )}

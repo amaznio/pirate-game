@@ -188,8 +188,16 @@ export class GameClient {
         view.status === 'planning' &&
         !view.self.lockedIn &&
         (view.ships[view.self.shipId]?.hp ?? 0) > 0,
-      tokensLeft: remainingTokens(view.self.tokens, seed),
-      ammoLeft: remainingAmmo(view.self.ammo, seed.cannons),
+      // Only while planning is the draft still waiting to be paid for. Once
+      // the turn is being played the host has already taken the cost.
+      tokensLeft:
+        view.status === 'planning'
+          ? remainingTokens(view.self.tokens, seed)
+          : view.self.tokens,
+      ammoLeft:
+        view.status === 'planning'
+          ? remainingAmmo(view.self.ammo, seed.cannons)
+          : view.self.ammo,
     };
   }
 

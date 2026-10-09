@@ -228,3 +228,20 @@ describe('spectating', () => {
     expect(client.getSnapshot().draft.movement[0]).toBeNull();
   });
 });
+
+describe('what is left to spend while a turn is played', () => {
+  it('stops counting the draft once the host has paid for it', () => {
+    const { client } = setup();
+    const pool = client.getView().self.tokens.FORWARD;
+    client.queueToken('FORWARD');
+    expect(client.getSnapshot().tokensLeft.FORWARD).toBe(pool - 1);
+
+    client.lockIn();
+
+    expect(client.getView().status).toBe('animating');
+    expect(client.getSnapshot().tokensLeft.FORWARD).toBe(
+      client.getView().self.tokens.FORWARD,
+    );
+    expect(client.getView().self.tokens.FORWARD).toBe(pool - 1);
+  });
+});

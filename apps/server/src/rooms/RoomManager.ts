@@ -46,7 +46,7 @@ export class RoomManager {
         continue;
       }
       const abandoned = now - room.lastActivity > this.options.idleRoomMs;
-      if (room.status === 'finished' || abandoned) {
+      if (room.status === 'finished' || room.seatCount() === 0 || abandoned) {
         room.close('The room was closed.');
         this.rooms.delete(id);
         removed += 1;

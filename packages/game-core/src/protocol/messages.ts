@@ -123,6 +123,8 @@ export interface ClientToServerEvents {
   ) => void;
   /** Host only. */
   'room:start': (ack: (result: Ack<Record<string, never>>) => void) => void;
+  /** Gives up the seat for good (in the lobby it is removed; the token stops working). */
+  'room:leave': (ack?: () => void) => void;
 
   /** The plan being worked on (keeps it safe across a reconnect; not locked in). */
   'game:draft': (plan: PlayerActions) => void;
