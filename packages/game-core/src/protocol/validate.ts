@@ -12,7 +12,9 @@ import type { PlayerActions } from '../domain/TurnResult';
 import {
   DEFAULT_ROOM_OPTIONS,
   ROOM_LIMITS,
+  type PublicRoomSummary,
   type RoomOptions,
+  type TeamMode,
 } from './messages';
 
 /**
@@ -117,6 +119,18 @@ export function parseRoomId(value: unknown): string | null {
   return /^[A-Z0-9]{3,8}$/.test(cleaned) ? cleaned : null;
 }
 
+/**
+ * What a player types to join: a public room's code or a private room's key.
+ * Letters and digits only, 3 to 12 long, upper-cased.
+ */
+export function parseJoinCode(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const cleaned = value.trim().toUpperCase();
+  return /^[A-Z0-9]{3,12}$/.test(cleaned) ? cleaned : null;
+}
+
 /** An opaque id or token: bounded length, no surprises. */
 export function parseOpaqueId(value: unknown): string | null {
   return typeof value === 'string' && /^[\w-]{4,64}$/.test(value) ? value : null;
@@ -137,7 +151,7 @@ export function parseRoomOptions(
     return null;
   }
 
-  let { ais, aiDifficulty, teamMode, turnDurationSeconds } = base;
+  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility } = base;
 
   if ('ais' in value) {
     if (
@@ -159,6 +173,13 @@ export function parseRoomOptions(
       return null;
     }
     aiDifficulty = value.aiDifficulty as AiDifficulty;
+  }
+
+  if ('visibility' in value) {
+    if (value.visibility !== 'public' && value.visibility !== 'private') {
+      return null;
+    }
+    visibility = value.visibility;
   }
 
   if ('teamMode' in value) {
@@ -184,5 +205,70 @@ export function parseRoomOptions(
     }
   }
 
-  return { ais, aiDifficulty, teamMode, turnDurationSeconds };
+  return { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility };
+}
+
+const TEAM_MODES = ['ffa', 'teams'] as const;
+
+function smallInt(value: unknown, max: number): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max
+    ? value
+    : null;
+}
+
+function parsePublicRoom(value: unknown): PublicRoomSummary | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const code = parseJoinCode(value.code);
+  const hostName = parseName(value.hostName);
+  const players = smallInt(value.players, ROOM_LIMITS.maxHumans);
+  const maxPlayers = smallInt(value.maxPlayers, ROOM_LIMITS.maxHumans);
+  const ais = smallInt(value.ais, ROOM_LIMITS.maxShips);
+  const timer = value.turnDurationSeconds;
+  if (
+    code === null ||
+    hostName === null ||
+    players === null ||
+    maxPlayers === null ||
+    ais === null ||
+    typeof value.aiDifficulty !== 'string' ||
+    !(AI_DIFFICULTIES as readonly string[]).includes(value.aiDifficulty) ||
+    typeof value.teamMode !== 'string' ||
+    !(TEAM_MODES as readonly string[]).includes(value.teamMode) ||
+    !(timer === null || (typeof timer === 'number' && Number.isFinite(timer) && timer > 0))
+  ) {
+    return null;
+  }
+  return {
+    code,
+    hostName,
+    players,
+    maxPlayers,
+    ais,
+    aiDifficulty: value.aiDifficulty as AiDifficulty,
+    teamMode: value.teamMode as TeamMode,
+    turnDurationSeconds: timer,
+  };
+}
+
+/**
+ * The public room list a server sent (`{ rooms: [...] }`), with anything
+ * malformed left out. A page never shows something it has not checked.
+ */
+export function parsePublicRoomList(value: unknown, limit = 50): PublicRoomSummary[] {
+  if (!isRecord(value) || !Array.isArray(value.rooms)) {
+    return [];
+  }
+  const rooms: PublicRoomSummary[] = [];
+  for (const entry of value.rooms) {
+    const room = parsePublicRoom(entry);
+    if (room) {
+      rooms.push(room);
+    }
+    if (rooms.length >= limit) {
+      break;
+    }
+  }
+  return rooms;
 }

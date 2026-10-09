@@ -58,8 +58,13 @@ drift apart.
 
 Flow of a match:
 
-1. A player sends `room:create` and gets a 5-letter room code, a seat id and a
-   **secret token** (keep it to rejoin the seat). Friends send `room:join`.
+1. A player sends `room:create` and gets a seat id and a **secret token** (keep
+   it to rejoin the seat). Friends send `room:join` with a code. Rooms are
+   **private** by default: they are not listed and are joined with an 8-letter
+   *key* (the 5-letter room code does not open them). **Public** rooms are
+   listed by `GET /rooms` and joined with their 5-letter code. The host can flip
+   a room between the two in the lobby. Failed joins are throttled per
+   connection (8 misses a minute) so keys cannot be guessed.
 2. The host tunes the room with `room:configure` (AI count, free-for-all or
    teams, turn timer) and sends `room:start`. Everyone connected becomes a human
    player (`p1`, `p2`, ...); the AIs fill the rest.
@@ -102,7 +107,10 @@ Configuration (environment variables, see `apps/server/.env.example`):
 | `AWAY_GRACE_SECONDS` | How long a player may be away before an AI sails for them | `15` |
 
 `GET /health` returns `{"status":"ok","rooms":N,...}` (use it as the Railway
-health check). The server stops cleanly on `SIGTERM`.
+health check). `GET /rooms` returns `{"rooms":[...]}`: the public rooms still in
+their lobby with a free seat, newest first. It is open to the same
+`CLIENT_ORIGIN`s as the websocket and is never cached. The server stops cleanly
+on `SIGTERM`.
 
 ## Playing
 

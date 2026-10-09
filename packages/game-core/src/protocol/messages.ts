@@ -14,6 +14,13 @@ import type { GameView } from '../view/GameView';
 
 export type TeamMode = 'ffa' | 'teams';
 
+/**
+ * Who can find and join a room. A public room is listed for anyone and can be
+ * joined with its short code. A private room is not listed and can only be
+ * joined with its long key.
+ */
+export type RoomVisibility = 'public' | 'private';
+
 /** What the host of a room can tune before the match starts. */
 export interface RoomOptions {
   /** AI-controlled ships to add. */
@@ -23,6 +30,7 @@ export interface RoomOptions {
   readonly teamMode: TeamMode;
   /** Planning time per turn in seconds, or null for no timer. */
   readonly turnDurationSeconds: number | null;
+  readonly visibility: RoomVisibility;
 }
 
 export const ROOM_LIMITS = {
@@ -38,6 +46,7 @@ export const DEFAULT_ROOM_OPTIONS: RoomOptions = {
   aiDifficulty: 'normal',
   teamMode: 'ffa',
   turnDurationSeconds: 30,
+  visibility: 'private',
 };
 
 export type RoomStatus = 'lobby' | 'playing' | 'finished';
@@ -54,7 +63,13 @@ export interface SeatInfo {
 }
 
 export interface LobbyState {
+  /** The room's own id (what a remembered seat is tied to). */
   readonly roomId: string;
+  /**
+   * What to give a friend so they can join: the short code of a public room, or
+   * the long key of a private one. Only people already in the room ever see it.
+   */
+  readonly shareCode: string;
   readonly status: RoomStatus;
   readonly seats: readonly SeatInfo[];
   readonly options: RoomOptions;
@@ -68,6 +83,7 @@ export type ErrorCode =
   | 'already_started'
   | 'not_host'
   | 'not_in_room'
+  | 'too_many_attempts'
   | 'bad_credentials'
   | 'too_few_ships'
   | 'too_many_ships'
@@ -85,8 +101,23 @@ export interface CreateRoomRequest {
 }
 
 export interface JoinRoomRequest {
-  readonly roomId: string;
+  /** A public room's code, or any room's key. */
+  readonly code: string;
   readonly name: string;
+}
+
+/** A public room that is open for joining, as shown in the room list. */
+export interface PublicRoomSummary {
+  /** Join with this. */
+  readonly code: string;
+  readonly hostName: string;
+  /** Humans in the room now, and the most it can hold. */
+  readonly players: number;
+  readonly maxPlayers: number;
+  readonly ais: number;
+  readonly aiDifficulty: AiDifficulty;
+  readonly teamMode: TeamMode;
+  readonly turnDurationSeconds: number | null;
 }
 
 /** Take a seat back after a dropped connection. */

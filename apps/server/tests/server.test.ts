@@ -37,7 +37,7 @@ async function startedDuel() {
     ais: 0,
     turnDurationSeconds: null,
   }));
-  const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+  const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
   const started = await host.client.request('room:start');
   expectOk(started);
   const hostView = await host.client.waitFor<GameView>('game:view');
@@ -82,7 +82,7 @@ describe('creating and joining rooms', () => {
 
   it('lets a second player join and tells everyone', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
 
     const lobby = await host.client.waitFor<LobbyState>(
       'lobby:update',
@@ -97,7 +97,7 @@ describe('creating and joining rooms', () => {
   it('accepts a room code in any case', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
 
-    const guest = track(await joinRoom(server.port, host.seat.roomId.toLowerCase(), 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode.toLowerCase(), 'Bart'));
 
     expect(guest.seat.roomId).toBe(host.seat.roomId);
   });
@@ -106,11 +106,11 @@ describe('creating and joining rooms', () => {
     const client = await TestClient.connect(server.port);
     clients.push(client);
 
-    expect(await client.request('room:join', { roomId: 'ZZZZZ', name: 'Bart' })).toMatchObject({
+    expect(await client.request('room:join', { code: 'ZZZZZ', name: 'Bart' })).toMatchObject({
       ok: false,
       error: 'room_not_found',
     });
-    expect(await client.request('room:join', { roomId: '!!', name: 'Bart' })).toMatchObject({
+    expect(await client.request('room:join', { code: '!!', name: 'Bart' })).toMatchObject({
       ok: false,
       error: 'bad_request',
     });
@@ -147,7 +147,7 @@ describe('creating and joining rooms', () => {
     const guest = await TestClient.connect(server.port);
     clients.push(guest);
     const result = await guest.request('room:join', {
-      roomId: host.seat.roomId,
+      code: host.seat.lobby.shareCode,
       name: 'Bart',
     });
 
@@ -172,7 +172,7 @@ describe('creating and joining rooms', () => {
 describe('the lobby', () => {
   it('lets only the host configure and start', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
 
     expect(await guest.client.request('room:start')).toMatchObject({
       ok: false,
@@ -186,7 +186,7 @@ describe('the lobby', () => {
 
   it('lets the host change the options and tells everyone', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
 
     const result = await host.client.request<{ lobby: LobbyState }>('room:configure', {
       ais: 3,
@@ -225,7 +225,7 @@ describe('the lobby', () => {
 
   it('hands the host role on when the host leaves the lobby', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
 
     host.client.close();
 
@@ -276,7 +276,7 @@ describe('starting a match', () => {
     clients.push(late);
 
     expect(
-      await late.request('room:join', { roomId: host.seat.roomId, name: 'Cara' }),
+      await late.request('room:join', { code: host.seat.lobby.shareCode, name: 'Cara' }),
     ).toMatchObject({ ok: false, error: 'already_started' });
     expect(await host.client.request('room:start')).toMatchObject({
       ok: false,
@@ -286,7 +286,7 @@ describe('starting a match', () => {
 
   it('leaves out players who dropped before the start', async () => {
     const host = track(await createRoom(server.port, 'Anne', { ais: 1, turnDurationSeconds: null }));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
     guest.client.close();
     await host.client.waitFor<LobbyState>(
       'lobby:update',
@@ -396,7 +396,7 @@ describe('playing a turn', () => {
 
   it('sends the countdown as seconds remaining, not as a timestamp', async () => {
     const host = track(await createRoom(server.port, 'Anne', { ais: 0, turnDurationSeconds: 10 }));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
     await host.client.request('room:start');
 
     const hostView = await host.client.waitFor<GameView>('game:view');
@@ -621,7 +621,7 @@ describe('cleaning up', () => {
 describe('leaving a room', () => {
   it('removes the seat from the lobby and tells the others', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
     await host.client.waitFor<LobbyState>('lobby:update', (lobby) => lobby.seats.length === 2);
 
     guest.client.send('room:leave');
@@ -635,7 +635,7 @@ describe('leaving a room', () => {
 
   it('hands the host role to the next player when the host leaves', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
 
     host.client.send('room:leave');
 
@@ -701,7 +701,7 @@ describe('leaving a room', () => {
 describe('AI difficulty', () => {
   it('is part of the room options, defaults to normal, and everyone sees changes', async () => {
     const host = track(await createRoom(server.port, 'Anne'));
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
     expect(host.seat.lobby.options.aiDifficulty).toBe('normal');
 
     const result = await host.client.request<{ lobby: LobbyState }>('room:configure', {
@@ -748,7 +748,7 @@ describe('AI difficulty', () => {
     const host = track(
       await createRoom(server.port, 'Anne', { ais: 0, aiDifficulty: 'easy', turnDurationSeconds: null }),
     );
-    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
     expectOk(await host.client.request('room:start'));
     await host.client.waitFor<GameView>('game:view');
 

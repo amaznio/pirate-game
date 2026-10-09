@@ -12,7 +12,15 @@ import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
 import { useStoredDifficulty } from './useStoredDifficulty';
 import { useStoredName } from './useStoredName';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
-import { onlineSession, useOnlineSession } from '../../app/onlineSession';
+import type { RoomVisibility } from '@pirate/game-core/protocol/messages';
+import { onlineSession, serverUrl, useOnlineSession } from '../../app/onlineSession';
+import { PublicRoomList } from './PublicRoomList';
+import {
+  VISIBILITY_CHOICES,
+  loadVisibility,
+  saveVisibility,
+  visibilityBlurb,
+} from './visibility';
 
 interface MainMenuProps {
   /** A room code from the page link (?room=ABCDE), to prefill the join box. */
@@ -27,6 +35,11 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const [opponents, setOpponents] = useState(1);
   const [difficulty, setDifficulty] = useStoredDifficulty();
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
+  const [visibility, setVisibilityState] = useState<RoomVisibility>(loadVisibility);
+  const setVisibility = (value: RoomVisibility) => {
+    setVisibilityState(value);
+    saveVisibility(value);
+  };
   const [busy, setBusy] = useState(false);
 
   const cleanName = name.trim();
@@ -84,9 +97,22 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
       <Card title="Play with friends">
         {online ? (
           <>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-semibold text-parchment">New room</span>
+              <Segmented
+                value={visibility}
+                disabled={false}
+                onChange={setVisibility}
+                choices={VISIBILITY_CHOICES.map((choice) => ({
+                  label: choice.label,
+                  value: choice.value,
+                }))}
+              />
+              <p className="text-xs text-parchment/50">{visibilityBlurb(visibility)}</p>
+            </div>
             <PrimaryButton
               disabled={working || !cleanName}
-              onClick={() => run(() => online.createRoom(cleanName))}
+              onClick={() => run(() => online.createRoom(cleanName, { visibility }))}
             >
               {working ? 'Connecting…' : 'Create a room'}
             </PrimaryButton>
@@ -94,9 +120,9 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
               <input
                 value={code}
                 onChange={(event) => setCode(event.target.value.toUpperCase())}
-                maxLength={8}
-                placeholder="Room code"
-                aria-label="Room code"
+                maxLength={12}
+                placeholder="Room code or key"
+                aria-label="Room code or key"
                 autoCapitalize="characters"
                 autoComplete="off"
                 spellCheck={false}
@@ -119,6 +145,14 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
           </p>
         )}
       </Card>
+
+      {online && serverUrl && (
+        <PublicRoomList
+          serverUrl={serverUrl}
+          canJoin={!working && cleanName.length > 0}
+          onJoin={(roomCode) => run(() => online.joinRoom(roomCode, cleanName))}
+        />
+      )}
 
       {session.resuming && <Notice>Returning to your match…</Notice>}
       {session.message && !session.resuming && <Notice>{session.message}</Notice>}

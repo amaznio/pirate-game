@@ -103,9 +103,12 @@ export class OnlineSession {
     return this.enter('room:create', { name, options: roomOptions });
   }
 
-  /** Takes a seat in someone else's room. */
-  async joinRoom(roomId: string, name: string): Promise<boolean> {
-    return this.enter('room:join', { roomId, name });
+  /**
+   * Takes a seat in someone else's room, with a public room's code or a private
+   * room's key.
+   */
+  async joinRoom(code: string, name: string): Promise<boolean> {
+    return this.enter('room:join', { code, name });
   }
 
   /** Host only: changes the room's options. */

@@ -29,7 +29,7 @@ afterEach(async () => {
 
 async function startedDuel() {
   const host = track(await createRoom(server.port, 'Anne', { ais: 0, turnDurationSeconds: null }));
-  const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+  const guest = track(await joinRoom(server.port, host.seat.lobby.shareCode, 'Bart'));
   expectOk(await host.client.request('room:start'));
   await host.client.waitFor<GameView>('game:view');
   await guest.client.waitFor<GameView>('game:view');

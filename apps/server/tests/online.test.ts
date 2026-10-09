@@ -11,6 +11,7 @@ import {
   type SessionState,
 } from '../../client/src/online/OnlineSession';
 import type { GameSocket } from '../../client/src/online/SocketTransport';
+import { fetchPublicRooms } from '../../client/src/online/publicRooms';
 import type { GameServer } from '../src/gameServer';
 import { startServer } from './helpers';
 
@@ -108,7 +109,7 @@ async function startedMatch() {
   const anne = newSession();
   const bart = newSession();
   expect(await anne.createRoom('Anne', { ais: 0, turnDurationSeconds: null })).toBe(true);
-  const code = anne.getState().lobby!.roomId;
+  const code = anne.getState().lobby!.shareCode;
   expect(await bart.joinRoom(code, 'Bart')).toBe(true);
   await anne.start();
   await until(anne, (s) => s.phase === 'playing');
@@ -134,7 +135,7 @@ describe('the lobby', () => {
     const anne = newSession();
     const bart = newSession();
     await anne.createRoom('Anne');
-    const code = anne.getState().lobby!.roomId;
+    const code = anne.getState().lobby!.shareCode;
 
     expect(await bart.joinRoom(code, 'Bart')).toBe(true);
 
@@ -147,7 +148,7 @@ describe('the lobby', () => {
     const anne = newSession();
     const bart = newSession();
     await anne.createRoom('Anne');
-    await bart.joinRoom(anne.getState().lobby!.roomId, 'Bart');
+    await bart.joinRoom(anne.getState().lobby!.shareCode, 'Bart');
 
     await anne.configure({ ais: 3, teamMode: 'teams' });
 
@@ -190,7 +191,7 @@ describe('the lobby', () => {
     const anne = newSession();
     const bart = newSession(store);
     await anne.createRoom('Anne');
-    await bart.joinRoom(anne.getState().lobby!.roomId, 'Bart');
+    await bart.joinRoom(anne.getState().lobby!.shareCode, 'Bart');
     expect(store.data.size).toBe(1);
 
     bart.leave();
@@ -495,5 +496,70 @@ describe('an AI sails for a player who is away', () => {
 
     expect(anne.getState().client!.getView().players.p2.controller).toBe('human');
     expect(bart.getState().notice).toBeNull();
+  });
+});
+
+describe('public and private rooms', () => {
+  const url = () => `http://127.0.0.1:${server.port}`;
+
+  it('lists a public room, and a friend joins it straight from the list', async () => {
+    const anne = newSession();
+    const bart = newSession();
+    await anne.createRoom('Anne', { visibility: 'public', ais: 2, aiDifficulty: 'hard' });
+
+    const rooms = await fetchPublicRooms(url());
+
+    expect(rooms).toHaveLength(1);
+    expect(rooms[0]).toMatchObject({ hostName: 'Anne', players: 1, ais: 2, aiDifficulty: 'hard' });
+    expect(await bart.joinRoom(rooms[0].code, 'Bart')).toBe(true);
+    await until(anne, (s) => s.lobby?.seats.length === 2);
+    expect((await fetchPublicRooms(url()))[0].players).toBe(2);
+  });
+
+  it('keeps a private room off the list, and only its key lets a friend in', async () => {
+    const anne = newSession();
+    const bart = newSession();
+    await anne.createRoom('Anne'); // private by default
+    const lobby = anne.getState().lobby!;
+
+    expect(await fetchPublicRooms(url())).toEqual([]);
+    expect(await bart.joinRoom(lobby.roomId, 'Bart')).toBe(false);
+    expect(bart.getState().message).toMatch(/no room has that code or key/i);
+    expect(await bart.joinRoom(lobby.shareCode, 'Bart')).toBe(true);
+    expect(bart.getState().lobby?.seats).toHaveLength(2);
+  });
+
+  it('hides a room from the list when the host makes it private', async () => {
+    const anne = newSession();
+    await anne.createRoom('Anne', { visibility: 'public' });
+    expect(await fetchPublicRooms(url())).toHaveLength(1);
+
+    await anne.configure({ visibility: 'private' });
+
+    expect(await fetchPublicRooms(url())).toEqual([]);
+    expect(anne.getState().lobby?.shareCode).toHaveLength(8);
+  });
+
+  it('takes a room off the list once its match has started', async () => {
+    const anne = newSession();
+    await anne.createRoom('Anne', { visibility: 'public', ais: 1, turnDurationSeconds: null });
+    expect(await fetchPublicRooms(url())).toHaveLength(1);
+
+    await anne.start();
+    await until(anne, (s) => s.phase === 'playing');
+
+    expect(await fetchPublicRooms(url())).toEqual([]);
+  });
+
+  it('shows a clear message after too many wrong codes', async () => {
+    const bart = newSession();
+    for (let i = 0; i < 8; i += 1) {
+      await bart.joinRoom(`WRONG${i}`, 'Bart');
+    }
+
+    await bart.joinRoom('WRONG9', 'Bart');
+
+    expect(bart.getState().message).toMatch(/too many wrong codes/i);
+    expect(bart.getState().phase).toBe('menu');
   });
 });

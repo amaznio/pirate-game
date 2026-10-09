@@ -15,6 +15,7 @@ import {
   Stepper,
 } from './MenuLayout';
 import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
+import { VISIBILITY_CHOICES, shareCodeLabel, visibilityBlurb } from './visibility';
 import { onlineSession, useOnlineSession } from '../../app/onlineSession';
 
 const TIMER_CHOICES: ReadonlyArray<{ label: string; seconds: number | null }> = [
@@ -39,7 +40,7 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
   const ships = here + options.ais;
   const maxAis = Math.max(0, ROOM_LIMITS.maxShips - lobby.seats.length);
 
-  const link = `${window.location.origin}${window.location.pathname}?room=${lobby.roomId}`;
+  const link = `${window.location.origin}${window.location.pathname}?room=${lobby.shareCode}`;
 
   async function copyLink() {
     try {
@@ -64,20 +65,26 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
 
   return (
     <MenuLayout>
-      <Card title="Room code">
-        <div className="flex items-center justify-between gap-3">
+      <Card title={shareCodeLabel(options.visibility)}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <span
-            className="select-all text-4xl font-black tracking-[0.3em] text-parchment"
-            aria-label={`Room code ${lobby.roomId.split('').join(' ')}`}
+            className={`select-all font-black text-parchment ${
+              lobby.shareCode.length > 6
+                ? 'text-3xl tracking-[0.18em]'
+                : 'text-4xl tracking-[0.3em]'
+            }`}
+            aria-label={`${shareCodeLabel(options.visibility)} ${lobby.shareCode.split('').join(' ')}`}
           >
-            {lobby.roomId}
+            {lobby.shareCode}
           </span>
           <SecondaryButton onClick={copyLink}>
             {copied ? 'Copied!' : 'Copy link'}
           </SecondaryButton>
         </div>
         <p className="text-xs text-parchment/50">
-          Friends can enter this code, or open the link, to join.
+          {options.visibility === 'public'
+            ? 'This room is listed for everyone. Friends can also enter this code, or open the link.'
+            : 'Not listed. Only people you give this key (or the link) to can join.'}
         </p>
       </Card>
 
@@ -115,6 +122,19 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
       </Card>
 
       <Card title={isHost ? 'Match options' : 'Match options (set by the host)'}>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">Who can join</span>
+          <Segmented
+            value={options.visibility}
+            disabled={!isHost}
+            onChange={(visibility) => set({ visibility })}
+            choices={VISIBILITY_CHOICES.map((choice) => ({
+              label: choice.label,
+              value: choice.value,
+            }))}
+          />
+          <p className="text-xs text-parchment/50">{visibilityBlurb(options.visibility)}</p>
+        </div>
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-parchment">AI opponents</span>
           <Stepper

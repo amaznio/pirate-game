@@ -1,4 +1,5 @@
 import {
+  parseJoinCode,
   parseName,
   parseOpaqueId,
   parsePlayerActions,
@@ -9,6 +10,7 @@ import {
 import type { Ack } from '@pirate/game-core/protocol/messages';
 import { Room, RoomError, type GameSocket, type Seat } from './rooms/Room';
 import type { RoomManager } from './rooms/RoomManager';
+import { AttemptLimiter } from './attempts';
 
 /** More messages than this per second from one connection is abuse, not play. */
 const MAX_MESSAGES_PER_SECOND = 120;
@@ -41,6 +43,8 @@ function bad(message: string): never {
 /** Wires one socket to the rooms. Everything the client sends is validated here. */
 export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
   let binding: { room: Room; seat: Seat } | null = null;
+  // Wrong codes and keys are counted: a connection cannot try them in bulk.
+  const wrongCodes = new AttemptLimiter();
 
   // Crude flood protection: a connection that spams is dropped.
   let windowStart = Date.now();
@@ -95,11 +99,18 @@ export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
   socket.on('room:join', (request, ack) => {
     answer(ack, () => {
       if (binding) bad('You are already in a room.');
-      const roomId = parseRoomId(request?.roomId) ?? bad('That is not a room code.');
+      if (wrongCodes.blocked()) {
+        throw new RoomError(
+          'too_many_attempts',
+          'Too many wrong codes. Wait a minute and try again.',
+        );
+      }
+      const code = parseJoinCode(request?.code) ?? bad('That is not a room code or key.');
       const name = parseName(request?.name) ?? bad('Enter a name.');
-      const room = rooms.get(roomId);
+      const room = rooms.findForJoin(code);
       if (!room) {
-        throw new RoomError('room_not_found', 'No room has that code.');
+        wrongCodes.miss();
+        throw new RoomError('room_not_found', 'No room has that code or key.');
       }
       return bind(room, room.join(name, socket));
     });

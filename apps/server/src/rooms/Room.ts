@@ -15,6 +15,7 @@ import {
   type ClientToServerEvents,
   type ErrorCode,
   type LobbyState,
+  type PublicRoomSummary,
   type RoomOptions,
   type RoomStatus,
   type SeatInfo,
@@ -74,8 +75,13 @@ export class Room {
   private cleanups: Array<() => void> = [];
   private closed = false;
 
+  /** When the room was opened (the room list shows the newest first). */
+  readonly createdAt = Date.now();
+
   constructor(
     readonly id: string,
+    /** What lets people into this room while it is private. */
+    readonly key: string,
     options: Partial<RoomOptions> = {},
     /** How long a player may be away from a running match before an AI steps in. */
     private readonly awayGraceMs = 15_000,
@@ -280,9 +286,44 @@ export class Room {
     }));
     return {
       roomId: this.id,
+      shareCode: this.shareCode(),
       status: this.status,
       seats,
       options: this.options,
+    };
+  }
+
+  /** What to give a friend: the short code if the room is public, else the key. */
+  shareCode(): string {
+    return this.options.visibility === 'public' ? this.id : this.key;
+  }
+
+  /**
+   * How the room appears in the public list, or null if it should not appear:
+   * private, already started, empty, or full.
+   */
+  publicSummary(): PublicRoomSummary | null {
+    if (this.status !== 'lobby' || this.options.visibility !== 'public') {
+      return null;
+    }
+    const players = this.connectedCount();
+    const maxPlayers = Math.min(
+      ROOM_LIMITS.maxHumans,
+      ROOM_LIMITS.maxShips - this.options.ais,
+    );
+    if (players === 0 || this.seats.size >= maxPlayers) {
+      return null;
+    }
+    const host = this.hostSeatId ? this.seats.get(this.hostSeatId) : undefined;
+    return {
+      code: this.id,
+      hostName: host?.name ?? 'Unknown',
+      players,
+      maxPlayers,
+      ais: this.options.ais,
+      aiDifficulty: this.options.aiDifficulty,
+      teamMode: this.options.teamMode,
+      turnDurationSeconds: this.options.turnDurationSeconds,
     };
   }
 

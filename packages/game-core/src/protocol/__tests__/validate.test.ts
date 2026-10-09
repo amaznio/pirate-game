@@ -3,6 +3,8 @@ import {
   parseName,
   parseOpaqueId,
   parsePlayerActions,
+  parseJoinCode,
+  parsePublicRoomList,
   parseRoomId,
   parseRoomOptions,
   parseTokenPatch,
@@ -122,17 +124,25 @@ describe('parseRoomOptions', () => {
       aiDifficulty: 'easy',
       teamMode: 'teams',
       turnDurationSeconds: 45,
+      visibility: 'private',
     });
     expect(
       parseRoomOptions(
         { ais: 0 },
-        { ais: 5, aiDifficulty: 'hard', teamMode: 'teams', turnDurationSeconds: 20 },
+        {
+          ais: 5,
+          aiDifficulty: 'hard',
+          teamMode: 'teams',
+          turnDurationSeconds: 20,
+          visibility: 'public',
+        },
       ),
     ).toEqual({
       ais: 0,
       aiDifficulty: 'hard',
       teamMode: 'teams',
       turnDurationSeconds: 20,
+      visibility: 'public',
     });
   });
 
@@ -147,6 +157,8 @@ describe('parseRoomOptions', () => {
     { ais: '2' },
     { teamMode: 'chaos' },
     { aiDifficulty: 'impossible' },
+    { visibility: 'secret' },
+    { visibility: true },
     { aiDifficulty: 3 },
     { turnDurationSeconds: 2 },
     { turnDurationSeconds: 9999 },
@@ -157,5 +169,104 @@ describe('parseRoomOptions', () => {
 
   it('rejects options that are not an object', () => {
     expect(parseRoomOptions('ais=3')).toBeNull();
+  });
+});
+
+describe('visibility', () => {
+  it('defaults to private, so a room is never listed by accident', () => {
+    expect(DEFAULT_ROOM_OPTIONS.visibility).toBe('private');
+    expect(parseRoomOptions({})?.visibility).toBe('private');
+  });
+
+  it('can be made public or private', () => {
+    expect(parseRoomOptions({ visibility: 'public' })?.visibility).toBe('public');
+    expect(
+      parseRoomOptions({ visibility: 'private' }, { ...DEFAULT_ROOM_OPTIONS, visibility: 'public' })
+        ?.visibility,
+    ).toBe('private');
+  });
+});
+
+describe('parseJoinCode', () => {
+  it('accepts a short code or a long key, in any case', () => {
+    expect(parseJoinCode(' ab3d9 ')).toBe('AB3D9');
+    expect(parseJoinCode('k7x9q2mp')).toBe('K7X9Q2MP');
+  });
+
+  it('rejects anything that could not be a code', () => {
+    expect(parseJoinCode('ab')).toBeNull();
+    expect(parseJoinCode('a'.repeat(13))).toBeNull();
+    expect(parseJoinCode('ab cd')).toBeNull();
+    expect(parseJoinCode('ab-cd')).toBeNull();
+    expect(parseJoinCode(null)).toBeNull();
+    expect(parseJoinCode(12345)).toBeNull();
+  });
+});
+
+describe('parsePublicRoomList', () => {
+  const room = {
+    code: 'ABCDE',
+    hostName: 'Anne',
+    players: 1,
+    maxPlayers: 8,
+    ais: 2,
+    aiDifficulty: 'hard',
+    teamMode: 'ffa',
+    turnDurationSeconds: 30,
+  };
+
+  it('accepts a well-formed list', () => {
+    expect(parsePublicRoomList({ rooms: [room, { ...room, code: 'FGHJK', turnDurationSeconds: null }] })).toEqual([
+      room,
+      { ...room, code: 'FGHJK', turnDurationSeconds: null },
+    ]);
+  });
+
+  it('is empty for anything that is not a list of rooms', () => {
+    for (const value of [null, undefined, 'rooms', 5, [], {}, { rooms: 'x' }, { rooms: null }]) {
+      expect(parsePublicRoomList(value)).toEqual([]);
+    }
+  });
+
+  it('leaves out an entry with anything wrong, and keeps the rest', () => {
+    const broken = [
+      { ...room, code: 'no spaces' },
+      { ...room, code: 5 },
+      { ...room, hostName: '   ' },
+      { ...room, players: -1 },
+      { ...room, players: 99 },
+      { ...room, maxPlayers: 1.5 },
+      { ...room, ais: '2' },
+      { ...room, aiDifficulty: 'impossible' },
+      { ...room, teamMode: 'chaos' },
+      { ...room, turnDurationSeconds: 0 },
+      { ...room, turnDurationSeconds: 'soon' },
+      null,
+      'room',
+    ];
+
+    expect(parsePublicRoomList({ rooms: [...broken, room] })).toEqual([room]);
+  });
+
+  it('drops any extra fields, so nothing unexpected reaches the page', () => {
+    const [clean] = parsePublicRoomList({ rooms: [{ ...room, secret: 'x', key: 'KEYKEYKE' }] });
+
+    expect(Object.keys(clean).sort()).toEqual(Object.keys(room).sort());
+  });
+
+  it('cleans up a host name and normalises the code', () => {
+    const [clean] = parsePublicRoomList({
+      rooms: [{ ...room, code: 'abcde', hostName: '  An\u0000ne  ' }],
+    });
+
+    expect(clean.code).toBe('ABCDE');
+    expect(clean.hostName).toBe('Anne');
+  });
+
+  it('never returns more than the limit', () => {
+    const many = Array.from({ length: 80 }, (_, index) => ({ ...room, code: `R${index + 100}` }));
+
+    expect(parsePublicRoomList({ rooms: many })).toHaveLength(50);
+    expect(parsePublicRoomList({ rooms: many }, 10)).toHaveLength(10);
   });
 });

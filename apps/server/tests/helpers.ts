@@ -125,13 +125,14 @@ export async function createRoom(
   return { client, seat: result };
 }
 
+/** Joins with whatever the host would share (a key if private, a code if public). */
 export async function joinRoom(
   port: number,
-  roomId: string,
+  code: string,
   name: string,
 ): Promise<{ client: TestClient; seat: JoinResult }> {
   const client = await TestClient.connect(port);
-  const result = await client.request<JoinResult>('room:join', { roomId, name });
+  const result = await client.request<JoinResult>('room:join', { code, name });
   expectOk(result);
   return { client, seat: result };
 }

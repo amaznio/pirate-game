@@ -21,6 +21,7 @@ export interface GameServer {
 function handleHttp(
   rooms: RoomManager,
   startedAt: number,
+  allowedOrigins: readonly string[],
 ): (request: IncomingMessage, response: ServerResponse) => void {
   return (request, response) => {
     const path = (request.url ?? '/').split('?')[0];
@@ -33,6 +34,21 @@ function handleHttp(
           uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
         }),
       );
+      return;
+    }
+    if (request.method === 'GET' && path === '/rooms') {
+      // The public room list. A page may read it only from an allowed origin.
+      const origin = request.headers.origin;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        Vary: 'Origin',
+      };
+      if (origin && isOriginAllowed(origin, allowedOrigins)) {
+        headers['Access-Control-Allow-Origin'] = origin;
+      }
+      response.writeHead(200, headers);
+      response.end(JSON.stringify({ rooms: rooms.publicRooms() }));
       return;
     }
     if (request.method === 'GET' && path === '/') {
@@ -71,7 +87,7 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
     awayGraceMs: config.awayGraceMs,
   });
 
-  const httpServer = createServer(handleHttp(rooms, startedAt));
+  const httpServer = createServer(handleHttp(rooms, startedAt, config.clientOrigins));
   const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
       origin: config.clientOrigins.includes('*') ? true : [...config.clientOrigins],

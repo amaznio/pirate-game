@@ -1,5 +1,8 @@
-import type { RoomOptions } from '@pirate/game-core/protocol/messages';
-import { newRoomCode } from '../ids';
+import type {
+  PublicRoomSummary,
+  RoomOptions,
+} from '@pirate/game-core/protocol/messages';
+import { newRoomCode, newRoomKey } from '../ids';
 import { Room, RoomError } from './Room';
 
 export interface RoomManagerOptions {
@@ -12,6 +15,8 @@ export interface RoomManagerOptions {
 /** Owns every room: creates them, finds them, and sweeps away dead ones. */
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
+  /** The same rooms by their private key. */
+  private readonly keys = new Map<string, Room>();
   private sweeper: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly options: RoomManagerOptions) {}
@@ -28,9 +33,44 @@ export class RoomManager {
     while (this.rooms.has(id)) {
       id = newRoomCode();
     }
-    const room = new Room(id, options, this.options.awayGraceMs);
+    let key = newRoomKey();
+    while (this.keys.has(key)) {
+      key = newRoomKey();
+    }
+    const room = new Room(id, key, options, this.options.awayGraceMs);
     this.rooms.set(id, room);
+    this.keys.set(key, room);
     return room;
+  }
+
+  /**
+   * The room a player means by what they typed. A key opens its room whatever
+   * its visibility; a short code only opens a public room. A private room's
+   * code is therefore not enough, and looks exactly like a room that does not
+   * exist.
+   */
+  findForJoin(code: string): Room | undefined {
+    const byKey = this.keys.get(code);
+    if (byKey) {
+      return byKey;
+    }
+    const byCode = this.rooms.get(code);
+    return byCode?.options.visibility === 'public' ? byCode : undefined;
+  }
+
+  /** The public rooms that can still be joined, newest first. */
+  publicRooms(limit = 50): PublicRoomSummary[] {
+    const open: Array<{ room: Room; summary: PublicRoomSummary }> = [];
+    for (const room of this.rooms.values()) {
+      const summary = room.publicSummary();
+      if (summary) {
+        open.push({ room, summary });
+      }
+    }
+    return open
+      .sort((a, b) => b.room.createdAt - a.room.createdAt)
+      .slice(0, limit)
+      .map((entry) => entry.summary);
   }
 
   get(id: string): Room | undefined {
@@ -51,6 +91,7 @@ export class RoomManager {
       if (room.status === 'finished' || room.seatCount() === 0 || abandoned) {
         room.close('The room was closed.');
         this.rooms.delete(id);
+        this.keys.delete(room.key);
         removed += 1;
       }
     }
@@ -72,5 +113,6 @@ export class RoomManager {
       room.close(reason);
     }
     this.rooms.clear();
+    this.keys.clear();
   }
 }
