@@ -27,6 +27,19 @@ export function checkServerUrl(
       : OK;
   }
 
+  // Just a scheme: the part after it was empty. On Railway this means a
+  // reference like ${{server.RAILWAY_PUBLIC_DOMAIN}} resolved to nothing.
+  if (/^https?:\/\/$/i.test(value)) {
+    return {
+      level: 'error',
+      message:
+        `VITE_SERVER_URL is "${value}" with no address after it. If it is set ` +
+        'from the domain of another service (e.g. https://${{server.RAILWAY_PUBLIC_DOMAIN}}), ' +
+        'that reference is empty: check the server service is named exactly ' +
+        '"server" and that it has a public domain generated.',
+    };
+  }
+
   let url: URL;
   try {
     url = new URL(value);

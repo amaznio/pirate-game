@@ -29,6 +29,17 @@ describe('checkServerUrl', () => {
     expect(check.message).toContain('https://game.up.railway.app');
   });
 
+  it('explains a value that is only a scheme (an empty Railway reference)', () => {
+    for (const value of ['https://', 'http://', 'HTTPS://']) {
+      const check = checkServerUrl(value, true);
+
+      expect(check.level).toBe('error');
+      expect(check.message).toMatch(/no address after it/);
+      expect(check.message).toMatch(/named exactly "server"/);
+      expect(check.message).not.toMatch(/https:\/\/https:\/\//);
+    }
+  });
+
   it('refuses a host:port that parses as a scheme', () => {
     expect(checkServerUrl('localhost:3001', false).level).toBe('error');
   });

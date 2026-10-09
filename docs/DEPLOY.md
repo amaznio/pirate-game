@@ -52,7 +52,10 @@ own build and start command instead. Railway calls this a *shared monorepo*.
 | Replicas | **1** (see "One instance only") |
 | Networking | **Generate Domain** (public) |
 
-Railway provides `PORT` itself; do not set it. The server listens on it.
+The server listens on `PORT`. Set `PORT` yourself (for example `3001`) and enter
+the same number in the **Target port** box when you generate the domain; if the
+two disagree the domain answers 502. The deploy log prints the real one:
+`Game server listening on 0.0.0.0:<port>`.
 
 **Variables**
 
@@ -75,6 +78,11 @@ Railway provides `PORT` itself; do not set it. The server listens on it.
 | Healthcheck path | `/` |
 | Watch paths | `/apps/client/**`, `/packages/game-core/**`, `/package.json`, `/pnpm-lock.yaml`, `/pnpm-workspace.yaml`, `/tsconfig.base.json` |
 | Networking | **Generate Domain** (public) |
+
+The client listens on `PORT` too (it falls back to 4173 if unset). Set `PORT`
+yourself (for example `8080`) and use the same number as the **Target port**
+when generating the domain. The deploy log prints it:
+`Serving ... on http://0.0.0.0:<port>`.
 
 **Variables**
 
@@ -169,7 +177,9 @@ Client (`apps/client/.env.example`):
 
 | What you see | Likely cause | Fix |
 | --- | --- | --- |
-| The menu says "Online play is not set up for this site" | The client was built without `VITE_SERVER_URL`. | Set it and redeploy the client. |
+| The deployed menu says "Online play is not set up for this site" | Built without `VITE_SERVER_URL` (or the variable was added after the last build). | Set it on the client service and **redeploy** it. The build log shows `[pirate] WARNING: VITE_SERVER_URL is not set` when this is the cause. |
+| Reference variable like `${{server.RAILWAY_PUBLIC_DOMAIN}}` is empty | The service is not named `server` (Railway names a service after its package, e.g. `@pirate/server`). | Rename the services to `server` and `client`, or paste the address in directly. |
+| Domain answers 502 | The Target port does not match the port the app listens on. | Set `PORT` explicitly and use the same number as the target port. |
 | "Could not reach the game server" | Wrong `VITE_SERVER_URL`, or the server is down. | Run the smoke test; check the server logs. |
 | Server logs `WARNING: CLIENT_ORIGIN is not set` | Variable missing: only `localhost:5173` can connect. | Set `CLIENT_ORIGIN` to the client's `https://` address. |
 | Browser console: CORS error, or sockets refused | `CLIENT_ORIGIN` does not match the client's address exactly (scheme, host, no trailing slash or path). | Fix it; the smoke test names the exact value. |
