@@ -34,6 +34,12 @@ export interface GameUISnapshot {
 interface GameUIStore extends GameUISnapshot {
   /** Movement slot the next token will fill, or null for "first empty". */
   activeSlot: number | null;
+  /**
+   * Whether the player wants the mobile planning sheet open. It is only shown
+   * expanded while planning, and this preference is restored on the next turn.
+   */
+  panelOpen: boolean;
+  setPanelOpen: (open: boolean) => void;
   setActiveSlot: (slot: number | null) => void;
   queuePlayerAction: (action: MovementAction) => void;
   removePlayerAction: (index: number) => void;
@@ -72,6 +78,8 @@ function snapshot(state: GameState): GameUISnapshot {
 export const useGameUIStore = create<GameUIStore>(() => ({
   ...snapshot(gameController.getState()),
   activeSlot: null,
+  panelOpen: true,
+  setPanelOpen: (open) => useGameUIStore.setState({ panelOpen: open }),
   setActiveSlot: (slot) => useGameUIStore.setState({ activeSlot: slot }),
   queuePlayerAction: (action) => {
     const { activeSlot } = useGameUIStore.getState();

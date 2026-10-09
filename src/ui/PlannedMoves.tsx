@@ -1,6 +1,7 @@
 import { useGameUIStore } from '../store/useGameUIStore';
 import { TOKEN_META } from './tokenMeta';
 import { CannonToggle } from './CannonToggle';
+import { useAmmo } from './useAmmo';
 
 /**
  * The four phase rows: a movement slot flanked by a cannonball toggle for the
@@ -13,7 +14,6 @@ import { CannonToggle } from './CannonToggle';
 export function PlannedMoves() {
   const queue = useGameUIStore((state) => state.queue);
   const cannonQueue = useGameUIStore((state) => state.cannonQueue);
-  const ammo = useGameUIStore((state) => state.ammo);
   const status = useGameUIStore((state) => state.status);
   const activeSlot = useGameUIStore((state) => state.activeSlot);
   const setActiveSlot = useGameUIStore((state) => state.setActiveSlot);
@@ -21,14 +21,10 @@ export function PlannedMoves() {
   const toggleCannon = useGameUIStore((state) => state.toggleCannon);
 
   const planning = status === 'planning';
-  const queuedShots = cannonQueue.reduce(
-    (total, slot) => total + (slot.left ? 1 : 0) + (slot.right ? 1 : 0),
-    0,
-  );
-  const available = ammo - queuedShots;
+  const available = useAmmo().remaining;
 
   return (
-    <ol className="flex flex-col gap-1.5">
+    <ol className="flex flex-col gap-1">
       {queue.map((slot, index) => {
         const meta = slot ? TOKEN_META[slot] : null;
         const cannon = cannonQueue[index] ?? { left: false, right: false };
@@ -55,7 +51,7 @@ export function PlannedMoves() {
                   setActiveSlot(armed ? null : index);
                 }
               }}
-              className={`flex flex-1 items-center gap-3 rounded-lg border px-3 py-2 text-left transition active:scale-[0.99] disabled:cursor-not-allowed ${
+              className={`flex flex-1 items-center gap-3 rounded-lg border px-3 py-1.5 text-left transition active:scale-[0.99] disabled:cursor-not-allowed ${
                 meta
                   ? `${meta.bgClass} border-white/20 text-white`
                   : armed

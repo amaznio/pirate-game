@@ -4,18 +4,22 @@ import type { GameEvent } from '../../game/domain/GameEvent';
 import type { GameController } from '../../game/controller/GameController';
 import { getShipBySide } from '../../game/simulation/selectors';
 import { AssetKeys, TileFrames } from '../assets/AssetKeys';
-import { TILE_SIZE, gridToWorld } from '../Grid';
+import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
 import { createShipView, headingToAngle } from '../views/ShipView';
 import { createObstacleView } from '../views/ObstacleView';
 import { EventAnimator } from '../animation/EventAnimator';
 import { BattleCameraController } from '../camera/BattleCameraController';
+import { PlanPreviewView } from '../views/PlanPreviewView';
+import { usePreviewSettings } from '../../store/previewSettings';
 import { getPhaserContext } from '../PhaserGame';
 
 export class BattleScene extends Phaser.Scene {
   private views!: EntityViewRegistry;
   private animator!: EventAnimator;
   private cameraController!: BattleCameraController;
+  private preview!: PlanPreviewView;
+  private unsubscribePreviewSetting?: () => void;
   private controller!: GameController;
   private unsubscribeState?: () => void;
   private unsubscribeEvents?: () => void;
@@ -33,11 +37,21 @@ export class BattleScene extends Phaser.Scene {
     const worldWidth = state.board.width * TILE_SIZE;
     const worldHeight = state.board.height * TILE_SIZE;
 
+    // The water extends past the board as a purely decorative margin; the
+    // playable area is still board.width x board.height.
+    const margin = WORLD_MARGIN_TILES * TILE_SIZE;
     this.add
-      .tileSprite(0, 0, worldWidth, worldHeight, AssetKeys.tiles, TileFrames.water)
+      .tileSprite(
+        -margin,
+        -margin,
+        worldWidth + margin * 2,
+        worldHeight + margin * 2,
+        AssetKeys.tiles,
+        TileFrames.water,
+      )
       .setOrigin(0)
       .setDepth(0);
-    this.drawGrid(state, worldWidth, worldHeight);
+    this.drawGrid(state, worldWidth, worldHeight, margin);
 
     this.views = new EntityViewRegistry();
     this.animator = new EventAnimator(this, this.views);
@@ -47,11 +61,16 @@ export class BattleScene extends Phaser.Scene {
       worldHeight,
     );
 
+    this.cameraController.setBottomInset(getPhaserContext().bottomInset);
     this.syncViews(state);
     this.recenterOnPlayer();
 
+    this.preview = new PlanPreviewView(this);
     this.unsubscribeState = controller.subscribe((next) =>
       this.onStateChange(next),
+    );
+    this.unsubscribePreviewSetting = usePreviewSettings.subscribe(() =>
+      this.refreshPreview(),
     );
     this.unsubscribeEvents = eventBus.on(this.onEvent);
 
@@ -64,6 +83,8 @@ export class BattleScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.unsubscribeState?.();
       this.unsubscribeEvents?.();
+      this.unsubscribePreviewSetting?.();
+      this.preview.clear();
       this.cameraController.destroy();
     });
   }
@@ -82,13 +103,43 @@ export class BattleScene extends Phaser.Scene {
     this.cameraController.recenterOn(x, y);
   }
 
+  /** Tells the camera how much of the bottom is covered by UI. */
+  setBottomInset(pixels: number): void {
+    if (!this.cameraController) {
+      return;
+    }
+    this.cameraController.setBottomInset(pixels);
+    // Keep the ship in the visible area until the player takes over the camera.
+    if (!this.cameraController.userMoved) {
+      this.recenterOnPlayer();
+    }
+  }
+
+  private refreshPreview(): void {
+    this.preview.update(
+      this.controller.getState(),
+      usePreviewSettings.getState().showPlanPreview,
+    );
+  }
+
   private drawGrid(
     state: GameState,
     worldWidth: number,
     worldHeight: number,
+    margin: number,
   ): void {
+    // Dim the decorative margin so the playable board reads clearly.
+    const shade = this.add.graphics().setDepth(1);
+    shade.fillStyle(0x0b1f2a, 0.35);
+    shade.fillRect(-margin, -margin, worldWidth + margin * 2, margin);
+    shade.fillRect(-margin, worldHeight, worldWidth + margin * 2, margin);
+    shade.fillRect(-margin, 0, margin, worldHeight);
+    shade.fillRect(worldWidth, 0, margin, worldHeight);
+    shade.lineStyle(3, 0x0d3b49, 0.8);
+    shade.strokeRect(0, 0, worldWidth, worldHeight);
+
     const g = this.add.graphics().setDepth(1);
-    g.lineStyle(1, 0x0d3b49, 0.35);
+    g.lineStyle(1, 0x0d3b49, 0.5);
     for (let x = 0; x <= state.board.width; x += 1) {
       g.lineBetween(x * TILE_SIZE, 0, x * TILE_SIZE, worldHeight);
     }
@@ -135,6 +186,7 @@ export class BattleScene extends Phaser.Scene {
     if (state.status === 'planning' || state.status === 'game_over') {
       this.syncViews(state);
     }
+    this.preview?.update(state, usePreviewSettings.getState().showPlanPreview);
   }
 
   private onEvent = (event: GameEvent): void => {

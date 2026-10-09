@@ -110,6 +110,22 @@ their own authoritative copy of the game state:
 - **Pan**: drag (mouse or one finger).
 - **Zoom**: mouse wheel or pinch.
 - **Recenter**: the ◎ button centres the camera on your ship.
+- **Plan preview**: the eye button (or **P**) toggles ghost ships and cannon
+  lines for your queued plan. The preview is a dry run of the real simulation
+  with the enemy standing still; the setting is saved in `localStorage`.
+
+The board is 20x20 but is drawn inside a decorative ocean margin, and the
+minimum zoom always keeps the view filled with water (no empty space).
+
+### Layouts
+
+- **Mobile / narrow** (< 1024px): a bottom sheet. Collapsed, it is a read-only
+  strip of your tokens and cannonballs; moves can only be planned in the
+  expanded sheet, where the plan is visible.
+- **Desktop** (>= 1024px): a fixed right-hand column with hulls, timer, the
+  planning controls and a shortcut legend. Shortcuts: `1 2 3` queue
+  Left/Forward/Right, `Q`/`E` fire left/right in the phase of your last queued
+  move, `Backspace` removes the last move, `C` clears, `Enter` locks in.
 
 ## Tests
 

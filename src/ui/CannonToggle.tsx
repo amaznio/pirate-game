@@ -19,7 +19,7 @@ export function CannonToggle({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition hover:border-parchment/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${
         active
           ? 'border-black/50 bg-ocean-light'
           : 'border-parchment/25 bg-black/20'
