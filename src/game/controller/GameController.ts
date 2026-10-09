@@ -1,7 +1,7 @@
 import type { GameState, PlayerState } from '../domain/GameState';
 import type { CannonSide, MovementAction } from '../domain/Action';
 import type { PlayerId } from '../domain/Entity';
-import type { SubmittedActions, TurnResult } from '../domain/TurnResult';
+import type { PlayerActions, TurnResult } from '../domain/TurnResult';
 import {
   cloneInventory,
   emptyCannonQueue,
@@ -14,12 +14,16 @@ import { beginNextTurn, spendMovementTokens } from '../simulation/tokens';
 import { EventBus } from '../events/EventBus';
 import type { AIController } from '../ai/AIController';
 import { createSimpleAI } from '../ai/simpleAI';
+import { applyPlayerPlan, type PlanRejection } from '../simulation/plans';
 import { createDuelConfig, type MatchConfig } from '../config/matchConfig';
 
 export type GameListener = (state: GameState) => void;
 
 export interface GameControllerOptions {
+  /** Decision maker used by every AI player without a specific controller. */
   ai?: AIController;
+  /** Per-player AI controllers (e.g. different difficulties). */
+  aiByPlayer?: Readonly<Record<PlayerId, AIController>>;
   /**
    * Milliseconds allowed for planning each turn. Pass `null` to disable the
    * timer (used by unit tests). Defaults to the match rules.
@@ -52,6 +56,7 @@ export class GameController {
   private readonly viewerId: PlayerId;
   private readonly listeners = new Set<GameListener>();
   private readonly ai: AIController;
+  private readonly aiByPlayer: Readonly<Record<PlayerId, AIController>>;
   private readonly turnDurationMs: number | null;
   private planningDeadline: number | null = null;
   private timerId: ReturnType<typeof setTimeout> | null = null;
@@ -62,6 +67,7 @@ export class GameController {
     options: GameControllerOptions = {},
   ) {
     this.ai = options.ai ?? createSimpleAI();
+    this.aiByPlayer = options.aiByPlayer ?? {};
     this.config = options.config ?? createDuelConfig();
     this.state = options.initialState ?? createGame(this.config);
 
@@ -138,6 +144,11 @@ export class GameController {
     return this.state.players[this.viewerId];
   }
 
+  /** The local player may edit their plan until they lock in. */
+  private canEdit(): boolean {
+    return this.state.status === 'planning' && !this.viewer().lockedIn;
+  }
+
   /** Applies a change to the local player's state and notifies listeners. */
   private updateViewer(patch: Partial<PlayerState>): void {
     this.setState({
@@ -161,7 +172,8 @@ export class GameController {
     this.planningDeadline = Date.now() + this.turnDurationMs;
     this.timerId = setTimeout(() => {
       this.timerId = null;
-      this.lockInTurn();
+      // Time is up: resolve with whatever everyone has queued so far.
+      this.resolveNow();
     }, this.turnDurationMs);
   }
 
@@ -187,7 +199,7 @@ export class GameController {
    * empty slot is used.
    */
   queuePlayerAction(action: MovementAction, slot?: number): void {
-    if (this.state.status !== 'planning') {
+    if (!this.canEdit()) {
       return;
     }
     const player = this.viewer();
@@ -215,7 +227,7 @@ export class GameController {
 
   /** Removes a movement slot and returns its token to the pool. */
   removePlayerAction(index: number): void {
-    if (this.state.status !== 'planning') {
+    if (!this.canEdit()) {
       return;
     }
     const player = this.viewer();
@@ -237,7 +249,7 @@ export class GameController {
    * the remaining pool.
    */
   togglePlayerCannon(phase: number, side: CannonSide): void {
-    if (this.state.status !== 'planning') {
+    if (!this.canEdit()) {
       return;
     }
 
@@ -262,7 +274,7 @@ export class GameController {
   }
 
   clearPlayerActions(): void {
-    if (this.state.status !== 'planning') {
+    if (!this.canEdit()) {
       return;
     }
     const player = this.viewer();
@@ -294,19 +306,81 @@ export class GameController {
 
   // --- Turn resolution ---------------------------------------------------
 
+  /** Locks in the local player's plan. Resolves the turn if everyone is ready. */
   lockInTurn(): TurnResult | null {
+    return this.lockInPlayer(this.viewerId);
+  }
+
+  /**
+   * Marks a human player as locked in; their plan can no longer change. When
+   * every human is locked in the turn ends early (unless the match rules say to
+   * wait for the timer). Returns the result if this call resolved the turn.
+   */
+  lockInPlayer(playerId: PlayerId): TurnResult | null {
+    const player = this.state.players[playerId];
+    if (
+      this.state.status !== 'planning' ||
+      !player ||
+      player.controller !== 'human' ||
+      player.lockedIn
+    ) {
+      return null;
+    }
+
+    this.setState({
+      ...this.state,
+      players: {
+        ...this.state.players,
+        [playerId]: { ...player, lockedIn: true },
+      },
+    });
+    return this.resolveIfReady();
+  }
+
+  /**
+   * Accepts a complete plan for a human player (the path a remote player's plan
+   * takes), validates it against what that player holds, and locks them in.
+   * Returns null on success or the reason it was rejected.
+   */
+  submitPlayerPlan(playerId: PlayerId, plan: PlayerActions): PlanRejection | null {
+    const player = this.state.players[playerId];
+    if (!player || player.controller !== 'human') {
+      return 'unknown_player';
+    }
+    const result = applyPlayerPlan(this.state, playerId, plan);
+    if (!result.ok) {
+      return result.reason;
+    }
+    this.setState(result.state);
+    this.lockInPlayer(playerId);
+    return null;
+  }
+
+  private resolveIfReady(): TurnResult | null {
+    const everyoneLocked = Object.values(this.state.players)
+      .filter((player) => player.controller === 'human')
+      .every((player) => player.lockedIn);
+    const endEarly =
+      this.state.rules.endTurnWhenAllLocked || this.turnDurationMs === null;
+    return everyoneLocked && endEarly ? this.resolveNow() : null;
+  }
+
+  /** Resolves the turn now with every player's current plan. */
+  private resolveNow(): TurnResult | null {
     if (this.state.status !== 'planning') {
       return null;
     }
     this.clearPlanningTimer();
 
-    // Humans submit the plan they built; AI players plan now and pay for their
-    // movement tokens from their own pool, like everyone else.
-    const submitted: Record<PlayerId, SubmittedActions[PlayerId]> = {};
+    // Humans submit the plan they built (a human who never locked in submits
+    // what they have queued); AI players plan now and pay for their movement
+    // tokens from their own pool, like everyone else.
+    const submitted: Record<PlayerId, PlayerActions> = {};
     const players: Record<PlayerId, PlayerState> = {};
     for (const player of Object.values(this.state.players)) {
       if (player.controller === 'ai') {
-        const actions = this.ai.chooseActions(this.state, player.id);
+        const controller = this.aiByPlayer[player.id] ?? this.ai;
+        const actions = controller.chooseActions(this.state, player.id);
         submitted[player.id] = actions;
         players[player.id] = {
           ...player,

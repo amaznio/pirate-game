@@ -84,6 +84,7 @@ export function createGame(config: MatchConfig = createDuelConfig()): GameState 
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),
       tokenGeneration: { auto: true, requested: 'FORWARD', rotationIndex: 0 },
+      lockedIn: false,
     };
   }
 

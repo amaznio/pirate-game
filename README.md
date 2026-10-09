@@ -100,6 +100,15 @@ player on their own team.
     leaves no one).
   - `friendlyFire` (default off): a shot that reaches a teammate is stopped
     without damage.
+- Locking in: a human can lock in their plan, after which it can no longer be
+  edited. With `rules.endTurnWhenAllLocked` (default on) the turn resolves the
+  moment every human has locked in; otherwise (or when the timer expires) it
+  resolves with whatever each player has queued. AI players plan at resolution.
+  A plan for another human arrives whole through
+  `GameController.submitPlayerPlan(playerId, plan)`, which validates it against
+  what that player holds (`simulation/plans.ts`) before locking them in; this
+  is the seam a network transport will use. `aiByPlayer` assigns a different AI
+  to individual players.
 - Each planning turn is timed (**30s** by default, `rules.turnDurationSeconds`,
   `null` disables it). When the
   countdown reaches zero the turn is locked in automatically with whatever is

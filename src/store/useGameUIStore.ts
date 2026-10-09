@@ -34,6 +34,12 @@ export interface GameUISnapshot {
   ammo: number;
   auto: boolean;
   requested: MovementAction;
+  /** The local player has locked in and can no longer change their plan. */
+  lockedIn: boolean;
+  /** Other humans who have not locked in yet. */
+  waitingFor: number;
+  /** Planning is open and the local player may still edit their plan. */
+  canPlan: boolean;
   /** The match result from the local player's point of view, once decided. */
   result: MatchResult | null;
   /** Epoch-ms the current planning window closes, or null when not planning. */
@@ -102,6 +108,14 @@ function snapshot(state: GameState): GameUISnapshot {
     ammo: viewer.ammo,
     auto: viewer.tokenGeneration.auto,
     requested: viewer.tokenGeneration.requested,
+    lockedIn: viewer.lockedIn,
+    waitingFor: Object.values(state.players).filter(
+      (player) =>
+        player.controller === 'human' &&
+        player.id !== viewerId &&
+        !player.lockedIn,
+    ).length,
+    canPlan: state.status === 'planning' && !viewer.lockedIn,
     result,
     deadline: gameController.getPlanningDeadline(),
     turnDurationSeconds: state.rules.turnDurationSeconds ?? 0,

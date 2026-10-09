@@ -362,3 +362,153 @@ describe('matches with several AI ships', () => {
     ).toThrow();
   });
 });
+
+describe('locking in with several humans', () => {
+  const twoHumans = (
+    options: Partial<ConstructorParameters<typeof GameController>[1]> = {},
+    rules: Partial<GameState['rules']> = {},
+  ) => {
+    const config = createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'ffa' });
+    return new GameController(new EventBus(), {
+      turnDurationMs: null,
+      config: { ...config, rules: { ...config.rules, ...rules } },
+      ...options,
+    });
+  };
+
+  const emptyPlan = {
+    movement: [null, null, null, null],
+    cannons: Array.from({ length: 4 }, () => ({ left: false, right: false })),
+  };
+
+  it('waits for the other human after you lock in', () => {
+    const controller = twoHumans();
+
+    const result = controller.lockInTurn();
+
+    expect(result).toBeNull();
+    expect(controller.getState().status).toBe('planning');
+    expect(controller.getState().players.p1.lockedIn).toBe(true);
+    expect(controller.getState().players.p2.lockedIn).toBe(false);
+  });
+
+  it('resolves as soon as the last human locks in', () => {
+    const controller = twoHumans();
+    controller.lockInTurn();
+
+    expect(controller.submitPlayerPlan('p2', emptyPlan)).toBeNull();
+
+    expect(controller.getState().status).toBe('animating');
+    expect(controller.getPendingTurn()).not.toBeNull();
+  });
+
+  it('applies the plan a remote human submitted', () => {
+    const controller = twoHumans();
+    controller.lockInTurn();
+
+    controller.submitPlayerPlan('p2', {
+      ...emptyPlan,
+      movement: ['FORWARD', null, null, null],
+    });
+
+    const moved = controller
+      .getPendingTurn()
+      ?.events.some((event) => event.type === 'SHIP_MOVED' && event.shipId === 'p2-ship');
+    expect(moved).toBe(true);
+  });
+
+  it('rejects an illegal plan without locking the player in', () => {
+    const controller = twoHumans();
+
+    const reason = controller.submitPlayerPlan('p2', {
+      ...emptyPlan,
+      movement: ['TURN_RIGHT', 'TURN_RIGHT', null, null],
+    });
+
+    expect(reason).toBe('not_enough_tokens');
+    expect(controller.getState().players.p2.lockedIn).toBe(false);
+  });
+
+  it('does not accept plans for AI players or unknown players', () => {
+    const controller = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      config: createSkirmishConfig({ humans: 1, ais: 1, teamMode: 'ffa' }),
+    });
+
+    expect(controller.submitPlayerPlan('p2', emptyPlan)).toBe('unknown_player');
+    expect(controller.submitPlayerPlan('nobody', emptyPlan)).toBe('unknown_player');
+  });
+
+  it('freezes your plan once you have locked in', () => {
+    const controller = twoHumans();
+    controller.queuePlayerAction('FORWARD');
+    controller.lockInTurn();
+
+    controller.queuePlayerAction('FORWARD');
+    controller.togglePlayerCannon(0, 'left');
+    controller.removePlayerAction(0);
+    controller.clearPlayerActions();
+
+    const player = controller.getState().players.p1;
+    expect(player.queue).toEqual(['FORWARD', null, null, null]);
+    expect(player.cannonQueue[0].left).toBe(false);
+  });
+
+  it('resolves on the timer with whatever players have queued', () => {
+    vi.useFakeTimers();
+    const controller = twoHumans({ turnDurationMs: 30000 });
+    controller.lockInTurn();
+
+    vi.advanceTimersByTime(30000);
+
+    expect(controller.getState().status).toBe('animating');
+    controller.dispose();
+  });
+
+  it('waits for the timer when the rules say not to end early', () => {
+    vi.useFakeTimers();
+    const controller = twoHumans({ turnDurationMs: 30000 }, { endTurnWhenAllLocked: false });
+    controller.lockInTurn();
+    controller.submitPlayerPlan('p2', emptyPlan);
+
+    expect(controller.getState().status).toBe('planning');
+
+    vi.advanceTimersByTime(30000);
+
+    expect(controller.getState().status).toBe('animating');
+    controller.dispose();
+  });
+
+  it('unlocks everyone when the next turn begins', () => {
+    const controller = twoHumans();
+    controller.lockInTurn();
+    controller.submitPlayerPlan('p2', emptyPlan);
+    controller.onAnimationComplete();
+
+    for (const player of Object.values(controller.getState().players)) {
+      expect(player.lockedIn).toBe(false);
+    }
+  });
+});
+
+describe('a controller per AI player', () => {
+  it('uses the AI assigned to each player', () => {
+    const asked: string[] = [];
+    const recorder = (label: string) => ({
+      chooseActions: (_state: GameState, playerId: string) => {
+        asked.push(`${label}:${playerId}`);
+        return { movement: [], cannons: [] };
+      },
+    });
+    const controller = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      config: createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' }),
+      ai: recorder('default'),
+      aiByPlayer: { p3: recorder('special') },
+    });
+
+    controller.lockInTurn();
+
+    expect(asked.sort()).toEqual(['default:p2', 'special:p3']);
+  });
+});

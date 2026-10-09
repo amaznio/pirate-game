@@ -14,13 +14,12 @@ import { useAmmo } from './useAmmo';
 export function PlannedMoves() {
   const queue = useGameUIStore((state) => state.queue);
   const cannonQueue = useGameUIStore((state) => state.cannonQueue);
-  const status = useGameUIStore((state) => state.status);
+  const canPlan = useGameUIStore((state) => state.canPlan);
   const activeSlot = useGameUIStore((state) => state.activeSlot);
   const setActiveSlot = useGameUIStore((state) => state.setActiveSlot);
   const removePlayerAction = useGameUIStore((state) => state.removePlayerAction);
   const toggleCannon = useGameUIStore((state) => state.toggleCannon);
 
-  const planning = status === 'planning';
   const available = useAmmo().remaining;
 
   return (
@@ -29,8 +28,8 @@ export function PlannedMoves() {
         const meta = slot ? TOKEN_META[slot] : null;
         const cannon = cannonQueue[index] ?? { left: false, right: false };
         const armed = activeSlot === index;
-        const leftDisabled = !planning || (!cannon.left && available <= 0);
-        const rightDisabled = !planning || (!cannon.right && available <= 0);
+        const leftDisabled = !canPlan || (!cannon.left && available <= 0);
+        const rightDisabled = !canPlan || (!cannon.right && available <= 0);
 
         return (
           <li key={index} className="flex items-center gap-2">
@@ -43,7 +42,7 @@ export function PlannedMoves() {
 
             <button
               type="button"
-              disabled={!planning}
+              disabled={!canPlan}
               onClick={() => {
                 if (slot) {
                   removePlayerAction(index);

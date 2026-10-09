@@ -26,6 +26,8 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
   const lockIn = useGameUIStore((state) => state.lockIn);
 
   const planning = status === 'planning';
+  const canPlan = useGameUIStore((state) => state.canPlan);
+  const lockedIn = useGameUIStore((state) => state.lockedIn);
   const expanded = planning && panelOpen;
   const ref = useRef<HTMLElement>(null);
 
@@ -53,11 +55,11 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
           <ResourceChips />
           <button
             type="button"
-            disabled={!planning}
+            disabled={!canPlan}
             onClick={lockIn}
             className="ml-auto shrink-0 rounded-xl bg-parchment/15 px-3 py-2 text-sm font-bold text-parchment active:scale-95 disabled:opacity-40"
           >
-            {hasPlan ? 'Lock In' : 'Pass'}
+            {lockedIn ? 'Locked' : hasPlan ? 'Lock In' : 'Pass'}
           </button>
           <button
             type="button"

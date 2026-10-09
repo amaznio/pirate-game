@@ -7,20 +7,18 @@ import { TOKEN_META, TOKEN_ORDER } from './tokenMeta';
  */
 export function MoveTokenTray() {
   const tokens = useGameUIStore((state) => state.tokens);
-  const status = useGameUIStore((state) => state.status);
+  const canPlan = useGameUIStore((state) => state.canPlan);
   const queueFull = useGameUIStore((state) =>
     state.queue.every((slot) => slot !== null),
   );
   const queuePlayerAction = useGameUIStore((state) => state.queuePlayerAction);
-
-  const planning = status === 'planning';
 
   return (
     <div className="grid grid-cols-3 gap-2">
       {TOKEN_ORDER.map((action) => {
         const meta = TOKEN_META[action];
         const count = tokens[action];
-        const disabled = !planning || count <= 0 || queueFull;
+        const disabled = !canPlan || count <= 0 || queueFull;
 
         return (
           <button

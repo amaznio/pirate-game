@@ -7,4 +7,10 @@ export interface MatchRules {
    * dealing damage.
    */
   readonly friendlyFire: boolean;
+  /**
+   * End the planning window as soon as every human has locked in, instead of
+   * waiting for the timer. (Always true in effect when the timer is disabled,
+   * otherwise a match could never advance.)
+   */
+  readonly endTurnWhenAllLocked: boolean;
 }

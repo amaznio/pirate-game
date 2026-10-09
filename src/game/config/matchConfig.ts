@@ -52,6 +52,7 @@ export interface MatchConfig {
 export const DEFAULT_RULES: MatchRules = {
   turnDurationSeconds: TURN_DURATION_SECONDS,
   friendlyFire: false,
+  endTurnWhenAllLocked: true,
 };
 
 const DEFAULT_SHIP_TYPE = 'sloop';

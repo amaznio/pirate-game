@@ -16,7 +16,7 @@ export function useDesktopShortcuts(): void {
       }
 
       const store = useGameUIStore.getState();
-      if (store.status !== 'planning') {
+      if (!store.canPlan) {
         return;
       }
 

@@ -100,6 +100,7 @@ export function beginNextTurn(state: GameState): NextTurnResult {
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),
       tokenGeneration: selection.tokenGeneration,
+      lockedIn: false,
     };
   }
 

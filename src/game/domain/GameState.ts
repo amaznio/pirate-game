@@ -30,6 +30,8 @@ export interface PlayerState {
   /** Cannon queue; each slot fires left, right, or both. */
   readonly cannonQueue: CannonQueue;
   readonly tokenGeneration: TokenGenerationConfig;
+  /** The player has finalised their plan for this turn and can no longer edit it. */
+  readonly lockedIn: boolean;
 }
 
 /** How a finished match ended. */
