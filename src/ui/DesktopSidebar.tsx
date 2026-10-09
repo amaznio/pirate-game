@@ -8,7 +8,7 @@ import { STATUS_LABEL, formatSeconds, useTurnClock } from './useTurnClock';
 function HullRow({ label, hp, maxHp }: { label: string; hp: number; maxHp: number }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-14 text-xs font-bold uppercase tracking-wide text-parchment/70">
+      <span className="w-14 truncate text-xs font-bold uppercase tracking-wide text-parchment/70">
         {label}
       </span>
       <HullBar hp={hp} maxHp={maxHp} />
@@ -32,8 +32,7 @@ const SHORTCUTS: ReadonlyArray<[string, string]> = [
 export function DesktopSidebar() {
   const hull = useGameUIStore((state) => state.hull);
   const maxHull = useGameUIStore((state) => state.maxHull);
-  const enemyHull = useGameUIStore((state) => state.enemyHull);
-  const enemyMaxHull = useGameUIStore((state) => state.enemyMaxHull);
+  const others = useGameUIStore((state) => state.others);
   const { turn, status, planning, remaining, low } = useTurnClock();
   const showPreview = usePreviewSettings((state) => state.showPlanPreview);
   const setShowPreview = usePreviewSettings((state) => state.setShowPlanPreview);
@@ -56,7 +55,16 @@ export function DesktopSidebar() {
         </div>
         <TimerBar />
         <HullRow label="You" hp={hull} maxHp={maxHull} />
-        <HullRow label="Enemy" hp={enemyHull} maxHp={enemyMaxHull} />
+        {others.map((other) => (
+          <HullRow
+            key={other.playerId}
+            label={
+              others.length === 1 && !other.ally ? 'Enemy' : other.playerId
+            }
+            hp={other.hull}
+            maxHp={other.maxHull}
+          />
+        ))}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">

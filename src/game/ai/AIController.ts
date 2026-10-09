@@ -1,11 +1,12 @@
 import type { GameState } from '../domain/GameState';
-import type { SideActions } from '../domain/TurnResult';
+import type { PlayerId } from '../domain/Entity';
+import type { PlayerActions } from '../domain/TurnResult';
 
 /**
- * The opponent's decision maker. It only ever returns the same phase-aligned
- * plan format the player uses and never touches presentation or privileged
- * state.
+ * Decision maker for one AI-controlled player. It only ever returns the same
+ * phase-aligned plan format a human uses and never touches presentation or
+ * privileged state.
  */
 export interface AIController {
-  chooseActions(state: GameState): SideActions;
+  chooseActions(state: GameState, playerId: PlayerId): PlayerActions;
 }

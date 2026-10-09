@@ -3,6 +3,7 @@ import type { Direction } from './Direction';
 import type { EntityId, EntityKind } from './Entity';
 import type { MovementAction } from './Action';
 import type { WeaponSide } from './Ship';
+import type { Outcome } from './GameState';
 
 export type ProjectileSide = WeaponSide;
 
@@ -85,6 +86,6 @@ export type GameEvent =
   | { type: 'SHIP_DESTROYED'; shipId: EntityId; phase: number }
   | { type: 'PHASE_ENDED'; phase: number }
   | { type: 'TURN_ENDED'; turn: number }
-  | { type: 'GAME_ENDED'; winnerId: EntityId; loserId: EntityId };
+  | { type: 'GAME_ENDED'; outcome: Outcome };
 
 export type GameEventType = GameEvent['type'];

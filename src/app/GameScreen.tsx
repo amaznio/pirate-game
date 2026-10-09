@@ -13,7 +13,7 @@ export function GameScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<PhaserHandle | null>(null);
   const status = useGameUIStore((state) => state.status);
-  const winner = useGameUIStore((state) => state.winner);
+  const result = useGameUIStore((state) => state.result);
   const restart = useGameUIStore((state) => state.restart);
 
   useEffect(() => {
@@ -81,12 +81,18 @@ export function GameScreen() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-parchment/25 bg-ocean p-6 text-center shadow-2xl">
             <h2 className="text-2xl font-black text-parchment">
-              {winner === 'player' ? 'Victory!' : 'Your ship has sunk'}
+              {result === 'win'
+                ? 'Victory!'
+                : result === 'draw'
+                  ? 'Mutual destruction'
+                  : 'Your ship has sunk'}
             </h2>
             <p className="mt-2 text-sm text-parchment/70">
-              {winner === 'player'
-                ? 'The enemy vessel is wreckage.'
-                : 'Better luck next voyage, captain.'}
+              {result === 'win'
+                ? 'The enemy fleet is wreckage.'
+                : result === 'draw'
+                  ? 'Every ship went down together.'
+                  : 'Better luck next voyage, captain.'}
             </p>
             <button
               type="button"

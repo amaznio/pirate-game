@@ -4,6 +4,7 @@ import { GameController } from '../GameController';
 import { createGame } from '../../simulation/createGame';
 import type { GameState } from '../../domain/GameState';
 import { pos } from '../../domain/Position';
+import { createSkirmishConfig } from '../../config/matchConfig';
 
 /** A state where one left-broadside shot sinks the enemy. */
 function gameOverSetup(): GameState {
@@ -44,17 +45,17 @@ afterEach(() => {
 describe('move token pool', () => {
   it('spends a token when queued and returns it when removed', () => {
     const controller = makeController();
-    const start = controller.getState().tokenInventories.player.FORWARD;
+    const start = controller.getState().players.player.tokens.FORWARD;
 
     controller.queuePlayerAction('FORWARD');
-    expect(controller.getState().queues.player[0]).toBe('FORWARD');
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(
+    expect(controller.getState().players.player.queue[0]).toBe('FORWARD');
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(
       start - 1,
     );
 
     controller.removePlayerAction(0);
-    expect(controller.getState().queues.player[0]).toBeNull();
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(start);
+    expect(controller.getState().players.player.queue[0]).toBeNull();
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(start);
   });
 
   it('cannot queue a token that is not in the pool', () => {
@@ -63,12 +64,12 @@ describe('move token pool', () => {
     controller.queuePlayerAction('FORWARD');
     controller.queuePlayerAction('FORWARD');
 
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(0);
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(0);
     controller.queuePlayerAction('FORWARD');
 
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(0);
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(0);
     expect(
-      controller.getState().queues.player.filter((slot) => slot !== null),
+      controller.getState().players.player.queue.filter((slot) => slot !== null),
     ).toHaveLength(3);
   });
 
@@ -79,11 +80,11 @@ describe('move token pool', () => {
 
     controller.clearPlayerActions();
 
-    expect(controller.getState().queues.player.every((slot) => slot === null)).toBe(
+    expect(controller.getState().players.player.queue.every((slot) => slot === null)).toBe(
       true,
     );
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(3);
-    expect(controller.getState().tokenInventories.player.TURN_LEFT).toBe(2);
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(3);
+    expect(controller.getState().players.player.tokens.TURN_LEFT).toBe(2);
   });
 
   it('can place a move into a specific slot, leaving earlier slots empty', () => {
@@ -91,7 +92,7 @@ describe('move token pool', () => {
 
     controller.queuePlayerAction('FORWARD', 2);
 
-    expect(controller.getState().queues.player).toEqual([
+    expect(controller.getState().players.player.queue).toEqual([
       null,
       null,
       'FORWARD',
@@ -104,7 +105,7 @@ describe('move token pool', () => {
     controller.queuePlayerAction('FORWARD', 0);
     controller.queuePlayerAction('TURN_LEFT', 0);
 
-    expect(controller.getState().queues.player).toEqual([
+    expect(controller.getState().players.player.queue).toEqual([
       'FORWARD',
       'TURN_LEFT',
       null,
@@ -128,7 +129,7 @@ describe('turn flow', () => {
     expect(controller.getState().turn).toBe(2);
     expect(controller.getPendingTurn()).toBeNull();
     expect(
-      controller.getState().queues.player.every((slot) => slot === null),
+      controller.getState().players.player.queue.every((slot) => slot === null),
     ).toBe(true);
   });
 
@@ -137,22 +138,22 @@ describe('turn flow', () => {
     controller.queuePlayerAction('FORWARD');
     controller.lockInTurn();
 
-    const snapshot = controller.getState().tokenInventories.player.FORWARD;
+    const snapshot = controller.getState().players.player.tokens.FORWARD;
     controller.queuePlayerAction('FORWARD');
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(snapshot);
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(snapshot);
   });
 });
 
 describe('token generation settings', () => {
   it('exposes auto and requested token settings', () => {
     const controller = makeController();
-    expect(controller.getState().tokenGeneration.auto).toBe(true);
+    expect(controller.getState().players.player.tokenGeneration.auto).toBe(true);
 
     controller.setAutoTokenGeneration(false);
     controller.setRequestedTokenType('TURN_RIGHT');
 
-    expect(controller.getState().tokenGeneration.auto).toBe(false);
-    expect(controller.getState().tokenGeneration.requested).toBe('TURN_RIGHT');
+    expect(controller.getState().players.player.tokenGeneration.auto).toBe(false);
+    expect(controller.getState().players.player.tokenGeneration.requested).toBe('TURN_RIGHT');
   });
 });
 
@@ -175,14 +176,14 @@ describe('passing a turn', () => {
 describe('cannon queueing', () => {
   it('toggles a broadside on and off without spending a movement token', () => {
     const controller = makeController();
-    const before = controller.getState().tokenInventories.player.FORWARD;
+    const before = controller.getState().players.player.tokens.FORWARD;
 
     controller.togglePlayerCannon(0, 'left');
-    expect(controller.getState().cannonQueues.player[0].left).toBe(true);
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(before);
+    expect(controller.getState().players.player.cannonQueue[0].left).toBe(true);
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(before);
 
     controller.togglePlayerCannon(0, 'left');
-    expect(controller.getState().cannonQueues.player[0].left).toBe(false);
+    expect(controller.getState().players.player.cannonQueue[0].left).toBe(false);
   });
 
   it('cannot queue more shots than the cannonball pool', () => {
@@ -195,12 +196,12 @@ describe('cannon queueing', () => {
 
     const queued = controller
       .getState()
-      .cannonQueues.player.reduce(
+      .players.player.cannonQueue.reduce(
         (total, slot) => total + (slot.left ? 1 : 0) + (slot.right ? 1 : 0),
         0,
       );
     expect(queued).toBe(3);
-    expect(controller.getState().cannonQueues.player[1].right).toBe(false);
+    expect(controller.getState().players.player.cannonQueue[1].right).toBe(false);
   });
 
   it('clears queued shots and returns movement tokens', () => {
@@ -213,20 +214,20 @@ describe('cannon queueing', () => {
     expect(
       controller
         .getState()
-        .cannonQueues.player.every((slot) => !slot.left && !slot.right),
+        .players.player.cannonQueue.every((slot) => !slot.left && !slot.right),
     ).toBe(true);
-    expect(controller.getState().tokenInventories.player.FORWARD).toBe(3);
+    expect(controller.getState().players.player.tokens.FORWARD).toBe(3);
   });
 
   it('spends cannonballs when queued shots resolve', () => {
     const controller = makeController();
     controller.togglePlayerCannon(0, 'left');
     controller.togglePlayerCannon(0, 'right');
-    const before = controller.getState().ammo.player;
+    const before = controller.getState().players.player.ammo;
 
     controller.lockInTurn();
 
-    expect(controller.getState().ammo.player).toBe(before - 2);
+    expect(controller.getState().players.player.ammo).toBe(before - 2);
   });
 });
 
@@ -242,7 +243,10 @@ describe('game over timing', () => {
     controller.lockInTurn();
 
     expect(controller.getState().status).toBe('animating');
-    expect(controller.getState().winner).toBe('player');
+    expect(controller.getState().outcome).toEqual({
+      kind: 'win',
+      teamId: 'player',
+    });
     expect(controller.getPendingTurn()).not.toBeNull();
 
     controller.onAnimationComplete();
@@ -289,5 +293,72 @@ describe('planning timer', () => {
   it('is disabled when turnDurationMs is null', () => {
     const controller = makeController({ turnDurationMs: null });
     expect(controller.getPlanningDeadline()).toBeNull();
+  });
+});
+
+describe('matches with several AI ships', () => {
+  const skirmish = () =>
+    new GameController(new EventBus(), {
+      turnDurationMs: null,
+      config: createSkirmishConfig({ humans: 1, ais: 3, teamMode: 'ffa' }),
+    });
+
+  it('plans for the first human and resolves every ship', () => {
+    const controller = skirmish();
+    expect(controller.getViewerId()).toBe('p1');
+
+    const before = controller.getState().players;
+    const result = controller.lockInTurn();
+
+    expect(result?.phases).toHaveLength(4);
+    const moved = new Set(
+      result?.events.flatMap((event) =>
+        event.type === 'SHIP_MOVED' ? [event.shipId] : [],
+      ),
+    );
+    // The human passed, so only AI ships can move.
+    expect(moved.has('p1-ship')).toBe(false);
+    expect(moved.size).toBeGreaterThan(0);
+
+    for (const id of ['p2', 'p3', 'p4']) {
+      const total = (tokens: { FORWARD: number; TURN_LEFT: number; TURN_RIGHT: number }) =>
+        tokens.FORWARD + tokens.TURN_LEFT + tokens.TURN_RIGHT;
+      expect(total(controller.getState().players[id].tokens)).toBeLessThanOrEqual(
+        total(before[id].tokens),
+      );
+    }
+  });
+
+  it('starts the next turn with a token for every player', () => {
+    const controller = skirmish();
+    controller.lockInTurn();
+    controller.onAnimationComplete();
+
+    expect(controller.getState().turn).toBe(2);
+    expect(controller.getState().status).toBe('planning');
+    for (const player of Object.values(controller.getState().players)) {
+      expect(player.queue.every((slot) => slot === null)).toBe(true);
+    }
+  });
+
+  it('controls only the local human (others pass)', () => {
+    const controller = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      config: createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'teams' }),
+    });
+
+    controller.queuePlayerAction('FORWARD');
+    expect(controller.getState().players.p1.queue[0]).toBe('FORWARD');
+    expect(controller.getState().players.p2.queue[0]).toBeNull();
+  });
+
+  it('refuses a match with no human to control', () => {
+    expect(
+      () =>
+        new GameController(new EventBus(), {
+          turnDurationMs: null,
+          config: createSkirmishConfig({ humans: 0, ais: 2, teamMode: 'ffa' }),
+        }),
+    ).toThrow();
   });
 });

@@ -39,6 +39,21 @@ export function gameWith(
   return { ...base, ships, obstacles: obstacleMap };
 }
 
+/** Returns a copy of the state with one player's cannonball pool replaced. */
+export function withAmmo(
+  state: GameState,
+  playerId: string,
+  ammo: number,
+): GameState {
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [playerId]: { ...state.players[playerId], ammo },
+    },
+  };
+}
+
 export function cannon(left: boolean, right: boolean): CannonSlot {
   return { left, right };
 }

@@ -1,17 +1,10 @@
 import type { MovementAction, TokenInventory } from '../domain/Action';
 
-/** Logical board size. The camera only ever shows a portion of this. */
+/** Default board size (a match can override it via MatchConfig). */
 export const BOARD_WIDTH = 20;
 export const BOARD_HEIGHT = 20;
 
-/** Deterministic board layout for the vertical slice (no randomness). */
-export const PLAYER_START = { x: 9, y: 14 };
-export const ENEMY_START = { x: 9, y: 5 };
-export const PLAYER_START_HEADING = 'NORTH' as const;
-export const ENEMY_START_HEADING = 'SOUTH' as const;
-export const PLAYER_SHIP_TYPE = 'sloop';
-export const ENEMY_SHIP_TYPE = 'sloop';
-
+/** Default obstacle layout for the standard 20x20 board. */
 export const OBSTACLE_LAYOUT: ReadonlyArray<{
   id: string;
   kind: 'rock' | 'island';
@@ -30,7 +23,7 @@ export const OBSTACLE_LAYOUT: ReadonlyArray<{
   { id: 'island-4', kind: 'island', x: 17, y: 17 },
 ];
 
-/** Player starts with this many tokens of each type. */
+/** Each player starts with this many tokens of each type. */
 export const INITIAL_TOKEN_POOL: TokenInventory = {
   FORWARD: 3,
   TURN_LEFT: 2,
@@ -41,9 +34,9 @@ export const INITIAL_TOKEN_POOL: TokenInventory = {
 export const TOKENS_PER_TURN = 1;
 
 /**
- * Wall-clock seconds the player has to plan each turn. When it elapses the
- * turn is locked in automatically with whatever is queued (an empty queue is a
- * valid pass).
+ * Default wall-clock seconds each player has to plan a turn (overridable per
+ * match via MatchRules). When it elapses the turn is locked in automatically
+ * with whatever is queued (an empty queue is a valid pass).
  */
 export const TURN_DURATION_SECONDS = 30;
 

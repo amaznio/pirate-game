@@ -28,6 +28,6 @@ export function useTurnClock() {
     planning,
     remaining,
     low: planning && remaining <= 10,
-    fraction: Math.min(1, remaining / duration),
+    fraction: duration > 0 ? Math.min(1, remaining / duration) : 0,
   };
 }

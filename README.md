@@ -51,14 +51,33 @@ their own authoritative copy of the game state:
 | Simulation | `src/game/simulation/` | `createGame`, `resolveTurn` (4 phases), movement, collision, combat, damage, tokens |
 | Controller | `src/game/controller/GameController.ts` | Flow orchestration only (no rules) |
 | AI | `src/game/ai/` | `AIController` interface + `simpleAI` |
-| Config | `src/game/config/` | `gameRules`, `shipTypes`, `weaponTypes` |
+| Config | `src/game/config/` | `matchConfig` (who plays, where, rules), `gameRules`, `shipTypes`, `weaponTypes` |
 | Events | `src/game/events/EventBus.ts` | Typed pub/sub |
 | Phaser | `src/phaser/` | Scenes, views, animations, camera |
 | React UI | `src/ui/`, `src/app/`, `src/store/` | HUD, planning sheet, screen |
 
+### Matches, players and teams
+
+A match is data: a `MatchConfig` (`src/game/config/matchConfig.ts`) lists the
+participants (player id, team, ship type, spawn, `human` or `ai`), the board
+size, obstacles, starting resources and the `rules` (turn timer, friendly
+fire). `createGame(config)` turns it into a `GameState`. There is no special
+"player" or "enemy": each participant has a `PlayerState` (tokens, cannonballs,
+queues, token-generation settings) in `state.players`, commands exactly one
+ship, and belongs to a team. A team wins when it is the last with a ship afloat;
+if the last ships sink together the match is a draw. Free-for-all is every
+player on their own team.
+
+- `createDuelConfig()` is the classic 1v1 (and the default).
+- `createSkirmishConfig({ humans, ais, teamMode, width, height })` builds any
+  number of ships (spawns are spread around a ring facing the centre).
+- Try one from the URL: `?ais=3`, `?ais=3&teams=teams`, `?ais=5&w=30&h=30`
+  (see `src/app/matchFromUrl.ts`).
+
 ### Core rules
 
-- Board is `20 x 20`; each entity occupies one cell. Obstacles block movement.
+- The default board is `20 x 20` (configurable per match); each entity
+  occupies one cell. Obstacles block movement.
 - Movement tokens: `FORWARD`, `TURN_LEFT`, `TURN_RIGHT`. A turn is a
   diagonal step: the ship advances one cell forward **and** one cell toward the
   turn side, ending with its heading rotated 90° that way (not rotation in
@@ -66,16 +85,27 @@ their own authoritative copy of the game state:
   blocked cell: a blocked turn still advances as far as it can and always rotates
   toward the turn side, even if it cannot move at all. A blocked `FORWARD` does
   neither.
-- Each ship has **two independent queues** aligned per phase: a movement queue
-  (4 slots) and a cannon queue (4 slots). In each phase a ship moves, then
-  fires. A cannon slot fires the left broadside, the right broadside, or both.
-- Both ships resolve in four phases, with events grouped per phase so they can
-  animate together.
-- Each planning turn is timed (**30s**, `TURN_DURATION_SECONDS`). When the
+- Each player has **two independent queues** aligned per phase: a movement
+  queue (4 slots) and a cannon queue (4 slots). A cannon slot fires the left
+  broadside, the right broadside, or both.
+- Turns resolve in four phases, with events grouped per phase so they can
+  animate together. **Everything in a phase is simultaneous and no ship has
+  priority:** first all ships move, then all ships fire, then all damage lands.
+  - Movement conflicts: ships trying to enter the same cell, swapping cells, or
+    entering a cell where another ship stays are all stopped (a ship may follow
+    one that is leaving its cell; a stopped ship can stop the one behind it).
+    The result never depends on the order players are listed in.
+  - Fire is cast against the positions after the phase's movement and before any
+    of its damage, so ships can sink each other in the same phase (a draw if it
+    leaves no one).
+  - `friendlyFire` (default off): a shot that reaches a teammate is stopped
+    without damage.
+- Each planning turn is timed (**30s** by default, `rules.turnDurationSeconds`,
+  `null` disables it). When the
   countdown reaches zero the turn is locked in automatically with whatever is
   queued — an empty queue is a valid **pass** (the Pass button does the same).
   The countdown is flow state owned by `GameController`, not the simulation.
-- Cannon shots come from a single shared cannonball pool per side (used by
+- Cannon shots come from a single shared cannonball pool per player (used by
   either broadside); firing one side costs one cannonball, "both" costs two.
   Ammo is deducted by the simulation when a shot resolves; the controller only
   prevents queueing more shots than you hold. Reload is config-driven (`+1` per
@@ -83,14 +113,14 @@ their own authoritative copy of the game state:
   has no upper cap and keeps growing until spent. A shot ray-casts along the
   broadside and the first blocking entity is hit — the simulation decides
   everything, Phaser only visualises.
-- A ship that sinks ends the match, but the game-over dialog only appears after
-  that turn's animation finishes (the controller stays in `animating` until the
+- When the match ends, the game-over dialog only appears after that turn's
+  animation finishes (the controller stays in `animating` until the
   presentation reports completion).
 - Movement tokens are spent when queued and returned when removed. One token is
-  produced for each side at the start of every new turn (the player's from the
-  deterministic auto rotation or the token you request; the enemy's on a fixed
-  rotation). The enemy plans only moves its own pool can afford, so it shares
-  the same movement economy as you. Tapping an empty movement slot selects it,
+  produced for each player at the start of every new turn, from that player's
+  own settings (the deterministic auto rotation, or the token they request).
+  AI players plan only moves their own pool can afford, so everyone shares the
+  same movement economy. Tapping an empty movement slot selects it,
   so you can leave earlier phases empty (e.g. move, empty, move, move).
 
 ## Extending

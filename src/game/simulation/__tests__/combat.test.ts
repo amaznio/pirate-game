@@ -10,6 +10,7 @@ import {
   gameWith,
   rock,
   submitted,
+  withAmmo,
 } from './testUtils';
 
 function eventsOfType<T extends GameEvent['type']>(
@@ -129,11 +130,13 @@ describe('damage and destruction', () => {
     const ended = eventsOfType(result.events, 'GAME_ENDED');
     expect(ended).toHaveLength(1);
     expect(ended[0]).toMatchObject({
-      winnerId: 'player-ship',
-      loserId: 'enemy-ship',
+      outcome: { kind: 'win', teamId: 'player' },
     });
     expect(result.nextState.status).toBe('game_over');
-    expect(result.nextState.winner).toBe('player');
+    expect(result.nextState.outcome).toEqual({
+      kind: 'win',
+      teamId: 'player',
+    });
   });
 });
 
@@ -145,13 +148,15 @@ describe('cannonball resource', () => {
 
     const result = resolveTurn(state, submitted([], [cannon(true, true)]));
 
-    expect(result.nextState.ammo.player).toBe(CANNON_STARTING_AMMO - 2);
+    expect(result.nextState.players.player.ammo).toBe(
+      CANNON_STARTING_AMMO - 2,
+    );
   });
 
   it('blocks a shot when the pool is empty', () => {
     const player = defaultPlayer({ position: pos(10, 10), heading: 'NORTH' });
     const enemy = defaultEnemy({ position: pos(7, 10), heading: 'SOUTH' });
-    const state = { ...gameWith(player, enemy), ammo: { player: 0, enemy: 0 } };
+    const state = withAmmo(gameWith(player, enemy), 'player', 0);
 
     const result = resolveTurn(state, submitted([], [cannon(true, false)]));
 

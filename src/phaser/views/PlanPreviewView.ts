@@ -20,14 +20,17 @@ const SHOT_COLORS: Record<PreviewShotOutcome, number> = {
 export class PlanPreviewView {
   private container: Phaser.GameObjects.Container | null = null;
 
-  constructor(private readonly scene: Phaser.Scene) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly playerId: string,
+  ) {}
 
   update(state: GameState, enabled: boolean): void {
     this.clear();
     if (!enabled || state.status !== 'planning') {
       return;
     }
-    const preview = previewPlayerPlan(state);
+    const preview = previewPlayerPlan(state, this.playerId);
     if (!preview) {
       return;
     }

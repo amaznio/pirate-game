@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { GameState } from '../../game/domain/GameState';
 import type { GameEvent } from '../../game/domain/GameEvent';
 import type { GameController } from '../../game/controller/GameController';
-import { getShipBySide } from '../../game/simulation/selectors';
+import { getShipByOwner } from '../../game/simulation/selectors';
 import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
@@ -65,7 +65,7 @@ export class BattleScene extends Phaser.Scene {
     this.syncViews(state);
     this.recenterOnPlayer();
 
-    this.preview = new PlanPreviewView(this);
+    this.preview = new PlanPreviewView(this, controller.getViewerId());
     this.unsubscribeState = controller.subscribe((next) =>
       this.onStateChange(next),
     );
@@ -95,7 +95,10 @@ export class BattleScene extends Phaser.Scene {
     if (!this.controller) {
       return;
     }
-    const player = getShipBySide(this.controller.getState(), 'player');
+    const player = getShipByOwner(
+      this.controller.getState(),
+      this.controller.getViewerId(),
+    );
     if (!player) {
       return;
     }
@@ -154,6 +157,8 @@ export class BattleScene extends Phaser.Scene {
    * teleport mid-animation.
    */
   private syncViews(state: GameState): void {
+    const viewerTeamId =
+      state.players[this.controller.getViewerId()]?.teamId ?? '';
     for (const ship of Object.values(state.ships)) {
       if (ship.hp <= 0) {
         this.views.remove(ship.id);
@@ -171,7 +176,10 @@ export class BattleScene extends Phaser.Scene {
         existing.setAlpha(1);
         existing.setScale(1);
       } else {
-        this.views.register(ship.id, createShipView(this, ship));
+        this.views.register(
+          ship.id,
+          createShipView(this, ship, viewerTeamId),
+        );
       }
     }
 

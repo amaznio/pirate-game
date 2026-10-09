@@ -7,25 +7,35 @@ import type {
   MovementAction,
   TokenInventory,
 } from '../game/domain/Action';
-import type { Side } from '../game/domain/Entity';
-import { getShipBySide } from '../game/simulation/selectors';
-import { TURN_DURATION_SECONDS } from '../game/config/gameRules';
+import type { PlayerId } from '../game/domain/Entity';
 import { gameController } from '../app/gameInstance';
+
+/** Another ship in the match, as the local player sees it (public info only). */
+export interface ShipSummary {
+  playerId: PlayerId;
+  hull: number;
+  maxHull: number;
+  /** On the viewer's team (never an enemy). */
+  ally: boolean;
+}
+
+export type MatchResult = 'win' | 'loss' | 'draw';
 
 export interface GameUISnapshot {
   turn: number;
   status: GameStatus;
   hull: number;
   maxHull: number;
-  enemyHull: number;
-  enemyMaxHull: number;
+  /** Every other ship in the match. */
+  others: ShipSummary[];
   tokens: TokenInventory;
   queue: ActionSlot[];
   cannonQueue: CannonQueue;
   ammo: number;
   auto: boolean;
   requested: MovementAction;
-  winner: Side | null;
+  /** The match result from the local player's point of view, once decided. */
+  result: MatchResult | null;
   /** Epoch-ms the current planning window closes, or null when not planning. */
   deadline: number | null;
   turnDurationSeconds: number;
@@ -54,24 +64,47 @@ interface GameUIStore extends GameUISnapshot {
 
 /** Derives the read-only UI projection from authoritative game state. */
 function snapshot(state: GameState): GameUISnapshot {
-  const player = getShipBySide(state, 'player');
-  const enemy = getShipBySide(state, 'enemy');
+  const viewerId = gameController.getViewerId();
+  const viewer = state.players[viewerId];
+  const ship = state.ships[viewer.shipId];
+
+  const others: ShipSummary[] = Object.values(state.players)
+    .filter((player) => player.id !== viewerId)
+    .map((player) => {
+      const other = state.ships[player.shipId];
+      return {
+        playerId: player.id,
+        hull: other?.hp ?? 0,
+        maxHull: other?.maxHp ?? 0,
+        ally: player.teamId === viewer.teamId,
+      };
+    });
+
+  let result: MatchResult | null = null;
+  if (state.outcome) {
+    result =
+      state.outcome.kind === 'draw'
+        ? 'draw'
+        : state.outcome.teamId === viewer.teamId
+          ? 'win'
+          : 'loss';
+  }
+
   return {
     turn: state.turn,
     status: state.status,
-    hull: player?.hp ?? 0,
-    maxHull: player?.maxHp ?? 0,
-    enemyHull: enemy?.hp ?? 0,
-    enemyMaxHull: enemy?.maxHp ?? 0,
-    tokens: { ...state.tokenInventories.player },
-    queue: [...state.queues.player],
-    cannonQueue: state.cannonQueues.player.map((slot) => ({ ...slot })),
-    ammo: state.ammo.player,
-    auto: state.tokenGeneration.auto,
-    requested: state.tokenGeneration.requested,
-    winner: state.winner,
+    hull: ship?.hp ?? 0,
+    maxHull: ship?.maxHp ?? 0,
+    others,
+    tokens: { ...viewer.tokens },
+    queue: [...viewer.queue],
+    cannonQueue: viewer.cannonQueue.map((slot) => ({ ...slot })),
+    ammo: viewer.ammo,
+    auto: viewer.tokenGeneration.auto,
+    requested: viewer.tokenGeneration.requested,
+    result,
     deadline: gameController.getPlanningDeadline(),
-    turnDurationSeconds: TURN_DURATION_SECONDS,
+    turnDurationSeconds: state.rules.turnDurationSeconds ?? 0,
   };
 }
 

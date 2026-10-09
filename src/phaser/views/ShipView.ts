@@ -19,9 +19,11 @@ export function headingToAngle(heading: Direction): number {
   return HEADING_ANGLE[heading];
 }
 
+/** Ships on the viewer's team use the friendly art; everyone else is hostile. */
 export function createShipView(
   scene: Phaser.Scene,
   ship: Ship,
+  viewerTeamId: string,
 ): Phaser.GameObjects.Container {
   const { x, y } = gridToWorld(ship.position);
   const sprite = scene.add
@@ -29,7 +31,7 @@ export function createShipView(
       0,
       0,
       AssetKeys.ships,
-      ship.side === 'player' ? ShipFrames.player : ShipFrames.enemy,
+      ship.teamId === viewerTeamId ? ShipFrames.player : ShipFrames.enemy,
     )
     .setScale(SHIP_SCALE);
   const container = scene.add.container(x, y, [sprite]);

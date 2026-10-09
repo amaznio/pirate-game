@@ -1,4 +1,9 @@
-import type { GameState, TokenGenerationConfig } from '../domain/GameState';
+import type {
+  GameState,
+  PlayerState,
+  TokenGenerationConfig,
+} from '../domain/GameState';
+import type { PlayerId } from '../domain/Entity';
 import type { ActionQueue, MovementAction, TokenInventory } from '../domain/Action';
 import { cloneInventory, emptyCannonQueue, emptyQueue } from '../domain/Action';
 import {
@@ -36,17 +41,9 @@ export function selectNextToken(
 }
 
 /**
- * The opponent produces tokens on a fixed rotation derived from the completed
- * turn, so it plays by the same movement economy as the player.
- */
-export function selectEnemyToken(completedTurn: number): MovementAction {
-  return AUTO_TOKEN_ROTATION[completedTurn % AUTO_TOKEN_ROTATION.length];
-}
-
-/**
  * Deducts the movement tokens a plan consumes. Never goes negative, so an
- * over-budget plan simply costs what the pool can cover. Used for the AI, which
- * spends its pool when a plan is locked in.
+ * over-budget plan simply costs what the pool can cover. Used for AI players,
+ * who spend their pool when a plan is locked in.
  */
 export function spendMovementTokens(
   inventory: TokenInventory,
@@ -76,40 +73,43 @@ export function reloadedAmmo(current: number, completedTurn: number): number {
 
 export interface NextTurnResult {
   readonly state: GameState;
-  readonly token: MovementAction;
+  /** The movement token each player produced for the new turn. */
+  readonly tokens: Readonly<Record<PlayerId, MovementAction>>;
 }
 
 /**
- * Advances to the next turn: increments the turn counter, clears both move and
- * cannon queues, reloads cannonballs, and produces one movement token for each
- * side.
+ * Advances to the next turn: increments the turn counter, clears every player's
+ * move and cannon queues, reloads cannonballs, and produces one movement token
+ * for each player from their own token-generation settings.
  */
 export function beginNextTurn(state: GameState): NextTurnResult {
-  const selection = selectNextToken(state.tokenGeneration);
-  const playerInventory = cloneInventory(state.tokenInventories.player);
-  playerInventory[selection.token] += TOKENS_PER_TURN;
+  const players: Record<PlayerId, PlayerState> = {};
+  const produced: Record<PlayerId, MovementAction> = {};
 
-  const enemyInventory = cloneInventory(state.tokenInventories.enemy);
-  enemyInventory[selectEnemyToken(state.turn)] += TOKENS_PER_TURN;
+  for (const id of Object.keys(state.players)) {
+    const player = state.players[id];
+    const selection = selectNextToken(player.tokenGeneration);
+    const tokens = cloneInventory(player.tokens);
+    tokens[selection.token] += TOKENS_PER_TURN;
+    produced[id] = selection.token;
+
+    players[id] = {
+      ...player,
+      tokens,
+      ammo: reloadedAmmo(player.ammo, state.turn),
+      queue: emptyQueue(),
+      cannonQueue: emptyCannonQueue(),
+      tokenGeneration: selection.tokenGeneration,
+    };
+  }
 
   return {
-    token: selection.token,
+    tokens: produced,
     state: {
       ...state,
       turn: state.turn + 1,
       status: 'planning',
-      winner: state.winner,
-      queues: { player: emptyQueue(), enemy: emptyQueue() },
-      cannonQueues: { player: emptyCannonQueue(), enemy: emptyCannonQueue() },
-      ammo: {
-        player: reloadedAmmo(state.ammo.player, state.turn),
-        enemy: reloadedAmmo(state.ammo.enemy, state.turn),
-      },
-      tokenInventories: {
-        player: playerInventory,
-        enemy: enemyInventory,
-      },
-      tokenGeneration: selection.tokenGeneration,
+      players,
     },
   };
 }

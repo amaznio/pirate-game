@@ -1,32 +1,29 @@
-import type { GameState } from '../domain/GameState';
+import type { GameState, PlayerState } from '../domain/GameState';
 import type { Obstacle } from '../domain/Board';
-import type { EntityId, Side } from '../domain/Entity';
+import type { EntityId, PlayerId, TeamId } from '../domain/Entity';
 import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
 import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import { createBoard } from '../domain/Board';
-import { emptyCannonQueue, emptyQueue } from '../domain/Action';
-import { cloneInventory } from '../domain/Action';
 import {
-  BOARD_HEIGHT,
-  BOARD_WIDTH,
-  CANNON_STARTING_AMMO,
-  ENEMY_SHIP_TYPE,
-  ENEMY_START,
-  ENEMY_START_HEADING,
-  INITIAL_TOKEN_POOL,
-  OBSTACLE_LAYOUT,
-  PLAYER_SHIP_TYPE,
-  PLAYER_START,
-  PLAYER_START_HEADING,
-} from '../config/gameRules';
+  cloneInventory,
+  emptyCannonQueue,
+  emptyQueue,
+} from '../domain/Action';
 import { getShipType } from '../config/shipTypes';
+import { createDuelConfig, type MatchConfig } from '../config/matchConfig';
 
 const BROADSIDE_ORDER: readonly WeaponSide[] = ['left', 'right'];
 
+/** Ship ids are derived from the owner, so they are stable across a match. */
+export function shipIdFor(playerId: PlayerId): EntityId {
+  return `${playerId}-ship`;
+}
+
 export function createShip(
   id: EntityId,
-  side: Side,
+  ownerId: PlayerId,
+  teamId: TeamId,
   position: Position,
   heading: Direction,
   shipTypeId: string,
@@ -43,7 +40,8 @@ export function createShip(
   return {
     id,
     kind: 'ship',
-    side,
+    ownerId,
+    teamId,
     shipTypeId,
     heading,
     hp: type.maxHp,
@@ -53,10 +51,10 @@ export function createShip(
   };
 }
 
-/** Builds the deterministic starting position for the vertical slice. */
-export function createGame(seed = 1): GameState {
+/** Builds the starting GameState for a match. Defaults to the classic 1v1. */
+export function createGame(config: MatchConfig = createDuelConfig()): GameState {
   const obstacles: Record<EntityId, Obstacle> = {};
-  for (const layout of OBSTACLE_LAYOUT) {
+  for (const layout of config.obstacles) {
     obstacles[layout.id] = {
       id: layout.id,
       kind: layout.kind,
@@ -64,38 +62,40 @@ export function createGame(seed = 1): GameState {
     };
   }
 
-  const ships: Record<EntityId, Ship> = {
-    'player-ship': createShip(
-      'player-ship',
-      'player',
-      PLAYER_START,
-      PLAYER_START_HEADING,
-      PLAYER_SHIP_TYPE,
-    ),
-    'enemy-ship': createShip(
-      'enemy-ship',
-      'enemy',
-      ENEMY_START,
-      ENEMY_START_HEADING,
-      ENEMY_SHIP_TYPE,
-    ),
-  };
+  const ships: Record<EntityId, Ship> = {};
+  const players: Record<PlayerId, PlayerState> = {};
+  for (const participant of config.participants) {
+    const id = shipIdFor(participant.playerId);
+    ships[id] = createShip(
+      id,
+      participant.playerId,
+      participant.teamId,
+      participant.spawn.position,
+      participant.spawn.heading,
+      participant.shipTypeId,
+    );
+    players[participant.playerId] = {
+      id: participant.playerId,
+      teamId: participant.teamId,
+      shipId: id,
+      controller: participant.controller,
+      tokens: cloneInventory(config.startingTokens),
+      ammo: config.startingAmmo,
+      queue: emptyQueue(),
+      cannonQueue: emptyCannonQueue(),
+      tokenGeneration: { auto: true, requested: 'FORWARD', rotationIndex: 0 },
+    };
+  }
 
   return {
-    seed,
+    seed: config.seed,
     turn: 1,
     status: 'planning',
-    board: createBoard(BOARD_WIDTH, BOARD_HEIGHT),
+    board: createBoard(config.board.width, config.board.height),
+    rules: config.rules,
     ships,
     obstacles,
-    tokenInventories: {
-      player: cloneInventory(INITIAL_TOKEN_POOL),
-      enemy: cloneInventory(INITIAL_TOKEN_POOL),
-    },
-    queues: { player: emptyQueue(), enemy: emptyQueue() },
-    cannonQueues: { player: emptyCannonQueue(), enemy: emptyCannonQueue() },
-    ammo: { player: CANNON_STARTING_AMMO, enemy: CANNON_STARTING_AMMO },
-    tokenGeneration: { auto: true, requested: 'FORWARD', rotationIndex: 0 },
-    winner: null,
+    players,
+    outcome: null,
   };
 }

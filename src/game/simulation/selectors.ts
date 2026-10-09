@@ -1,19 +1,26 @@
 import type { GameState } from '../domain/GameState';
 import type { Ship } from '../domain/Ship';
 import type { Obstacle } from '../domain/Board';
-import type { Entity } from '../domain/Entity';
-import type { Side } from '../domain/Entity';
+import type { Entity, PlayerId } from '../domain/Entity';
 import type { Position } from '../domain/Position';
 import { positionsEqual } from '../domain/Position';
 
-export function getShipBySide(state: GameState, side: Side): Ship | undefined {
-  return Object.values(state.ships).find((ship) => ship.side === side);
+/** The ship a player commands (one ship per player). */
+export function getShipByOwner(
+  state: GameState,
+  playerId: PlayerId,
+): Ship | undefined {
+  const player = state.players[playerId];
+  return player ? state.ships[player.shipId] : undefined;
 }
 
-export function getOpponent(state: GameState, side: Side): Ship | undefined {
-  return Object.values(state.ships).find(
-    (ship) => ship.side !== side && ship.hp > 0,
-  );
+export function getLivingShips(state: GameState): Ship[] {
+  return Object.values(state.ships).filter((ship) => ship.hp > 0);
+}
+
+/** Living ships on a different team from `ship`. */
+export function getHostiles(state: GameState, ship: Ship): Ship[] {
+  return getLivingShips(state).filter((other) => other.teamId !== ship.teamId);
 }
 
 export function obstacleAt(

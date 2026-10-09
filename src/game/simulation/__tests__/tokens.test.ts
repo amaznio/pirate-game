@@ -3,7 +3,6 @@ import { createGame } from '../createGame';
 import {
   beginNextTurn,
   reloadedAmmo,
-  selectEnemyToken,
   selectNextToken,
   spendMovementTokens,
 } from '../tokens';
@@ -19,7 +18,7 @@ describe('token generation', () => {
 
     for (let i = 0; i < 4; i += 1) {
       const result = beginNextTurn(state);
-      produced.push(result.token);
+      produced.push(result.tokens.player);
       state = result.state;
     }
 
@@ -32,28 +31,48 @@ describe('token generation', () => {
   });
 
   it('manual mode produces the requested token', () => {
-    const state = {
-      ...createGame(),
-      tokenGeneration: {
-        auto: false,
-        requested: 'TURN_RIGHT' as const,
-        rotationIndex: 0,
-      },
+    const generation = {
+      auto: false,
+      requested: 'TURN_RIGHT' as const,
+      rotationIndex: 0,
     };
 
-    expect(selectNextToken(state.tokenGeneration).token).toBe('TURN_RIGHT');
+    expect(selectNextToken(generation).token).toBe('TURN_RIGHT');
   });
 
   it('grants one token and advances the turn', () => {
     const state = createGame();
-    const before = state.tokenInventories.player.FORWARD;
+    const before = state.players.player.tokens.FORWARD;
 
     const result = beginNextTurn(state);
 
-    expect(result.token).toBe('FORWARD');
-    expect(result.state.tokenInventories.player.FORWARD).toBe(before + 1);
+    expect(result.tokens.player).toBe('FORWARD');
+    expect(result.state.players.player.tokens.FORWARD).toBe(before + 1);
     expect(result.state.turn).toBe(state.turn + 1);
     expect(result.state.status).toBe('planning');
+  });
+
+  it('each player produces a token from their own settings', () => {
+    const base = createGame();
+    const state = {
+      ...base,
+      players: {
+        ...base.players,
+        player: {
+          ...base.players.player,
+          tokenGeneration: {
+            auto: false,
+            requested: 'TURN_RIGHT' as const,
+            rotationIndex: 0,
+          },
+        },
+      },
+    };
+
+    const result = beginNextTurn(state);
+
+    expect(result.tokens.player).toBe('TURN_RIGHT');
+    expect(result.tokens.enemy).toBe('FORWARD');
   });
 });
 
@@ -67,34 +86,35 @@ describe('cannonball reload', () => {
     expect(reloadedAmmo(100, 1)).toBe(101);
   });
 
-  it('clears the cannon queue when a new turn begins', () => {
+  it('clears every cannon queue when a new turn begins', () => {
     const state = createGame();
+    const shots = state.players.player.cannonQueue.map((slot, index) =>
+      index === 0 ? { left: true, right: true } : slot,
+    );
     const withShots = {
       ...state,
-      cannonQueues: {
-        ...state.cannonQueues,
-        player: state.cannonQueues.player.map((slot, index) =>
-          index === 0 ? { left: true, right: true } : slot,
-        ),
+      players: {
+        ...state.players,
+        player: { ...state.players.player, cannonQueue: shots },
       },
     };
 
     const result = beginNextTurn(withShots);
 
-    expect(
-      result.state.cannonQueues.player.every(
-        (slot) => !slot.left && !slot.right,
-      ),
-    ).toBe(true);
+    for (const player of Object.values(result.state.players)) {
+      expect(player.cannonQueue.every((slot) => !slot.left && !slot.right)).toBe(
+        true,
+      );
+    }
   });
 
   it('starts with the configured ammo', () => {
-    expect(createGame().ammo.player).toBe(CANNON_STARTING_AMMO);
+    expect(createGame().players.player.ammo).toBe(CANNON_STARTING_AMMO);
   });
 });
 
-describe('enemy movement economy', () => {
-  it('gives the enemy one token per new turn', () => {
+describe('movement economy', () => {
+  it('gives every player one token per new turn', () => {
     const state = createGame();
     const total = (inventory: {
       FORWARD: number;
@@ -104,16 +124,11 @@ describe('enemy movement economy', () => {
 
     const result = beginNextTurn(state);
 
-    expect(total(result.state.tokenInventories.enemy)).toBe(
-      total(state.tokenInventories.enemy) + 1,
-    );
-  });
-
-  it('selectEnemyToken follows a deterministic rotation', () => {
-    expect(selectEnemyToken(0)).toBe('FORWARD');
-    expect(selectEnemyToken(1)).toBe('TURN_LEFT');
-    expect(selectEnemyToken(2)).toBe('FORWARD');
-    expect(selectEnemyToken(3)).toBe('TURN_RIGHT');
+    for (const id of Object.keys(state.players)) {
+      expect(total(result.state.players[id].tokens)).toBe(
+        total(state.players[id].tokens) + 1,
+      );
+    }
   });
 
   it('spends movement tokens and never goes negative', () => {

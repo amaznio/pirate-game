@@ -1,5 +1,4 @@
-import type { GameState } from '../domain/GameState';
-import type { EntityId, Side } from '../domain/Entity';
+import type { GameState, Outcome } from '../domain/GameState';
 import type { GameEvent } from '../domain/GameEvent';
 import type {
   SubmittedActions,
@@ -9,27 +8,19 @@ import type {
 import { ACTIONS_PER_TURN } from '../domain/Action';
 import { toMutable, freeze } from './internal';
 import { resolvePhase } from './resolvePhase';
-import { getShipBySide } from './selectors';
+import { getLivingShips } from './selectors';
 
-interface GameOverOutcome {
-  readonly winner: Side;
-  readonly winnerShipId: EntityId;
-  readonly loserShipId: EntityId;
-}
-
-function evaluateGameOver(
-  state: GameState,
-): GameOverOutcome | null {
-  const player = getShipBySide(state, 'player');
-  const enemy = getShipBySide(state, 'enemy');
-  if (!player || !enemy) {
-    return null;
+/**
+ * The match is over when at most one team still has a ship afloat. One team
+ * left is a win; none left (e.g. a simultaneous kill) is a draw.
+ */
+export function evaluateOutcome(state: GameState): Outcome | null {
+  const teams = new Set(getLivingShips(state).map((ship) => ship.teamId));
+  if (teams.size === 0) {
+    return { kind: 'draw' };
   }
-  if (enemy.hp <= 0 && player.hp > 0) {
-    return { winner: 'player', winnerShipId: player.id, loserShipId: enemy.id };
-  }
-  if (player.hp <= 0 && enemy.hp > 0) {
-    return { winner: 'enemy', winnerShipId: enemy.id, loserShipId: player.id };
+  if (teams.size === 1) {
+    return { kind: 'win', teamId: [...teams][0] };
   }
   return null;
 }
@@ -54,16 +45,12 @@ export function resolveTurn(
     phases.push(result);
     events.push(...result.events);
 
-    if (state.status !== 'game_over') {
-      const outcome = evaluateGameOver(state);
+    if (state.outcome === null) {
+      const outcome = evaluateOutcome(state);
       if (outcome) {
         state.status = 'game_over';
-        state.winner = outcome.winner;
-        events.push({
-          type: 'GAME_ENDED',
-          winnerId: outcome.winnerShipId,
-          loserId: outcome.loserShipId,
-        });
+        state.outcome = outcome;
+        events.push({ type: 'GAME_ENDED', outcome });
       }
     }
   }

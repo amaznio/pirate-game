@@ -1,8 +1,8 @@
-import type { GameState, TokenGenerationConfig } from '../domain/GameState';
+import type { GameState, PlayerState } from '../domain/GameState';
 import type { Board, Obstacle } from '../domain/Board';
 import type { Ship } from '../domain/Ship';
-import type { EntityId, Side } from '../domain/Entity';
-import type { ActionQueue, CannonQueue, TokenInventory } from '../domain/Action';
+import type { EntityId, PlayerId } from '../domain/Entity';
+import type { MatchRules } from '../domain/Rules';
 import { cloneInventory } from '../domain/Action';
 
 /**
@@ -15,14 +15,11 @@ export interface MutableGameState {
   turn: number;
   status: GameState['status'];
   board: Board;
+  rules: MatchRules;
   ships: Record<EntityId, Ship>;
   obstacles: Record<EntityId, Obstacle>;
-  tokenInventories: Record<Side, TokenInventory>;
-  queues: Record<Side, ActionQueue>;
-  cannonQueues: Record<Side, CannonQueue>;
-  ammo: Record<Side, number>;
-  tokenGeneration: TokenGenerationConfig;
-  winner: Side | null;
+  players: Record<PlayerId, PlayerState>;
+  outcome: GameState['outcome'];
 }
 
 export function toMutable(state: GameState): MutableGameState {
@@ -38,25 +35,22 @@ export function toMutable(state: GameState): MutableGameState {
     obstacles[id] = { ...obstacle, position: { ...obstacle.position } };
   }
 
+  const players: Record<PlayerId, PlayerState> = {};
+  for (const id of Object.keys(state.players)) {
+    const player = state.players[id];
+    players[id] = { ...player, tokens: cloneInventory(player.tokens) };
+  }
+
   return {
     seed: state.seed,
     turn: state.turn,
     status: state.status,
     board: state.board,
+    rules: state.rules,
     ships,
     obstacles,
-    tokenInventories: {
-      player: cloneInventory(state.tokenInventories.player),
-      enemy: cloneInventory(state.tokenInventories.enemy),
-    },
-    queues: { player: state.queues.player, enemy: state.queues.enemy },
-    cannonQueues: {
-      player: state.cannonQueues.player,
-      enemy: state.cannonQueues.enemy,
-    },
-    ammo: { player: state.ammo.player, enemy: state.ammo.enemy },
-    tokenGeneration: state.tokenGeneration,
-    winner: state.winner,
+    players,
+    outcome: state.outcome,
   };
 }
 

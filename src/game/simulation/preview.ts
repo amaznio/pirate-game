@@ -1,10 +1,11 @@
 import type { GameState } from '../domain/GameState';
+import type { PlayerId } from '../domain/Entity';
 import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import type { WeaponSide } from '../domain/Ship';
 import { ACTIONS_PER_TURN } from '../domain/Action';
 import { resolveTurn } from './resolveTurn';
-import { getShipBySide } from './selectors';
+import { getShipByOwner } from './selectors';
 
 export type PreviewShotOutcome = 'miss' | 'ship' | 'obstacle';
 
@@ -33,22 +34,23 @@ export interface PlanPreview {
 }
 
 /**
- * Dry-runs the player's queued plan through the real simulation with the
- * enemy standing still, so the preview can never disagree with the rules.
+ * Dry-runs a player's queued plan through the real simulation with every
+ * other ship standing still, so the preview can never disagree with the rules.
  * Pure: does not touch the controller or the given state.
  */
-export function previewPlayerPlan(state: GameState): PlanPreview | null {
-  const ship = getShipBySide(state, 'player');
-  if (!ship || ship.hp <= 0) {
+export function previewPlayerPlan(
+  state: GameState,
+  playerId: PlayerId,
+): PlanPreview | null {
+  const ship = getShipByOwner(state, playerId);
+  const player = state.players[playerId];
+  if (!ship || !player || ship.hp <= 0) {
     return null;
   }
 
+  // Only this player's plan is submitted: every other ship stands still.
   const result = resolveTurn(state, {
-    player: {
-      movement: state.queues.player,
-      cannons: state.cannonQueues.player,
-    },
-    enemy: { movement: [], cannons: [] },
+    [playerId]: { movement: player.queue, cannons: player.cannonQueue },
   });
 
   let position = ship.position;
@@ -104,7 +106,7 @@ export function previewPlayerPlan(state: GameState): PlanPreview | null {
       position,
       heading,
       blocked,
-      hasMove: state.queues.player[phase] !== null,
+      hasMove: player.queue[phase] !== null,
       shots,
     });
   }

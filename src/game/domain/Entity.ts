@@ -12,8 +12,12 @@ export interface Entity {
   readonly position: Position;
 }
 
-export type Side = 'player' | 'enemy';
+/** Identity of a participant (a human or an AI) in a match. */
+export type PlayerId = string;
 
-export function otherSide(side: Side): Side {
-  return side === 'player' ? 'enemy' : 'player';
-}
+/**
+ * Players on the same team never damage each other when friendly fire is off,
+ * and a team wins when it is the last one with a ship afloat. Free-for-all is
+ * simply every player on their own team.
+ */
+export type TeamId = string;

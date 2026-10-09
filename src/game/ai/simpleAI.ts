@@ -1,5 +1,6 @@
 import type { GameState } from '../domain/GameState';
-import type { SideActions } from '../domain/TurnResult';
+import type { PlayerActions } from '../domain/TurnResult';
+import type { PlayerId } from '../domain/Entity';
 import type {
   ActionSlot,
   CannonSide,
@@ -16,7 +17,7 @@ import type { Ship } from '../domain/Ship';
 import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import { leftBroadside, rightBroadside } from '../domain/Direction';
-import { getShipBySide } from '../simulation/selectors';
+import { getHostiles, getShipByOwner } from '../simulation/selectors';
 import { resolveMovementOutcome } from '../simulation/movement';
 import { firstEntityAlongRay } from '../simulation/collision';
 import { getWeaponType } from '../config/weaponTypes';
@@ -131,17 +132,31 @@ function chooseBestAction(
   return best ?? { action: null, position, heading, score: 0 };
 }
 
-export function planEnemyActions(state: GameState): SideActions {
-  const me = getShipBySide(state, 'enemy');
-  const target = getShipBySide(state, 'player');
-  if (!me || !target || me.hp <= 0 || target.hp <= 0) {
+/** The nearest living hostile ship (ties broken by id for determinism). */
+function chooseTarget(state: GameState, me: Ship): Ship | undefined {
+  return getHostiles(state, me).sort(
+    (a, b) =>
+      manhattan(me.position, a.position) - manhattan(me.position, b.position) ||
+      a.id.localeCompare(b.id),
+  )[0];
+}
+
+/** Plans one AI player's turn: movement limited to the tokens it holds. */
+export function planAiActions(
+  state: GameState,
+  playerId: PlayerId,
+): PlayerActions {
+  const player = state.players[playerId];
+  const me = getShipByOwner(state, playerId);
+  const target = me ? chooseTarget(state, me) : undefined;
+  if (!player || !me || !target || me.hp <= 0) {
     return { movement: [], cannons: [] };
   }
 
   let position = me.position;
   let heading = me.heading;
-  let ammo = state.ammo.enemy;
-  const pool = cloneInventory(state.tokenInventories.enemy);
+  let ammo = player.ammo;
+  const pool = cloneInventory(player.tokens);
 
   const movement: ActionSlot[] = [];
   const cannons: CannonSlot[] = [];
@@ -175,5 +190,5 @@ export function planEnemyActions(state: GameState): SideActions {
 }
 
 export function createSimpleAI(): AIController {
-  return { chooseActions: planEnemyActions };
+  return { chooseActions: planAiActions };
 }

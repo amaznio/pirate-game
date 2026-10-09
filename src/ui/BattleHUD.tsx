@@ -7,8 +7,7 @@ import { STATUS_LABEL, formatSeconds, useTurnClock } from './useTurnClock';
 export function BattleHUD() {
   const hull = useGameUIStore((state) => state.hull);
   const maxHull = useGameUIStore((state) => state.maxHull);
-  const enemyHull = useGameUIStore((state) => state.enemyHull);
-  const enemyMaxHull = useGameUIStore((state) => state.enemyMaxHull);
+  const others = useGameUIStore((state) => state.others);
   const { turn, status, planning, remaining, low } = useTurnClock();
 
   return (
@@ -24,15 +23,20 @@ export function BattleHUD() {
               {hull}/{maxHull}
             </span>
           </div>
-          <div className="flex items-center gap-2 opacity-80">
-            <span className="text-xs" aria-hidden>
-              ☠
-            </span>
-            <HullBar hp={enemyHull} maxHp={enemyMaxHull} />
-            <span className="text-xs font-semibold tabular-nums text-parchment">
-              {enemyHull}/{enemyMaxHull}
-            </span>
-          </div>
+          {others.map((other) => (
+            <div
+              key={other.playerId}
+              className="flex items-center gap-2 opacity-80"
+            >
+              <span className="text-xs" aria-hidden>
+                {other.ally ? '⚓' : '☠'}
+              </span>
+              <HullBar hp={other.hull} maxHp={other.maxHull} />
+              <span className="text-xs font-semibold tabular-nums text-parchment">
+                {other.hull}/{other.maxHull}
+              </span>
+            </div>
+          ))}
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-ocean/80 px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur">

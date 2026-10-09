@@ -1,19 +1,14 @@
-import type { Side } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
 import type { SubmittedActions, PhaseResult } from '../domain/TurnResult';
 import type { MutableGameState } from './internal';
-import { getShipBySide } from './selectors';
-import { applyMovementAction } from './movement';
-import { resolveCannonSlot } from './combat';
-
-/** Actions are resolved in a fixed order so results stay deterministic. */
-export const SIDE_ORDER: readonly Side[] = ['player', 'enemy'];
+import { applyMovementPhase, type MovementIntent } from './movement';
+import { resolveFirePhase, type FirePlan } from './combat';
 
 /**
- * Resolves a single phase. Each ship executes its movement action for this
- * phase, then its cannon move (which may fire one or both broadsides). All
- * events are grouped in one PhaseResult so a later layer can animate them
- * together.
+ * Resolves a single phase for every ship at once: all movement first, then all
+ * cannon fire, then (inside the fire step) all damage. No ship has priority
+ * over another; nothing depends on the order players are listed in. All events
+ * are grouped in one PhaseResult so a later layer can animate them together.
  */
 export function resolvePhase(
   state: MutableGameState,
@@ -22,27 +17,32 @@ export function resolvePhase(
 ): PhaseResult {
   const events: GameEvent[] = [{ type: 'PHASE_STARTED', phase }];
 
-  const gameOver = state.status === 'game_over';
+  if (state.outcome === null) {
+    const participants = Object.values(state.players)
+      .map((player) => ({
+        player,
+        ship: state.ships[player.shipId],
+        plan: submitted[player.id],
+      }))
+      .filter(({ ship }) => ship && ship.hp > 0);
 
-  if (!gameOver) {
-    for (const side of SIDE_ORDER) {
-      const ship = getShipBySide(state, side);
-      if (!ship || ship.hp <= 0) {
-        continue;
-      }
-
-      const plan = submitted[side];
-      const movementAction = plan.movement[phase];
-      if (movementAction) {
-        events.push(...applyMovementAction(state, ship, movementAction, phase));
-      }
-
-      const movedShip = state.ships[ship.id];
-      const cannonSlot = plan.cannons[phase];
-      if (cannonSlot) {
-        events.push(...resolveCannonSlot(state, movedShip, cannonSlot, phase));
+    const intents: MovementIntent[] = [];
+    for (const { ship, plan } of participants) {
+      const action = plan?.movement[phase];
+      if (action) {
+        intents.push({ shipId: ship.id, action });
       }
     }
+    events.push(...applyMovementPhase(state, intents, phase));
+
+    const firePlans: FirePlan[] = [];
+    for (const { ship, plan } of participants) {
+      const slot = plan?.cannons[phase];
+      if (slot) {
+        firePlans.push({ ship: state.ships[ship.id], slot });
+      }
+    }
+    events.push(...resolveFirePhase(state, firePlans, phase));
   }
 
   events.push({ type: 'PHASE_ENDED', phase });
