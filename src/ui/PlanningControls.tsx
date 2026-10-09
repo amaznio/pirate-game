@@ -35,10 +35,16 @@ export function PlanningControls() {
   const canPlan = useGameUIStore((state) => state.canPlan);
   const lockedIn = useGameUIStore((state) => state.lockedIn);
   const waitingFor = useGameUIStore((state) => state.waitingFor);
+  const spectating = useGameUIStore((state) => state.spectating);
 
   return (
     <div className="flex flex-col gap-3">
-      {lockedIn && planning && (
+      {spectating && (
+        <p className="rounded-xl bg-hull/25 px-3 py-2 text-center text-sm font-semibold text-parchment">
+          Your ship was sunk — watching the battle
+        </p>
+      )}
+      {lockedIn && planning && !spectating && (
         <p className="rounded-xl bg-token-forward/20 px-3 py-2 text-center text-sm font-semibold text-parchment">
           Locked in
           {waitingFor > 0

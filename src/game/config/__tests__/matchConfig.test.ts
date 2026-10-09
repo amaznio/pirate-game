@@ -129,3 +129,21 @@ describe('createSkirmishConfig', () => {
     }
   });
 });
+
+describe('player names', () => {
+  it('names the duel players and gives every skirmish player a name', () => {
+    const duel = createGame(createDuelConfig());
+    expect(duel.players.player.name).toBe('Player');
+    expect(duel.players.enemy.name).toBe('Enemy');
+
+    const skirmish = createGame(
+      createSkirmishConfig({ humans: 2, ais: 2, teamMode: 'ffa' }),
+    );
+    expect(Object.values(skirmish.players).map((player) => player.name)).toEqual([
+      'Player 1',
+      'Player 2',
+      'Bot 3',
+      'Bot 4',
+    ]);
+  });
+});

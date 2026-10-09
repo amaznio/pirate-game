@@ -12,6 +12,7 @@ import type { MatchRules } from '../domain/Rules';
 /** What every player may know about another player. */
 export interface PublicPlayerView {
   readonly id: PlayerId;
+  readonly name: string;
   readonly teamId: TeamId;
   readonly shipId: EntityId;
   readonly controller: ControllerKind;

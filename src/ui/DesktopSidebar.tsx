@@ -1,23 +1,8 @@
-import { useGameUIStore } from '../store/useGameUIStore';
 import { usePreviewSettings } from '../store/previewSettings';
-import { HullBar } from './ShipStatus';
+import { FleetList } from './FleetList';
 import { PlanningControls } from './PlanningControls';
 import { TimerBar } from './TimerBar';
 import { STATUS_LABEL, formatSeconds, useTurnClock } from './useTurnClock';
-
-function HullRow({ label, hp, maxHp }: { label: string; hp: number; maxHp: number }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-14 truncate text-xs font-bold uppercase tracking-wide text-parchment/70">
-        {label}
-      </span>
-      <HullBar hp={hp} maxHp={maxHp} />
-      <span className="ml-auto text-sm font-semibold tabular-nums">
-        {hp}/{maxHp}
-      </span>
-    </div>
-  );
-}
 
 const SHORTCUTS: ReadonlyArray<[string, string]> = [
   ['1 2 3', 'Left / Forward / Right'],
@@ -30,9 +15,6 @@ const SHORTCUTS: ReadonlyArray<[string, string]> = [
 
 /** Right-hand column for wide screens: status, then the full planning UI. */
 export function DesktopSidebar() {
-  const hull = useGameUIStore((state) => state.hull);
-  const maxHull = useGameUIStore((state) => state.maxHull);
-  const others = useGameUIStore((state) => state.others);
   const { turn, status, planning, remaining, low } = useTurnClock();
   const showPreview = usePreviewSettings((state) => state.showPlanPreview);
   const setShowPreview = usePreviewSettings((state) => state.setShowPlanPreview);
@@ -54,17 +36,7 @@ export function DesktopSidebar() {
           </span>
         </div>
         <TimerBar />
-        <HullRow label="You" hp={hull} maxHp={maxHull} />
-        {others.map((other) => (
-          <HullRow
-            key={other.playerId}
-            label={
-              others.length === 1 && !other.ally ? 'Enemy' : other.playerId
-            }
-            hp={other.hull}
-            maxHp={other.maxHull}
-          />
-        ))}
+        <FleetList />
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">

@@ -15,8 +15,8 @@ export class BattleCameraController {
   private readonly camera: Phaser.Cameras.Scene2D.Camera;
   private readonly pointers = new Map<number, { x: number; y: number }>();
   private pinchDistance = 0;
-  /** Screen pixels at the bottom covered by UI (e.g. the planning sheet). */
-  private bottomInset = 0;
+  /** Screen pixels at the top and bottom covered by UI (HUD, planning sheet). */
+  private insets = { top: 0, bottom: 0 };
   /** True once the player has panned or zoomed themselves. */
   userMoved = false;
 
@@ -26,12 +26,7 @@ export class BattleCameraController {
     private readonly worldHeight: number,
   ) {
     this.camera = scene.cameras.main;
-    this.camera.setBounds(
-      -CAMERA_PAD,
-      -CAMERA_PAD,
-      worldWidth + CAMERA_PAD * 2,
-      worldHeight + CAMERA_PAD * 2,
-    );
+    this.applyBounds();
     scene.scale.on('resize', this.refit, this);
     this.refit();
     scene.input.addPointer(2);
@@ -106,15 +101,53 @@ export class BattleCameraController {
 
   setZoom(zoom: number): void {
     this.camera.setZoom(Phaser.Math.Clamp(zoom, this.minZoom(), MAX_ZOOM));
+    this.applyBounds();
   }
 
-  setBottomInset(pixels: number): void {
-    this.bottomInset = Math.max(0, pixels);
+  /**
+   * The camera may scroll a little past the board, and far enough that any
+   * edge of the board can be brought into the part of the screen that is not
+   * covered by UI (otherwise a ship by the bottom edge could never be lifted
+   * out from behind the planning sheet).
+   */
+  private applyBounds(): void {
+    const zoom = this.camera ? this.camera.zoom : 1;
+    const top = this.insets.top / zoom;
+    const bottom = this.insets.bottom / zoom;
+    this.camera.setBounds(
+      -CAMERA_PAD,
+      -CAMERA_PAD - top,
+      this.worldWidth + CAMERA_PAD * 2,
+      this.worldHeight + CAMERA_PAD * 2 + top + bottom,
+    );
+  }
+
+  setInsets(insets: { top: number; bottom: number }): void {
+    this.insets = {
+      top: Math.max(0, insets.top),
+      bottom: Math.max(0, insets.bottom),
+    };
+    this.applyBounds();
+  }
+
+  getInsets(): { top: number; bottom: number } {
+    return this.insets;
+  }
+
+  /** Vertical shift that puts a point in the middle of the uncovered screen. */
+  private centreOffset(): number {
+    return (this.insets.bottom - this.insets.top) / 2 / this.camera.zoom;
   }
 
   /** Centres a world point in the part of the screen not covered by UI. */
   recenterOn(x: number, y: number): void {
-    this.camera.centerOn(x, y + this.bottomInset / 2 / this.camera.zoom);
+    this.camera.centerOn(x, y + this.centreOffset());
+  }
+
+  /** Smoothly brings a world point to the middle of the uncovered screen. */
+  panTo(x: number, y: number): void {
+    this.userMoved = true;
+    this.camera.pan(x, y + this.centreOffset(), 350, 'Sine.easeInOut', true);
   }
 
   destroy(): void {

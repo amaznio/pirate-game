@@ -9,15 +9,21 @@ import type {
   TokenInventory,
 } from '../game/domain/Action';
 import type { PlayerId } from '../game/domain/Entity';
+import { assignTeamStyles } from '../presentation/teamStyle';
 import { gameClient } from '../app/gameInstance';
 
 /** Another ship in the match, as the local player sees it (public info only). */
 export interface ShipSummary {
   playerId: PlayerId;
+  name: string;
+  /** Team colour as CSS. */
+  color: string;
   hull: number;
   maxHull: number;
   /** On the viewer's team (never an enemy). */
   ally: boolean;
+  /** Still afloat. */
+  alive: boolean;
 }
 
 export type MatchResult = 'win' | 'loss' | 'draw';
@@ -27,6 +33,10 @@ export interface GameUISnapshot {
   status: GameStatus;
   hull: number;
   maxHull: number;
+  /** Team colour of the local player as CSS. */
+  selfColor: string;
+  /** The local player's ship has sunk but the match goes on: they watch. */
+  spectating: boolean;
   /** Every other ship in the match. */
   others: ShipSummary[];
   tokens: TokenInventory;
@@ -80,15 +90,19 @@ function snapshot({
   const self = view.self;
   const ship = view.ships[self.shipId];
 
+  const styles = assignTeamStyles(view);
   const others: ShipSummary[] = Object.values(view.players)
     .filter((player) => player.id !== view.viewerId)
     .map((player) => {
       const other = view.ships[player.shipId];
       return {
         playerId: player.id,
+        name: player.name,
+        color: styles.get(player.teamId)?.css ?? '#ffffff',
         hull: other?.hp ?? 0,
         maxHull: other?.maxHp ?? 0,
         ally: player.teamId === self.teamId,
+        alive: (other?.hp ?? 0) > 0,
       };
     });
 
@@ -107,6 +121,8 @@ function snapshot({
     status: view.status,
     hull: ship?.hp ?? 0,
     maxHull: ship?.maxHp ?? 0,
+    selfColor: styles.get(self.teamId)?.css ?? '#4f86c6',
+    spectating: (ship?.hp ?? 0) <= 0 && view.outcome === null,
     others,
     tokens: tokensLeft,
     queue: [...draft.movement],

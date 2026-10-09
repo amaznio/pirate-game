@@ -5,8 +5,8 @@ import { BattleScene } from './scenes/BattleScene';
 
 export interface PhaserContext {
   client: GameClient;
-  /** Latest UI inset, kept here so a scene that boots late still gets it. */
-  bottomInset: number;
+  /** Latest UI insets, kept here so a scene that boots late still gets them. */
+  insets: { top: number; bottom: number };
 }
 
 let context: PhaserContext | null = null;
@@ -20,8 +20,8 @@ export function getPhaserContext(): PhaserContext {
 
 export interface PhaserHandle {
   recenterOnPlayer(): void;
-  /** Pixels at the bottom of the canvas covered by UI. */
-  setBottomInset(pixels: number): void;
+  /** Pixels at the top and bottom of the canvas covered by UI. */
+  setInsets(insets: { top: number; bottom: number }): void;
   destroy(): void;
 }
 
@@ -33,7 +33,7 @@ export function createPhaserGame(
   parent: HTMLElement,
   client: GameClient,
 ): PhaserHandle {
-  context = { client, bottomInset: 0 };
+  context = { client, insets: { top: 0, bottom: 0 } };
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -54,12 +54,12 @@ export function createPhaserGame(
       const scene = game.scene.getScene('BattleScene') as BattleScene | null;
       scene?.recenterOnPlayer();
     },
-    setBottomInset: (pixels) => {
+    setInsets: (insets) => {
       if (context) {
-        context.bottomInset = pixels;
+        context.insets = insets;
       }
       const scene = game.scene.getScene('BattleScene') as BattleScene | null;
-      scene?.setBottomInset(pixels);
+      scene?.setInsets(insets);
     },
     destroy: () => {
       game.destroy(true);

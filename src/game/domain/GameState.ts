@@ -18,6 +18,8 @@ export type ControllerKind = 'human' | 'ai';
  */
 export interface PlayerState {
   readonly id: PlayerId;
+  /** Name shown to everyone (avatar, fleet list). */
+  readonly name: string;
   readonly teamId: TeamId;
   /** The single ship this player commands. */
   readonly shipId: EntityId;

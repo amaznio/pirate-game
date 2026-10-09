@@ -76,6 +76,7 @@ export function createGame(config: MatchConfig = createDuelConfig()): GameState 
     );
     players[participant.playerId] = {
       id: participant.playerId,
+      name: participant.name ?? participant.playerId,
       teamId: participant.teamId,
       shipId: id,
       controller: participant.controller,

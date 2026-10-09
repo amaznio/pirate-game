@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import type { Ship } from '../../game/domain/Ship';
 import type { Direction } from '../../game/domain/Direction';
-import { AssetKeys, ShipFrames } from '../assets/AssetKeys';
+import { AssetKeys } from '../assets/AssetKeys';
+import type { TeamStyle } from '../../presentation/teamStyle';
 import { gridToWorld } from '../Grid';
 
 /** The Kenney ship art points SOUTH (bow at the bottom) at rotation 0. */
@@ -19,21 +20,19 @@ export function headingToAngle(heading: Direction): number {
   return HEADING_ANGLE[heading];
 }
 
-/** Ships on the viewer's team use the friendly art; everyone else is hostile. */
+/** A ship wears the sails of its team. */
 export function createShipView(
   scene: Phaser.Scene,
   ship: Ship,
-  viewerTeamId: string,
+  style: TeamStyle,
 ): Phaser.GameObjects.Container {
   const { x, y } = gridToWorld(ship.position);
   const sprite = scene.add
-    .image(
-      0,
-      0,
-      AssetKeys.ships,
-      ship.teamId === viewerTeamId ? ShipFrames.player : ShipFrames.enemy,
-    )
+    .image(0, 0, AssetKeys.ships, style.frame)
     .setScale(SHIP_SCALE);
+  if (style.tint !== null) {
+    sprite.setTint(style.tint);
+  }
   const container = scene.add.container(x, y, [sprite]);
   container.setDepth(20);
   container.setRotation(headingToAngle(ship.heading));

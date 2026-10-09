@@ -28,7 +28,8 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
   const planning = status === 'planning';
   const canPlan = useGameUIStore((state) => state.canPlan);
   const lockedIn = useGameUIStore((state) => state.lockedIn);
-  const expanded = planning && panelOpen;
+  const spectating = useGameUIStore((state) => state.spectating);
+  const expanded = planning && panelOpen && !spectating;
   const ref = useRef<HTMLElement>(null);
 
   // The element is re-created when switching between collapsed and expanded,
@@ -52,23 +53,33 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
         className="absolute inset-x-0 bottom-0 z-30 border-t border-parchment/20 bg-ocean/90 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur"
       >
         <div className="mx-auto flex max-w-3xl items-center gap-2">
-          <ResourceChips />
-          <button
-            type="button"
-            disabled={!canPlan}
-            onClick={lockIn}
-            className="ml-auto shrink-0 rounded-xl bg-parchment/15 px-3 py-2 text-sm font-bold text-parchment active:scale-95 disabled:opacity-40"
-          >
-            {lockedIn ? 'Locked' : hasPlan ? 'Lock In' : 'Pass'}
-          </button>
-          <button
-            type="button"
-            disabled={!planning}
-            onClick={() => setPanelOpen(true)}
-            className="shrink-0 rounded-xl bg-parchment px-3 py-2 text-sm font-bold text-ink shadow active:scale-95 disabled:opacity-40"
-          >
-            Plan <span aria-hidden>▴</span>
-          </button>
+          {spectating ? (
+            <p className="flex-1 text-center text-sm font-semibold text-parchment">
+              Your ship was sunk — watching the battle
+            </p>
+          ) : (
+            <ResourceChips />
+          )}
+          {!spectating && (
+            <>
+            <button
+              type="button"
+              disabled={!canPlan}
+              onClick={lockIn}
+              className="ml-auto shrink-0 rounded-xl bg-parchment/15 px-3 py-2 text-sm font-bold text-parchment active:scale-95 disabled:opacity-40"
+            >
+              {lockedIn ? 'Locked' : hasPlan ? 'Lock In' : 'Pass'}
+            </button>
+            <button
+              type="button"
+              disabled={!planning}
+              onClick={() => setPanelOpen(true)}
+              className="shrink-0 rounded-xl bg-parchment px-3 py-2 text-sm font-bold text-ink shadow active:scale-95 disabled:opacity-40"
+            >
+              Plan <span aria-hidden>▴</span>
+            </button>
+            </>
+          )}
         </div>
       </section>
     );

@@ -263,10 +263,19 @@ export class GameController {
 
   // --- Turn resolution ----------------------------------------------------
 
+  /** Humans whose ship is still afloat. A sunk human has nothing left to plan. */
+  private livingHumans(): PlayerState[] {
+    return Object.values(this.state.players).filter(
+      (player) =>
+        player.controller === 'human' &&
+        (this.state.ships[player.shipId]?.hp ?? 0) > 0,
+    );
+  }
+
   private resolveIfReady(): TurnResult | null {
-    const everyoneLocked = Object.values(this.state.players)
-      .filter((player) => player.controller === 'human')
-      .every((player) => player.lockedIn);
+    const everyoneLocked = this.livingHumans().every(
+      (player) => player.lockedIn,
+    );
     const endEarly =
       this.state.rules.endTurnWhenAllLocked || this.turnDurationMs === null;
     return everyoneLocked && endEarly ? this.resolveNow() : null;
@@ -349,6 +358,13 @@ export class GameController {
     const { state } = beginNextTurn(this.state);
     this.armPlanningTimer();
     this.setState(state);
+
+    // Every human is out of the fight: do not make the spectators wait for the
+    // timer, let the remaining ships carry on. (Needs a connected client, who
+    // acknowledges each turn; without one this would spin.)
+    if (this.clients.size > 0 && this.livingHumans().length === 0) {
+      this.resolveIfReady();
+    }
   }
 
   isPlanning(): boolean {

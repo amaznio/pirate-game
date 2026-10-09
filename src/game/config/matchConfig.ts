@@ -21,6 +21,8 @@ export interface SpawnConfig {
 /** One player in a match and the ship they start with. */
 export interface ParticipantConfig {
   readonly playerId: PlayerId;
+  /** Display name. Defaults to the player id. */
+  readonly name?: string;
   readonly teamId: TeamId;
   readonly shipTypeId: string;
   readonly spawn: SpawnConfig;
@@ -68,6 +70,7 @@ export function createDuelConfig(
     participants: [
       {
         playerId: 'player',
+        name: 'Player',
         teamId: 'player',
         shipTypeId: DEFAULT_SHIP_TYPE,
         spawn: { position: { x: 9, y: 14 }, heading: 'NORTH' },
@@ -75,6 +78,7 @@ export function createDuelConfig(
       },
       {
         playerId: 'enemy',
+        name: 'Enemy',
         teamId: 'enemy',
         shipTypeId: DEFAULT_SHIP_TYPE,
         spawn: { position: { x: 9, y: 5 }, heading: 'SOUTH' },
@@ -194,8 +198,10 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
 
   const participants: ParticipantConfig[] = spawns.map((spawn, index) => {
     const playerId = `p${index + 1}`;
+    const controller = index < options.humans ? 'human' : 'ai';
     return {
       playerId,
+      name: `${controller === 'human' ? 'Player' : 'Bot'} ${index + 1}`,
       teamId:
         options.teamMode === 'teams'
           ? index % 2 === 0
@@ -204,7 +210,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
           : playerId,
       shipTypeId: DEFAULT_SHIP_TYPE,
       spawn,
-      controller: index < options.humans ? 'human' : 'ai',
+      controller,
     };
   });
 

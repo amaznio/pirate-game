@@ -30,7 +30,7 @@ export interface ClientSnapshot {
    * a duration, so differences between clocks do not matter).
    */
   readonly deadline: number | null;
-  /** Planning is open and the player has not locked in. */
+  /** Planning is open, the player has not locked in and their ship is afloat. */
   readonly canEdit: boolean;
   /** Movement tokens still free to queue (held minus used by the draft). */
   readonly tokensLeft: TokenInventory;
@@ -184,7 +184,10 @@ export class GameClient {
         view.status === 'planning' && view.planningSecondsRemaining !== null
           ? Date.now() + view.planningSecondsRemaining * 1000
           : null,
-      canEdit: view.status === 'planning' && !view.self.lockedIn,
+      canEdit:
+        view.status === 'planning' &&
+        !view.self.lockedIn &&
+        (view.ships[view.self.shipId]?.hp ?? 0) > 0,
       tokensLeft: remainingTokens(view.self.tokens, seed),
       ammoLeft: remainingAmmo(view.self.ammo, seed.cannons),
     };

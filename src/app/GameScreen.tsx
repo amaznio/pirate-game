@@ -32,21 +32,25 @@ export function GameScreen() {
   const desktop = useIsDesktop();
   useDesktopShortcuts();
 
-  // On mobile the planning sheet overlays the board; tell the camera how much
-  // of the bottom is covered so recentering targets the visible area.
+  // On mobile the HUD (top) and planning sheet (bottom) overlay the board; tell
+  // the camera how much each covers so recentering and the off-screen
+  // indicators use the part of the screen that is actually visible.
   const [sheetHeight, setSheetHeight] = useState(0);
+  const [hudHeight, setHudHeight] = useState(0);
   const onSheetHeight = useCallback((pixels: number) => setSheetHeight(pixels), []);
-  const inset = desktop ? 0 : sheetHeight;
+  const onHudHeight = useCallback((pixels: number) => setHudHeight(pixels), []);
+  const insetTop = desktop ? 0 : hudHeight;
+  const insetBottom = desktop ? 0 : sheetHeight;
   useEffect(() => {
-    handleRef.current?.setBottomInset(inset);
-  }, [inset]);
+    handleRef.current?.setInsets({ top: insetTop, bottom: insetBottom });
+  }, [insetTop, insetBottom]);
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-ocean-deep">
       <div className="relative h-full min-w-0 flex-1 overflow-hidden">
         <div ref={containerRef} className="absolute inset-0" />
 
-        {!desktop && <BattleHUD />}
+        {!desktop && <BattleHUD onHeightChange={onHudHeight} />}
 
         <div
           className="absolute right-3 z-20 flex flex-col gap-2"

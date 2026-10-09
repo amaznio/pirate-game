@@ -55,6 +55,7 @@ export function redactState(
   for (const player of Object.values(state.players)) {
     players[player.id] = {
       id: player.id,
+      name: player.name,
       teamId: player.teamId,
       shipId: player.shipId,
       controller: player.controller,
@@ -100,6 +101,7 @@ export function viewToState(view: GameView, draft?: PlayerActions): GameState {
           }
         : {
             id: pub.id,
+            name: pub.name,
             teamId: pub.teamId,
             shipId: pub.shipId,
             controller: pub.controller,

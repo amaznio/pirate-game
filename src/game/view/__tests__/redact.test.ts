@@ -57,6 +57,7 @@ describe('redactState', () => {
       'controller',
       'id',
       'lockedIn',
+      'name',
       'shipId',
       'teamId',
     ]);

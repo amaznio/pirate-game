@@ -211,3 +211,20 @@ describe('what a client can see', () => {
     expect(client.getPreviewState().players.p1.queue[0]).toBe('FORWARD');
   });
 });
+
+describe('spectating', () => {
+  it('cannot edit or lock in once the ship has sunk', () => {
+    const { host, client } = setup({ humans: 2, ais: 0 });
+    // Sink p1 by hand: the host state is the source of truth.
+    const state = host.getState();
+    (host as unknown as { state: typeof state }).state = {
+      ...state,
+      ships: { ...state.ships, 'p1-ship': { ...state.ships['p1-ship'], hp: 0 } },
+    };
+    host.setTokenGeneration('p1', { auto: true }); // pushes a fresh view
+
+    expect(client.getSnapshot().canEdit).toBe(false);
+    client.queueToken('FORWARD');
+    expect(client.getSnapshot().draft.movement[0]).toBeNull();
+  });
+});

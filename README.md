@@ -60,6 +60,22 @@ player never gets the host's state, only a **view** of it:
 
 `src/game/**` contains **no** React, Phaser or DOM.
 
+### What you see
+
+- **Teams look different.** `src/presentation/teamStyle.ts` gives every team a
+  colour and ship sails (your team is always blue). Players have a `name` (from
+  the `MatchConfig`); avatars show its initials.
+- **Avatars** float above each ship: a team-coloured badge, hull pips, an
+  activity bar (how busy another player's plan looks, never what it holds) and a
+  tick once they lock in. They keep a constant on-screen size at any zoom, and
+  hull pips follow the damage as it animates.
+- **Off-screen indicators** sit on the edge of the view for ships you cannot see:
+  the badge, an arrow and the distance in tiles. Click one to pan to that ship.
+  They stay clear of the HUD and the planning sheet.
+- **Spectating:** once your ship sinks you keep watching. You no longer hold up
+  the turn, and if every human is out the remaining ships play on without
+  waiting for the timer.
+
 ## Where things live
 
 | Area | Path | Owns |

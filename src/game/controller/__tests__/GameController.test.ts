@@ -498,3 +498,81 @@ describe('a controller per AI player', () => {
     expect(asked.sort()).toEqual(['default:p2', 'special:p3']);
   });
 });
+
+describe('spectating after being sunk', () => {
+  /** p1 (human) is already sunk; p2 (human) and p3 (AI) are afloat. */
+  const sunkHuman = (options: { connected?: string[] } = {}) => {
+    const config = createSkirmishConfig({ humans: 2, ais: 1, teamMode: 'ffa' });
+    const base = createGame(config);
+    const host = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      initialState: {
+        ...base,
+        ships: {
+          ...base.ships,
+          'p1-ship': { ...base.ships['p1-ship'], hp: 0 },
+        },
+      },
+      config,
+    });
+    for (const id of options.connected ?? ['p1', 'p2']) {
+      host.registerClient(id);
+    }
+    return host;
+  };
+
+  it('does not wait for a sunk human to lock in', () => {
+    const host = sunkHuman();
+
+    host.submitPlayerPlan('p2', plan());
+
+    expect(host.getState().status).toBe('animating');
+  });
+
+  it('plays on by itself when every human is sunk', () => {
+    const config = createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' });
+    const base = createGame(config);
+    const host = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      initialState: {
+        ...base,
+        ships: {
+          ...base.ships,
+          'p1-ship': { ...base.ships['p1-ship'], hp: 0 },
+        },
+      },
+      config,
+    });
+    host.registerClient('p1');
+
+    // Kick the first turn off (the spectator has nothing to lock in).
+    host.lockInPlayer('p1');
+    expect(host.getState().status).toBe('animating');
+
+    host.acknowledgeTurn('p1');
+
+    // The next turn has already been resolved without waiting for the timer.
+    expect(host.getState().turn).toBe(2);
+    expect(host.getState().status).toBe('animating');
+  });
+
+  it('does not spin when no client is connected', () => {
+    const config = createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' });
+    const base = createGame(config);
+    const host = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      initialState: {
+        ...base,
+        ships: {
+          ...base.ships,
+          'p1-ship': { ...base.ships['p1-ship'], hp: 0 },
+        },
+      },
+      config,
+    });
+
+    host.lockInPlayer('p1');
+
+    expect(host.getState().turn).toBeLessThanOrEqual(2);
+  });
+});

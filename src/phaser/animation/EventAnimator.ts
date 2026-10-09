@@ -9,6 +9,12 @@ import { animateDestroyed } from './animateDestroyed';
 
 type PhaseGroup = GameEvent[];
 
+/** Lets the scene keep things that follow ships (avatars) in step with the fight. */
+export interface AnimatorHooks {
+  onDamage?(shipId: string, hp: number): void;
+  onDestroyed?(shipId: string): void;
+}
+
 function groupPhases(events: readonly GameEvent[]): PhaseGroup[] {
   const groups: PhaseGroup[] = [];
   let current: PhaseGroup | null = null;
@@ -40,6 +46,7 @@ export class EventAnimator {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly registry: EntityViewRegistry,
+    private readonly hooks: AnimatorHooks = {},
   ) {}
 
   play(events: readonly GameEvent[]): Promise<void> {
@@ -104,7 +111,14 @@ export class EventAnimator {
     await Promise.all(impacts.map((event) => this.animateImpact(event)));
 
     for (const event of events) {
+      if (event.type === 'SHIP_DAMAGED') {
+        this.hooks.onDamage?.(event.shipId, event.hp);
+      }
+    }
+
+    for (const event of events) {
       if (event.type === 'SHIP_DESTROYED') {
+        this.hooks.onDestroyed?.(event.shipId);
         await this.animateDestroyed(event);
       }
     }
