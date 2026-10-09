@@ -1,4 +1,5 @@
 import type {
+  ControllerKind,
   GameState,
   PlayerState,
   TokenGenerationConfig,
@@ -259,6 +260,27 @@ export class GameController {
         },
       },
     });
+  }
+
+  /**
+   * Hands a player's ship to an AI (when they have gone away) or back to the
+   * human (when they return). It takes effect from the next time plans are
+   * collected, so a turn that is already being played is not affected. If the
+   * change leaves every remaining human locked in, the turn ends right away
+   * instead of waiting for someone who is no longer there.
+   */
+  setController(playerId: PlayerId, controller: ControllerKind): void {
+    const player = this.state.players[playerId];
+    if (!player || player.controller === controller) {
+      return;
+    }
+    this.setState({
+      ...this.state,
+      players: { ...this.state.players, [playerId]: { ...player, controller } },
+    });
+    if (this.state.status === 'planning') {
+      this.resolveIfReady();
+    }
   }
 
   // --- Turn resolution ----------------------------------------------------

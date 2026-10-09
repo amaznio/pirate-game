@@ -46,6 +46,8 @@ export interface SeatInfo {
   readonly connected: boolean;
   readonly isHost: boolean;
   readonly playerId: PlayerId | null;
+  /** An AI is sailing this player's ship (they are away, or left the match). */
+  readonly aiControlled: boolean;
 }
 
 export interface LobbyState {
@@ -101,6 +103,8 @@ export interface SeatCredentials {
 
 export interface JoinResult extends SeatCredentials {
   readonly lobby: LobbyState;
+  /** Rejoining only: an AI sailed for this player while they were away. */
+  readonly wasAiControlled: boolean;
 }
 
 export interface ClientToServerEvents {

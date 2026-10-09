@@ -576,3 +576,93 @@ describe('spectating after being sunk', () => {
     expect(host.getState().turn).toBeLessThanOrEqual(2);
   });
 });
+
+describe('handing a ship to an AI and back', () => {
+  const twoHumans = () => {
+    const host = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      config: createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'ffa' }),
+    });
+    host.registerClient('p1');
+    host.registerClient('p2');
+    return host;
+  };
+
+  it('lets an AI plan for a player who is no longer in command', () => {
+    const host = twoHumans();
+    host.setController('p2', 'ai');
+    const tokensBefore = host.getState().players.p2.tokens;
+    const total = (t: typeof tokensBefore) => t.FORWARD + t.TURN_LEFT + t.TURN_RIGHT;
+
+    host.submitPlayerPlan('p1', plan());
+
+    const moved = host
+      .getPendingTurn()
+      ?.events.some((event) => event.type === 'SHIP_MOVED' && event.shipId === 'p2-ship');
+    expect(moved).toBe(true);
+    expect(total(host.getState().players.p2.tokens)).toBeLessThan(total(tokensBefore));
+  });
+
+  it('stops taking plans from the player while the AI has the helm', () => {
+    const host = twoHumans();
+    host.setController('p2', 'ai');
+
+    expect(host.submitDraft('p2', plan(['FORWARD', null, null, null]))).toBe(
+      'unknown_player',
+    );
+  });
+
+  it('takes plans from the player again once they are back', () => {
+    const host = twoHumans();
+    host.setController('p2', 'ai');
+    host.setController('p2', 'human');
+
+    expect(host.submitDraft('p2', plan(['FORWARD', null, null, null]))).toBeNull();
+    expect(host.getState().players.p2.queue[0]).toBe('FORWARD');
+  });
+
+  it('ends the turn at once when the player who was holding it up is replaced', () => {
+    const host = twoHumans();
+    host.lockInPlayer('p1');
+    expect(host.getState().status).toBe('planning');
+
+    host.setController('p2', 'ai');
+
+    expect(host.getState().status).toBe('animating');
+  });
+
+  it('does not end the turn when a player comes back to it', () => {
+    const host = twoHumans();
+    host.setController('p2', 'ai');
+    host.lockInPlayer('p1');
+    host.acknowledgeTurn('p1');
+    host.acknowledgeTurn('p2');
+    expect(host.getState().turn).toBe(2);
+
+    host.setController('p2', 'human');
+
+    expect(host.getState().status).toBe('planning');
+  });
+
+  it('ignores a change that changes nothing, and unknown players', () => {
+    const host = twoHumans();
+    const before = host.getState();
+
+    host.setController('p1', 'human');
+    host.setController('nobody', 'ai');
+
+    expect(host.getState()).toBe(before);
+  });
+
+  it('leaves the turn being played alone', () => {
+    const host = twoHumans();
+    host.lockInPlayer('p1');
+    host.lockInPlayer('p2');
+    const turn = host.getPendingTurn();
+
+    host.setController('p2', 'ai');
+
+    expect(host.getPendingTurn()).toBe(turn);
+    expect(host.getState().status).toBe('animating');
+  });
+});

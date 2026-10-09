@@ -66,13 +66,14 @@ export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
     return binding;
   };
 
-  const bind = (room: Room, seat: Seat) => {
+  const bind = (room: Room, seat: Seat, wasAiControlled = false) => {
     binding = { room, seat };
     return {
       roomId: room.id,
       seatId: seat.seatId,
       token: seat.token,
       lobby: room.lobbyState(),
+      wasAiControlled,
     };
   };
 
@@ -118,7 +119,8 @@ export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
       if (!seat) {
         throw new RoomError('bad_credentials', 'Could not restore your seat.');
       }
-      const result = bind(room, seat);
+      // Ask before reconnecting: coming back hands the ship back to the player.
+      const result = bind(room, seat, seat.aiControlled);
       room.reconnect(seat, socket);
       return { ...result, lobby: room.lobbyState() };
     });

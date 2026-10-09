@@ -68,6 +68,13 @@ Flow of a match:
    connected players have.
 5. A dropped player keeps their seat. `room:rejoin` with the seat id and token
    restores their view, their draft and the turn being animated.
+6. A player who stays away longer than the grace period (`AWAY_GRACE_SECONDS`,
+   15 by default) has their ship sailed by an AI, so the match never waits for
+   them: turns end as soon as everyone still present has locked in. When they
+   come back they take the helm again straight away and are told an AI sailed
+   for them. A player who *leaves* (rather than drops) is replaced at once and
+   cannot take the ship back. Ships an AI is sailing show an "AI" tag in the
+   fleet list.
 
 Nothing a client sends is trusted: payloads are shape-checked
 (`protocol/validate.ts`), plans are checked against what the player really holds
@@ -84,6 +91,7 @@ Configuration (environment variables, see `apps/server/.env.example`):
 | `CLIENT_ORIGIN` | Allowed browser origin(s), comma separated | `http://localhost:5173` |
 | `MAX_ROOMS` | Most rooms alive at once | `100` |
 | `IDLE_ROOM_MINUTES` | How long an empty room is kept | `10` |
+| `AWAY_GRACE_SECONDS` | How long a player may be away before an AI sails for them | `15` |
 
 `GET /health` returns `{"status":"ok","rooms":N,...}` (use it as the Railway
 health check). The server stops cleanly on `SIGTERM`.

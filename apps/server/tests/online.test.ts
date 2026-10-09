@@ -424,3 +424,76 @@ describe('coming back after a refresh', () => {
     expect(state.message).toMatch(/another window/i);
   });
 });
+
+describe('an AI sails for a player who is away', () => {
+  beforeEach(async () => {
+    await server.close();
+    server = await startServer({ awayGraceMs: 200 });
+  });
+
+  /** Cuts a session's connection and keeps it down until `reconnect` is called. */
+  function goOffline(session: OnlineSession) {
+    const socket = sockets.get(session)!;
+    socket.io.reconnection(false);
+    socket.io.engine.close();
+    return () => {
+      socket.io.reconnection(true);
+      socket.connect();
+    };
+  }
+
+  it('steps in, then hands the ship back and says so', async () => {
+    const { anne, bart } = await startedMatch();
+    const annesView = () => anne.getState().client!.getView();
+
+    const comeBack = goOffline(bart);
+    await until(anne, () => annesView().players.p2.controller === 'ai');
+    expect(annesView().players.p1.controller).toBe('human');
+
+    // Anne is not held up by Bart any more.
+    const events: GameEvent[] = [];
+    anne.getState().client!.onEvents((event) => events.push(event));
+    anne.getState().client!.lockIn();
+    await until(anne, () => events.some((event) => event.type === 'TURN_ENDED'));
+    expect(
+      events.some((event) => event.type === 'SHIP_MOVED' && event.shipId === 'p2-ship'),
+    ).toBe(true);
+
+    comeBack();
+    await until(bart, (s) => s.notice === 'ai_took_over');
+    expect(bart.getState().phase).toBe('playing');
+    await until(anne, () => annesView().players.p2.controller === 'human');
+  });
+
+  it('puts Bart back in command: his plan counts again', async () => {
+    const { anne, bart } = await startedMatch();
+    const comeBack = goOffline(bart);
+    await until(anne, () => anne.getState().client!.getView().players.p2.controller === 'ai');
+    comeBack();
+    await until(bart, () => bart.getState().client!.getView().players.p2.controller === 'human');
+    await until(bart, (s) => s.connection === 'connected');
+
+    const events: GameEvent[] = [];
+    anne.getState().client!.onEvents((event) => events.push(event));
+    bart.getState().client!.queueToken('FORWARD');
+    bart.getState().client!.lockIn();
+    anne.getState().client!.lockIn();
+
+    await until(anne, () => events.some((event) => event.type === 'TURN_ENDED'));
+    expect(
+      events.some((event) => event.type === 'SHIP_MOVED' && event.shipId === 'p2-ship'),
+    ).toBe(true);
+  });
+
+  it('is not interrupted by a short drop', async () => {
+    const { anne, bart } = await startedMatch();
+
+    sockets.get(bart)!.io.engine.close(); // reconnects by itself within the grace period
+    await until(bart, (s) => s.connection === 'reconnecting');
+    await until(bart, (s) => s.connection === 'connected');
+    await pause(500);
+
+    expect(anne.getState().client!.getView().players.p2.controller).toBe('human');
+    expect(bart.getState().notice).toBeNull();
+  });
+});

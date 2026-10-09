@@ -21,8 +21,9 @@ interface GameScreenProps {
   notice?: string | null;
 }
 
-/** Friendly wording for why the server refused a plan. */
-const REFUSAL: Record<string, string> = {
+/** Friendly wording for the short messages shown over the board. */
+const NOTICES: Record<string, string> = {
+  ai_took_over: 'You were away, so an AI sailed for you. You are back in command.',
   not_enough_tokens: 'That plan uses movement tokens you do not have.',
   not_enough_ammo: 'That plan fires more cannonballs than you have.',
   not_planning: 'Too late: that turn is already being played.',
@@ -122,7 +123,7 @@ export function GameScreen({
                 role="status"
                 className="rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-parchment"
               >
-                {REFUSAL[notice] ?? 'That plan was refused.'}
+                {NOTICES[notice] ?? 'That plan was refused.'}
               </span>
             )}
             {busy && !disconnected && (

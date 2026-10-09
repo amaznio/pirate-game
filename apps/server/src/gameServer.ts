@@ -51,6 +51,7 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
   const rooms = new RoomManager({
     maxRooms: config.maxRooms,
     idleRoomMs: config.idleRoomMs,
+    awayGraceMs: config.awayGraceMs,
   });
 
   const httpServer = createServer(handleHttp(rooms, startedAt));

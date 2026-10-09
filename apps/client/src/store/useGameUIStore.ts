@@ -23,6 +23,8 @@ export interface ShipSummary {
   ally: boolean;
   /** Still afloat. */
   alive: boolean;
+  /** An AI is sailing it (a computer opponent, or a player who is away). */
+  bot: boolean;
 }
 
 export type MatchResult = 'win' | 'loss' | 'draw';
@@ -102,6 +104,7 @@ function snapshot({
         maxHull: other?.maxHp ?? 0,
         ally: player.teamId === self.teamId,
         alive: (other?.hp ?? 0) > 0,
+        bot: player.controller === 'ai',
       };
     });
 

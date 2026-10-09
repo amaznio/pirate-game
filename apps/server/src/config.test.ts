@@ -9,6 +9,7 @@ describe('loadConfig', () => {
       clientOrigins: ['http://localhost:5173'],
       maxRooms: 100,
       idleRoomMs: 10 * 60_000,
+      awayGraceMs: 15_000,
     });
   });
 
@@ -33,6 +34,11 @@ describe('loadConfig', () => {
     expect(config.port).toBe(3001);
     expect(config.maxRooms).toBe(100);
     expect(config.idleRoomMs).toBe(10 * 60_000);
+  });
+
+  it('reads how long a player may be away before an AI takes over', () => {
+    expect(loadConfig({ AWAY_GRACE_SECONDS: '40' }).awayGraceMs).toBe(40_000);
+    expect(loadConfig({ AWAY_GRACE_SECONDS: 'soon' }).awayGraceMs).toBe(15_000);
   });
 
   it('converts the idle time from minutes', () => {

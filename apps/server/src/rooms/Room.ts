@@ -47,6 +47,10 @@ export interface Seat {
   playerId: PlayerId | null;
   /** The player left on purpose: the token no longer restores this seat. */
   abandoned: boolean;
+  /** An AI is sailing this ship while the player is away. */
+  aiControlled: boolean;
+  /** Counts down to an AI taking over after the player drops. */
+  awayTimer: ReturnType<typeof setTimeout> | null;
   /** Tells the host this seat's client is connected (undoes registerClient). */
   disconnectFromHost: (() => void) | null;
 }
@@ -73,6 +77,8 @@ export class Room {
   constructor(
     readonly id: string,
     options: Partial<RoomOptions> = {},
+    /** How long a player may be away from a running match before an AI steps in. */
+    private readonly awayGraceMs = 15_000,
   ) {
     this.options = { ...DEFAULT_ROOM_OPTIONS, ...options };
   }
@@ -99,6 +105,8 @@ export class Room {
       socket,
       playerId: null,
       abandoned: false,
+      aiControlled: false,
+      awayTimer: null,
       disconnectFromHost: null,
     };
     this.seats.set(seat.seatId, seat);
@@ -129,6 +137,10 @@ export class Room {
     }
 
     if (this.host && seat.playerId) {
+      // Back in time (or after an AI stepped in): the player takes the helm
+      // again before they are sent anything, so their first view is in command.
+      this.clearAwayTimer(seat);
+      this.giveBackControl(seat);
       seat.disconnectFromHost?.();
       seat.disconnectFromHost = this.host.registerClient(seat.playerId);
       this.sendStarted(seat);
@@ -155,6 +167,8 @@ export class Room {
 
     if (this.status === 'lobby') {
       this.passHostOn(seatId);
+    } else {
+      this.startAwayTimer(seat);
     }
     this.broadcastLobby();
   }
@@ -177,8 +191,55 @@ export class Room {
     if (this.status === 'lobby') {
       this.seats.delete(seatId);
       this.passHostOn(seatId);
+    } else {
+      // They are not coming back, so there is nothing to wait for.
+      this.takeOver(seat);
     }
     this.broadcastLobby();
+  }
+
+  // --- AI standing in for an absent player ---------------------------------
+
+  /** After the grace period an AI takes over a ship whose player is still away. */
+  private startAwayTimer(seat: Seat): void {
+    if (!this.host || !seat.playerId || seat.aiControlled) {
+      return;
+    }
+    this.clearAwayTimer(seat);
+    seat.awayTimer = setTimeout(() => {
+      seat.awayTimer = null;
+      if (!seat.socket) {
+        this.takeOver(seat);
+        this.broadcastLobby();
+      }
+    }, this.awayGraceMs);
+    seat.awayTimer.unref();
+  }
+
+  private clearAwayTimer(seat: Seat): void {
+    if (seat.awayTimer) {
+      clearTimeout(seat.awayTimer);
+      seat.awayTimer = null;
+    }
+  }
+
+  /** An AI sails the player's ship from now on (until they come back, if they can). */
+  private takeOver(seat: Seat): void {
+    this.clearAwayTimer(seat);
+    if (!this.host || !seat.playerId || seat.aiControlled || this.closed) {
+      return;
+    }
+    seat.aiControlled = true;
+    this.host.setController(seat.playerId, 'ai');
+  }
+
+  /** The player is back: they command their own ship again. */
+  private giveBackControl(seat: Seat): void {
+    if (!this.host || !seat.playerId || !seat.aiControlled) {
+      return;
+    }
+    seat.aiControlled = false;
+    this.host.setController(seat.playerId, 'human');
   }
 
   /** If the host is gone, the first connected player takes over. */
@@ -215,6 +276,7 @@ export class Room {
       connected: seat.socket !== null,
       isHost: seat.seatId === this.hostSeatId,
       playerId: seat.playerId,
+      aiControlled: seat.aiControlled,
     }));
     return {
       roomId: this.id,
@@ -341,6 +403,7 @@ export class Room {
     }
     this.closed = true;
     for (const seat of this.seats.values()) {
+      this.clearAwayTimer(seat);
       seat.socket?.emit('room:closed', { reason });
       seat.disconnectFromHost?.();
     }

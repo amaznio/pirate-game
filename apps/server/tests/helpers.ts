@@ -17,6 +17,9 @@ export const testConfig: ServerConfig = {
   clientOrigins: ['http://localhost:5173'],
   maxRooms: 50,
   idleRoomMs: 60_000,
+  // Long, so a test that drops a connection is not taken over by an AI by
+  // surprise. Tests about the takeover set a short one.
+  awayGraceMs: 60_000,
 };
 
 export function startServer(overrides: Partial<ServerConfig> = {}): Promise<GameServer> {

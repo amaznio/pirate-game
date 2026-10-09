@@ -5,6 +5,8 @@ import { Room, RoomError } from './Room';
 export interface RoomManagerOptions {
   readonly maxRooms: number;
   readonly idleRoomMs: number;
+  /** Passed to every room: how long a player may be away before an AI steps in. */
+  readonly awayGraceMs: number;
 }
 
 /** Owns every room: creates them, finds them, and sweeps away dead ones. */
@@ -26,7 +28,7 @@ export class RoomManager {
     while (this.rooms.has(id)) {
       id = newRoomCode();
     }
-    const room = new Room(id, options);
+    const room = new Room(id, options, this.options.awayGraceMs);
     this.rooms.set(id, room);
     return room;
   }

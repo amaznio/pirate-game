@@ -266,6 +266,9 @@ export class OnlineSession {
       phase: this.transport ? 'playing' : result.lobby.status === 'lobby' ? 'lobby' : this.state.phase,
     });
     this.transport?.flush();
+    if (result.wasAiControlled) {
+      this.showNotice('ai_took_over');
+    }
   }
 
   // --- Entering a room -----------------------------------------------------

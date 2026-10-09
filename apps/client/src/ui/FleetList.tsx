@@ -25,6 +25,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       maxHull,
       alive: hull > 0,
       you: true,
+      bot: false,
     },
     ...others.map((other) => ({
       id: other.playerId,
@@ -34,6 +35,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       maxHull: other.maxHull,
       alive: other.alive,
       you: false,
+      bot: other.bot,
     })),
   ];
 
@@ -58,6 +60,14 @@ export function FleetList({ compact = false }: FleetListProps) {
           >
             {row.name}
           </span>
+          {row.bot && (
+            <span
+              className="rounded bg-parchment/15 px-1 text-[9px] font-bold uppercase tracking-wide text-parchment/70"
+              title="An AI is sailing this ship"
+            >
+              AI
+            </span>
+          )}
           <HullBar hp={row.hull} maxHp={row.maxHull} />
           <span className="ml-auto text-xs font-semibold tabular-nums text-parchment">
             {row.alive ? `${row.hull}/${row.maxHull}` : 'Sunk'}
