@@ -59,9 +59,13 @@ their own authoritative copy of the game state:
 ### Core rules
 
 - Board is `20 x 20`; each entity occupies one cell. Obstacles block movement.
-- Movement tokens: `FORWARD`, `TURN_LEFT`, `TURN_RIGHT`. A turn rotates the
-  heading 90° **then** advances one cell in the new heading (not rotation in
-  place).
+- Movement tokens: `FORWARD`, `TURN_LEFT`, `TURN_RIGHT`. A turn is a
+  diagonal step: the ship advances one cell forward **and** one cell toward the
+  turn side, ending with its heading rotated 90° that way (not rotation in
+  place). A turn moves forward first, then sideways, and stops at the first
+  blocked cell: a blocked turn still advances as far as it can and always rotates
+  toward the turn side, even if it cannot move at all. A blocked `FORWARD` does
+  neither.
 - Each ship has **two independent queues** aligned per phase: a movement queue
   (4 slots) and a cannon queue (4 slots). In each phase a ship moves, then
   fires. A cannon slot fires the left broadside, the right broadside, or both.

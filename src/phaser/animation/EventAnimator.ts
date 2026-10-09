@@ -60,7 +60,30 @@ export class EventAnimator {
         event.type === 'SHIP_TURNED' ||
         event.type === 'SHIP_BLOCKED',
     );
-    await Promise.all(movement.map((event) => this.animateMovement(event)));
+    // Ships move in parallel. Within one ship the move and turn play together,
+    // then a bump (SHIP_BLOCKED) plays once it has stopped.
+    const shipIds = [
+      ...new Set(
+        movement.map((event) => (event as { shipId: string }).shipId),
+      ),
+    ];
+    await Promise.all(
+      shipIds.map(async (shipId) => {
+        const own = movement.filter(
+          (event) => (event as { shipId: string }).shipId === shipId,
+        );
+        await Promise.all(
+          own
+            .filter((event) => event.type !== 'SHIP_BLOCKED')
+            .map((event) => this.animateMovement(event)),
+        );
+        for (const event of own) {
+          if (event.type === 'SHIP_BLOCKED') {
+            await this.animateMovement(event);
+          }
+        }
+      }),
+    );
 
     for (const event of events) {
       if (event.type === 'CANNON_FIRED') {

@@ -69,6 +69,9 @@ export function previewPlayerPlan(state: GameState): PlanPreview | null {
           position = event.to;
           heading = event.heading;
           break;
+        case 'SHIP_TURNED':
+          heading = event.to;
+          break;
         case 'SHIP_BLOCKED':
           blocked = true;
           break;

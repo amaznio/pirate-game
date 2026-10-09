@@ -17,8 +17,8 @@ import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import { leftBroadside, rightBroadside } from '../domain/Direction';
 import { getShipBySide } from '../simulation/selectors';
-import { resolveActionTarget } from '../simulation/movement';
-import { checkBlocked, firstEntityAlongRay } from '../simulation/collision';
+import { resolveMovementOutcome } from '../simulation/movement';
+import { firstEntityAlongRay } from '../simulation/collision';
 import { getWeaponType } from '../config/weaponTypes';
 import type { AIController } from './AIController';
 
@@ -98,11 +98,19 @@ function chooseBestAction(
     if (pool[action] <= 0) {
       continue;
     }
-    const next = resolveActionTarget(position, heading, action);
-    const blocked = checkBlocked(state, next.position, me.id).blocked;
+    // Predict with the real movement rules, so partial and blocked moves are
+    // understood exactly as the simulation will play them.
+    const next = resolveMovementOutcome(
+      state,
+      me.id,
+      position,
+      heading,
+      action,
+    );
+    const noEffect = !next.moved && next.heading === heading;
 
-    let score = blocked ? -1000 : 0;
-    if (!blocked) {
+    let score = noEffect ? -1000 : 0;
+    if (!noEffect) {
       if (canBroadside(state, me, next.position, next.heading, target.id)) {
         score += 100;
       }
