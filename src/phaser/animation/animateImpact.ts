@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Position } from '../../game/domain/Position';
-import { AssetKeys } from '../assets/AssetKeys';
+import { AssetKeys, EffectFrames } from '../assets/AssetKeys';
 import { gridToWorld } from '../Grid';
 
 export function tweenProjectile(
@@ -28,26 +28,29 @@ export function tweenProjectile(
   });
 }
 
-/** Explosion placeholder for a hit. */
+/** Explosion for a hit. */
 export function spawnImpact(scene: Phaser.Scene, to: Position): void {
   const { x, y } = gridToWorld(to);
-  const burst = scene.add.image(x, y, AssetKeys.flash).setDepth(70);
+  const burst = scene.add
+    .image(x, y, AssetKeys.ships, EffectFrames.explosion)
+    .setDepth(70)
+    .setScale(0.8);
   scene.tweens.add({
     targets: burst,
-    scale: 2.2,
+    scale: 1.2,
     alpha: 0,
-    duration: 300,
+    duration: 320,
     onComplete: () => burst.destroy(),
   });
 }
 
-/** Splash placeholder for a miss. */
+/** Water splash for a miss. */
 export function spawnSplash(scene: Phaser.Scene, to: Position): void {
   const { x, y } = gridToWorld(to);
-  const splash = scene.add.image(x, y, AssetKeys.splash).setDepth(70);
+  const splash = scene.add.circle(x, y, 10, 0xbfe3ef, 0.7).setDepth(70);
   scene.tweens.add({
     targets: splash,
-    scale: 1.8,
+    scale: 2,
     alpha: 0,
     duration: 400,
     onComplete: () => splash.destroy(),

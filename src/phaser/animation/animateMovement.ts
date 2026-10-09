@@ -56,7 +56,22 @@ export function animateTurn(
   view: Phaser.GameObjects.Container,
   event: TurnedEvent,
 ): Promise<void> {
-  return tweenRotation(scene, view, headingToAngle(event.to));
+  return tweenRotation(scene, view, nearestEquivalentAngle(view.rotation, headingToAngle(event.to)));
+}
+
+/**
+ * Returns the target angle adjusted by whole turns so the rotation tween takes
+ * the short way (a 90-degree turn should never animate as 270 degrees the other
+ * way).
+ */
+function nearestEquivalentAngle(current: number, target: number): number {
+  const twoPi = Math.PI * 2;
+  let delta = (target - current + Math.PI) % twoPi;
+  if (delta < 0) {
+    delta += twoPi;
+  }
+  delta -= Math.PI;
+  return current + delta;
 }
 
 export function animateBlocked(

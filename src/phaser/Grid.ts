@@ -1,7 +1,7 @@
 import type { Position } from '../game/domain/Position';
 
-/** Pixel size of one logical grid cell. Defined once for the whole layer. */
-export const TILE_SIZE = 48;
+/** Pixel size of one logical grid cell. Matches the Kenney 64x64 tiles. */
+export const TILE_SIZE = 64;
 
 export function gridToWorld(position: Position): { x: number; y: number } {
   return {

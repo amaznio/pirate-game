@@ -100,9 +100,10 @@ their own authoritative copy of the game state:
 - **Tune cannonball economy**: edit `CANNON_*` in `src/game/config/gameRules.ts`
   (start, reload amount/interval), or replace `reloadedAmmo` in
   `src/game/simulation/tokens.ts`. Cannonballs have no upper cap.
-- **Replace placeholder art with Scallywag assets**: see
-  `src/assets/scallywag/README.md`. Only `AssetKeys.ts` and `BootScene.ts`
-  change — never simulation code.
+- **Change the art**: assets are the Kenney "Pirate Pack" (CC0) in
+  `public/assets/kenney/`. Texture keys and frame ids are centralised in
+  `src/phaser/assets/AssetKeys.ts` and loaded in `BootScene.ts`; no simulation
+  code references filenames. See `src/assets/scallywag/README.md`.
 
 ## Controls
 

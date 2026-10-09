@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { AssetKeys } from '../assets/AssetKeys';
 
 /** Short muzzle flash at the firing ship. */
 export function spawnMuzzleFlash(
@@ -7,11 +6,11 @@ export function spawnMuzzleFlash(
   x: number,
   y: number,
 ): void {
-  const flash = scene.add.image(x, y, AssetKeys.flash).setDepth(55);
+  const flash = scene.add.circle(x, y, 6, 0xffd166, 0.9).setDepth(55);
   scene.tweens.add({
     targets: flash,
     alpha: 0,
-    scale: 1.8,
+    scale: 2,
     duration: 160,
     onComplete: () => flash.destroy(),
   });

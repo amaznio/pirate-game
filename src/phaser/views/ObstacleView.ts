@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Obstacle } from '../../game/domain/Board';
-import { AssetKeys } from '../assets/AssetKeys';
+import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { gridToWorld } from '../Grid';
 
 export function createObstacleView(
@@ -8,6 +8,7 @@ export function createObstacleView(
   obstacle: Obstacle,
 ): Phaser.GameObjects.Image {
   const { x, y } = gridToWorld(obstacle.position);
-  const key = obstacle.kind === 'rock' ? AssetKeys.rock : AssetKeys.island;
-  return scene.add.image(x, y, key).setDepth(10);
+  const frame =
+    obstacle.kind === 'rock' ? TileFrames.rock : TileFrames.grass;
+  return scene.add.image(x, y, AssetKeys.tiles, frame).setDepth(10);
 }

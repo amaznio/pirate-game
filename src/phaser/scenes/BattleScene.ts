@@ -3,7 +3,7 @@ import type { GameState } from '../../game/domain/GameState';
 import type { GameEvent } from '../../game/domain/GameEvent';
 import type { GameController } from '../../game/controller/GameController';
 import { getShipBySide } from '../../game/simulation/selectors';
-import { AssetKeys } from '../assets/AssetKeys';
+import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
 import { createShipView, headingToAngle } from '../views/ShipView';
@@ -34,7 +34,7 @@ export class BattleScene extends Phaser.Scene {
     const worldHeight = state.board.height * TILE_SIZE;
 
     this.add
-      .tileSprite(0, 0, worldWidth, worldHeight, AssetKeys.water)
+      .tileSprite(0, 0, worldWidth, worldHeight, AssetKeys.tiles, TileFrames.water)
       .setOrigin(0)
       .setDepth(0);
     this.drawGrid(state, worldWidth, worldHeight);
@@ -88,7 +88,7 @@ export class BattleScene extends Phaser.Scene {
     worldHeight: number,
   ): void {
     const g = this.add.graphics().setDepth(1);
-    g.lineStyle(1, 0x1c4a57, 0.5);
+    g.lineStyle(1, 0x0d3b49, 0.35);
     for (let x = 0; x <= state.board.width; x += 1) {
       g.lineBetween(x * TILE_SIZE, 0, x * TILE_SIZE, worldHeight);
     }

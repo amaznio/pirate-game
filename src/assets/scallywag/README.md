@@ -1,23 +1,20 @@
-# Scallywag assets
+# Art assets
 
-The game currently renders **programmatic placeholder textures** generated in
-`src/phaser/scenes/BootScene.ts`, so it runs from a clean checkout with no
-external art.
+The game uses the **Kenney "Pirate Pack"** (CC0). The runtime files live in
+`public/assets/kenney/` and are loaded in `src/phaser/scenes/BootScene.ts`:
 
-When the Scallywag asset packs are available, drop the files in this folder
-(for example `ship_player.png`, `ship_enemy.png`, `rock.png`, `island.png`,
-`cannonball.png`) and update only:
+- `tiles_sheet.png` — 64x64 terrain spritesheet (water, sand, grass, rocks).
+- `shipsMiscellaneous_sheet.png` + `.xml` — ship/effect atlas.
 
-1. `src/phaser/assets/AssetKeys.ts` — the central key registry.
-2. `src/phaser/scenes/BootScene.ts` — replace the `create*` placeholder
-   generators with `this.load.image(...)` / `this.load.atlas(...)` calls, or
-   move them to a `preload()` method.
+Texture keys and frame ids are centralised in
+`src/phaser/assets/AssetKeys.ts`. No simulation or React code references
+filenames, so swapping art only touches `AssetKeys.ts` + `BootScene.ts`.
 
-No simulation or React code references texture filenames, so no game rules
-change when swapping in real art.
+See `public/assets/kenney/README.md` for the sheet layout and how to add new
+frames.
 
-## Placeholder orientation
+## Orientation
 
-The generated ship textures point **east** at rotation `0`. Keep new ship art
-in the same orientation, or adjust `HEADING_ANGLE` in
-`src/phaser/views/ShipView.ts`.
+The Kenney ship art points **north** at rotation `0`; `HEADING_ANGLE` in
+`src/phaser/views/ShipView.ts` maps headings accordingly. Keep new ship art in
+the same orientation or update that map.
