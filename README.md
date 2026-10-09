@@ -38,7 +38,10 @@ pnpm build:client    # build only the client  -> apps/client/dist
 pnpm start:client    # serve that build on $PORT (default 4173)
 pnpm build:server    # bundle the server -> apps/server/dist/index.js
 pnpm start:server    # run that bundle on $PORT (default 3001)
+pnpm smoke --server <url> --client <url>   # check a running deployment from outside
 ```
+
+Deploying to Railway is covered step by step in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 `pnpm start:client` runs `apps/client/scripts/serve.mjs`, a tiny dependency-free
 static server (single-page-app fallback, long caching for hashed files only).
@@ -75,6 +78,11 @@ Flow of a match:
    for them. A player who *leaves* (rather than drops) is replaced at once and
    cannot take the ship back. Ships an AI is sailing show an "AI" tag in the
    fleet list.
+
+Browsers do not apply CORS to websockets, so the server also checks the `Origin`
+of every connection against `CLIENT_ORIGIN`. At startup it warns about settings
+that are fine locally but wrong for a hosted server (for example a missing
+`CLIENT_ORIGIN`).
 
 Nothing a client sends is trusted: payloads are shape-checked
 (`protocol/validate.ts`), plans are checked against what the player really holds

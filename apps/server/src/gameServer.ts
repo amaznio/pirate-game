@@ -45,6 +45,23 @@ function handleHttp(
   };
 }
 
+/**
+ * Whether a connection from this `Origin` header may be opened. Browsers always
+ * send the page's origin and cannot forge it; a missing header means a
+ * non-browser client (a script, a test), which is not what the check is for.
+ * Browsers do not apply CORS to websockets, so this is what keeps another
+ * website's page from opening sockets to the server.
+ */
+export function isOriginAllowed(
+  origin: string | undefined,
+  allowed: readonly string[],
+): boolean {
+  if (origin === undefined || allowed.includes('*')) {
+    return true;
+  }
+  return allowed.includes(origin.replace(/\/+$/, ''));
+}
+
 /** Starts the HTTP + Socket.IO server. */
 export async function createGameServer(config: ServerConfig): Promise<GameServer> {
   const startedAt = Date.now();
@@ -59,6 +76,8 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
     cors: {
       origin: config.clientOrigins.includes('*') ? true : [...config.clientOrigins],
     },
+    allowRequest: (request, callback) =>
+      callback(null, isOriginAllowed(request.headers.origin, config.clientOrigins)),
     // Plans are tiny; anything big is not a plan.
     maxHttpBufferSize: 64 * 1024,
   });

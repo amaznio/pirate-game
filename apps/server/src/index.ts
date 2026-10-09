@@ -1,4 +1,4 @@
-import { loadConfig } from './config';
+import { configWarnings, loadConfig } from './config';
 import { createGameServer } from './gameServer';
 
 const config = loadConfig();
@@ -6,6 +6,9 @@ const server = await createGameServer(config);
 
 console.log(`Game server listening on ${config.host}:${server.port}`);
 console.log(`Allowed client origins: ${config.clientOrigins.join(', ')}`);
+for (const warning of configWarnings(config)) {
+  console.warn(`WARNING: ${warning}`);
+}
 
 // Railway stops a service with SIGTERM: close sockets and timers, then exit.
 let stopping = false;

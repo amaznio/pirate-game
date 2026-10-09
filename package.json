@@ -18,6 +18,7 @@
     "start:server": "pnpm --filter @pirate/server start",
     "test": "pnpm -r test",
     "test:watch": "pnpm --filter @pirate/game-core test:watch",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "smoke": "pnpm --filter @pirate/server smoke"
   }
 }
