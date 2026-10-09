@@ -16,7 +16,7 @@ This is a pnpm workspace (Node 22+; `corepack enable` or `npm i -g pnpm`).
 | --- | --- |
 | `packages/game-core` | Rules, simulation, AI, host controller, views and client logic. No DOM, React or Phaser. Imported as `@pirate/game-core/...`. |
 | `apps/client` | The browser app: React HUD + Phaser board (Vite). |
-| `apps/server` | *(coming)* the Node server that hosts online matches. |
+| `apps/server` | The game server: rooms, lobby and one authoritative match per room, over Socket.IO. |
 
 ## Quick start
 
@@ -28,17 +28,65 @@ pnpm dev           # client at http://localhost:5173
 Scripts (run from the repo root):
 
 ```bash
-pnpm dev             # client dev server (the server joins this once it exists)
+pnpm dev             # client (:5173) and server (:3001) together
+pnpm dev:client      # just the client
+pnpm dev:server      # just the server (restarts on change)
 pnpm build           # typecheck + production build of every package
 pnpm test            # all unit tests (Vitest)
 pnpm typecheck       # tsc --noEmit in every package
 pnpm build:client    # build only the client  -> apps/client/dist
 pnpm start:client    # serve that build on $PORT (default 4173)
+pnpm build:server    # bundle the server -> apps/server/dist/index.js
+pnpm start:server    # run that bundle on $PORT (default 3001)
 ```
 
 `pnpm start:client` runs `apps/client/scripts/serve.mjs`, a tiny dependency-free
 static server (single-page-app fallback, long caching for hashed files only).
 It reads `PORT`, which is how Railway tells a service where to listen.
+
+## The game server
+
+`apps/server` runs matches for people on different machines. It speaks Socket.IO
+and plays the **host** role from the diagram below: one `GameController` per
+room, seeing every plan, while each player only ever receives their own redacted
+view. The wire protocol (event names, payloads, limits) lives in
+`packages/game-core/src/protocol/`, shared by server and client so they cannot
+drift apart.
+
+Flow of a match:
+
+1. A player sends `room:create` and gets a 5-letter room code, a seat id and a
+   **secret token** (keep it to rejoin the seat). Friends send `room:join`.
+2. The host tunes the room with `room:configure` (AI count, free-for-all or
+   teams, turn timer) and sends `room:start`. Everyone connected becomes a human
+   player (`p1`, `p2`, ...); the AIs fill the rest.
+3. During planning each client sends `game:draft` (work in progress) and
+   `game:lockIn` (final plan). The server validates every message, then replies
+   with `game:view` (that player's redacted view) after every change.
+4. When the turn resolves everyone gets `game:turn` (the public events to
+   animate) and answers `game:ack` when done; the next turn starts when all
+   connected players have.
+5. A dropped player keeps their seat. `room:rejoin` with the seat id and token
+   restores their view, their draft and the turn being animated.
+
+Nothing a client sends is trusted: payloads are shape-checked
+(`protocol/validate.ts`), plans are checked against what the player really holds
+(`simulation/plans.ts`), and a connection that floods the server is dropped.
+
+Matches live in memory, so run **one instance** of the server; a restart ends
+running matches. Empty rooms are swept after a while, finished ones right away.
+
+Configuration (environment variables, see `apps/server/.env.example`):
+
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `PORT` | Port to listen on (Railway sets it) | `3001` |
+| `CLIENT_ORIGIN` | Allowed browser origin(s), comma separated | `http://localhost:5173` |
+| `MAX_ROOMS` | Most rooms alive at once | `100` |
+| `IDLE_ROOM_MINUTES` | How long an empty room is kept | `10` |
+
+`GET /health` returns `{"status":"ok","rooms":N,...}` (use it as the Railway
+health check). The server stops cleanly on `SIGTERM`.
 
 ## How it works
 

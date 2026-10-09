@@ -7,3 +7,8 @@ dist-ssr
 .DS_Store
 *.log
 .openchamber
+
+# Local environment overrides (see apps/server/.env.example)
+.env
+.env.*
+!.env.example

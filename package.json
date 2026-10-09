@@ -8,11 +8,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "pnpm --filter @pirate/client dev",
+    "dev": "pnpm --parallel --filter @pirate/client --filter @pirate/server dev",
     "dev:client": "pnpm --filter @pirate/client dev",
+    "dev:server": "pnpm --filter @pirate/server dev",
     "build": "pnpm -r build",
     "build:client": "pnpm --filter @pirate/client build",
+    "build:server": "pnpm --filter @pirate/server build",
     "start:client": "pnpm --filter @pirate/client start",
+    "start:server": "pnpm --filter @pirate/server start",
     "test": "pnpm -r test",
     "test:watch": "pnpm --filter @pirate/game-core test:watch",
     "typecheck": "pnpm -r typecheck"
