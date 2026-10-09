@@ -8,20 +8,37 @@ enemy sloop.
 This is a small, extensible foundation: a deterministic pure-TypeScript
 simulation, a Phaser presentation layer, and a mobile-first React HUD.
 
+## Repo layout
+
+This is a pnpm workspace (Node 22+; `corepack enable` or `npm i -g pnpm`).
+
+| Path | What it is |
+| --- | --- |
+| `packages/game-core` | Rules, simulation, AI, host controller, views and client logic. No DOM, React or Phaser. Imported as `@pirate/game-core/...`. |
+| `apps/client` | The browser app: React HUD + Phaser board (Vite). |
+| `apps/server` | *(coming)* the Node server that hosts online matches. |
+
 ## Quick start
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
+pnpm install
+pnpm dev           # client at http://localhost:5173
 ```
 
-Other scripts:
+Scripts (run from the repo root):
 
 ```bash
-npm run build      # typecheck + production build
-npm run test       # run simulation unit tests (Vitest)
-npm run typecheck  # tsc --noEmit
+pnpm dev             # client dev server (the server joins this once it exists)
+pnpm build           # typecheck + production build of every package
+pnpm test            # all unit tests (Vitest)
+pnpm typecheck       # tsc --noEmit in every package
+pnpm build:client    # build only the client  -> apps/client/dist
+pnpm start:client    # serve that build on $PORT (default 4173)
 ```
+
+`pnpm start:client` runs `apps/client/scripts/serve.mjs`, a tiny dependency-free
+static server (single-page-app fallback, long caching for hashed files only).
+It reads `PORT`, which is how Railway tells a service where to listen.
 
 ## How it works
 
@@ -39,30 +56,30 @@ npm run typecheck  # tsc --noEmit
 The **simulation is the single source of truth**, and it runs on the host. A
 player never gets the host's state, only a **view** of it:
 
-- `src/game/view/redact.ts` builds a `GameView` per player. The board is public
+- `packages/game-core/src/view/redact.ts` builds a `GameView` per player. The board is public
   (ships, hulls, obstacles) but other players' plans, tokens, cannonballs and
   settings are dropped. All a player learns about someone else's plan is an
   `activity` number (0 to 1) saying how busy it looks, weighted in
   `config/gameRules.ts`. The turn timer is sent as seconds remaining, not a
   timestamp, so clocks do not need to agree.
-- `src/game/client/GameClient.ts` owns the **draft plan**. Editing it (queueing
+- `packages/game-core/src/client/GameClient.ts` owns the **draft plan**. Editing it (queueing
   tokens, toggling cannons) is instant and local; the host is sent the draft
   (so it survives a reconnect and drives the activity bar) and, on lock-in, the
   final plan, which it **validates against what the player really holds**.
   Movement tokens are only spent when the turn resolves.
-- `src/game/client/GameTransport.ts` is everything a client needs from a host.
+- `packages/game-core/src/client/GameTransport.ts` is everything a client needs from a host.
   `LocalTransport` runs the host in the same page and behaves like a network
   connection (views out, whole plans in). A socket transport replaces it later;
   React and Phaser would not change.
-- React holds a read-only projection (`src/store/useGameUIStore.ts`) of the
+- React holds a read-only projection (`apps/client/src/store/useGameUIStore.ts`) of the
   client. Phaser holds only view objects in a `Map<EntityId, GameObject>`
-  (`src/phaser/views/EntityViewRegistry.ts`) and animates events.
+  (`apps/client/src/phaser/views/EntityViewRegistry.ts`) and animates events.
 
-`src/game/**` contains **no** React, Phaser or DOM.
+`packages/game-core/src/**` contains **no** React, Phaser or DOM.
 
 ### What you see
 
-- **Teams look different.** `src/presentation/teamStyle.ts` gives every team a
+- **Teams look different.** `apps/client/src/presentation/teamStyle.ts` gives every team a
   colour and ship sails (your team is always blue). Players have a `name` (from
   the `MatchConfig`); avatars show its initials.
 - **Avatars** float above each ship: a team-coloured badge, hull pips, an
@@ -80,18 +97,18 @@ player never gets the host's state, only a **view** of it:
 
 | Area | Path | Owns |
 | --- | --- | --- |
-| Domain | `src/game/domain/` | `GameState`, entities, events, positions, directions |
-| Simulation | `src/game/simulation/` | `createGame`, `resolveTurn` (4 phases), movement, collision, combat, damage, tokens |
-| Controller | `src/game/controller/GameController.ts` | Flow orchestration only (no rules) |
-| AI | `src/game/ai/` | `AIController` interface + `simpleAI` |
-| Config | `src/game/config/` | `matchConfig` (who plays, where, rules), `gameRules`, `shipTypes`, `weaponTypes` |
-| Events | `src/game/events/EventBus.ts` | Typed pub/sub |
-| Phaser | `src/phaser/` | Scenes, views, animations, camera |
-| React UI | `src/ui/`, `src/app/`, `src/store/` | HUD, planning sheet, screen |
+| Domain | `packages/game-core/src/domain/` | `GameState`, entities, events, positions, directions |
+| Simulation | `packages/game-core/src/simulation/` | `createGame`, `resolveTurn` (4 phases), movement, collision, combat, damage, tokens |
+| Controller | `packages/game-core/src/controller/GameController.ts` | Flow orchestration only (no rules) |
+| AI | `packages/game-core/src/ai/` | `AIController` interface + `simpleAI` |
+| Config | `packages/game-core/src/config/` | `matchConfig` (who plays, where, rules), `gameRules`, `shipTypes`, `weaponTypes` |
+| Events | `packages/game-core/src/events/EventBus.ts` | Typed pub/sub |
+| Phaser | `apps/client/src/phaser/` | Scenes, views, animations, camera |
+| React UI | `apps/client/src/ui/`, `apps/client/src/app/`, `apps/client/src/store/` | HUD, planning sheet, screen |
 
 ### Matches, players and teams
 
-A match is data: a `MatchConfig` (`src/game/config/matchConfig.ts`) lists the
+A match is data: a `MatchConfig` (`packages/game-core/src/config/matchConfig.ts`) lists the
 participants (player id, team, ship type, spawn, `human` or `ai`), the board
 size, obstacles, starting resources and the `rules` (turn timer, friendly
 fire). `createGame(config)` turns it into a `GameState`. There is no special
@@ -105,7 +122,7 @@ player on their own team.
 - `createSkirmishConfig({ humans, ais, teamMode, width, height })` builds any
   number of ships (spawns are spread around a ring facing the centre).
 - Try one from the URL: `?ais=3`, `?ais=3&teams=teams`, `?ais=5&w=30&h=30`
-  (see `src/app/matchFromUrl.ts`).
+  (see `apps/client/src/app/matchFromUrl.ts`).
 
 ### Core rules
 
@@ -168,19 +185,19 @@ player on their own team.
 
 ## Extending
 
-- **Add an event**: add a variant to `GameEvent` in `src/game/domain/GameEvent.ts`,
+- **Add an event**: add a variant to `GameEvent` in `packages/game-core/src/domain/GameEvent.ts`,
   emit it from a simulation step, and handle it in
-  `src/phaser/animation/EventAnimator.ts`.
-- **Add a ship type**: add an entry to `src/game/config/shipTypes.ts`.
-- **Add a weapon**: add an entry to `src/game/config/weaponTypes.ts` and mount it
+  `apps/client/src/phaser/animation/EventAnimator.ts`.
+- **Add a ship type**: add an entry to `packages/game-core/src/config/shipTypes.ts`.
+- **Add a weapon**: add an entry to `packages/game-core/src/config/weaponTypes.ts` and mount it
   via a ship type's `broadsides`.
-- **Tune cannonball economy**: edit `CANNON_*` in `src/game/config/gameRules.ts`
+- **Tune cannonball economy**: edit `CANNON_*` in `packages/game-core/src/config/gameRules.ts`
   (start, reload amount/interval), or replace `reloadedAmmo` in
-  `src/game/simulation/tokens.ts`. Cannonballs have no upper cap.
+  `packages/game-core/src/simulation/tokens.ts`. Cannonballs have no upper cap.
 - **Change the art**: assets are the Kenney "Pirate Pack" (CC0) in
-  `public/assets/kenney/`. Texture keys and frame ids are centralised in
-  `src/phaser/assets/AssetKeys.ts` and loaded in `BootScene.ts`; no simulation
-  code references filenames. See `src/assets/scallywag/README.md`.
+  `apps/client/public/assets/kenney/`. Texture keys and frame ids are centralised in
+  `apps/client/src/phaser/assets/AssetKeys.ts` and loaded in `BootScene.ts`; no simulation
+  code references filenames. See `apps/client/src/assets/scallywag/README.md`.
 
 ## Controls
 
@@ -206,7 +223,7 @@ minimum zoom always keeps the view filled with water (no empty space).
 
 ## Tests
 
-`src/game/**/__tests__` cover forward/turn movement, edge and obstacle blocking,
+`packages/game-core/src/**/__tests__` cover forward/turn movement, edge and obstacle blocking,
 token consumption and refund, cannon queueing and the shared cannonball pool
 (spend, out-of-ammo block, reload cadence), four-phase ordering, cannon range,
 first-blocking entity, misses, damage, destruction, and determinism. Phaser

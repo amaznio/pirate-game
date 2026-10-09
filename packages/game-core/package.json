@@ -1,0 +1,20 @@
+{
+  "name": "@pirate/game-core",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Rules, simulation, AI, host controller and client logic. No DOM, React or Phaser.",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}

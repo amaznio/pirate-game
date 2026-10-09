@@ -2,29 +2,19 @@
   "name": "pirate-game",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
+  "description": "Battle Navigation: a grid-based naval tactics game (client, server and shared game core).",
+  "packageManager": "pnpm@10.6.5",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "phaser": "^3.90.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "zustand": "^5.0.15"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^5.9.3",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.3"
+    "dev": "pnpm --filter @pirate/client dev",
+    "dev:client": "pnpm --filter @pirate/client dev",
+    "build": "pnpm -r build",
+    "build:client": "pnpm --filter @pirate/client build",
+    "start:client": "pnpm --filter @pirate/client start",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm --filter @pirate/game-core test:watch",
+    "typecheck": "pnpm -r typecheck"
   }
 }
