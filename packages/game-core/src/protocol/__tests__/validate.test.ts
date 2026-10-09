@@ -111,10 +111,26 @@ describe('parseRoomOptions', () => {
 
   it('applies valid changes on top of the base', () => {
     expect(
-      parseRoomOptions({ ais: 3, teamMode: 'teams', turnDurationSeconds: 45 }),
-    ).toEqual({ ais: 3, teamMode: 'teams', turnDurationSeconds: 45 });
-    expect(parseRoomOptions({ ais: 0 }, { ais: 5, teamMode: 'teams', turnDurationSeconds: 20 })).toEqual({
+      parseRoomOptions({
+        ais: 3,
+        aiDifficulty: 'easy',
+        teamMode: 'teams',
+        turnDurationSeconds: 45,
+      }),
+    ).toEqual({
+      ais: 3,
+      aiDifficulty: 'easy',
+      teamMode: 'teams',
+      turnDurationSeconds: 45,
+    });
+    expect(
+      parseRoomOptions(
+        { ais: 0 },
+        { ais: 5, aiDifficulty: 'hard', teamMode: 'teams', turnDurationSeconds: 20 },
+      ),
+    ).toEqual({
       ais: 0,
+      aiDifficulty: 'hard',
       teamMode: 'teams',
       turnDurationSeconds: 20,
     });
@@ -130,6 +146,8 @@ describe('parseRoomOptions', () => {
     { ais: 1.5 },
     { ais: '2' },
     { teamMode: 'chaos' },
+    { aiDifficulty: 'impossible' },
+    { aiDifficulty: 3 },
     { turnDurationSeconds: 2 },
     { turnDurationSeconds: 9999 },
     { turnDurationSeconds: 'fast' },

@@ -3,6 +3,7 @@ import {
   createDuelConfig,
   createSkirmishConfig,
   generateSpawns,
+  withAiDifficulty,
 } from '../matchConfig';
 import { createGame } from '../../simulation/createGame';
 
@@ -145,5 +146,52 @@ describe('player names', () => {
       'Bot 3',
       'Bot 4',
     ]);
+  });
+});
+
+describe('AI difficulty', () => {
+  it('defaults to normal for everyone', () => {
+    const state = createGame(createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' }));
+
+    expect(Object.values(state.players).map((player) => player.aiDifficulty)).toEqual([
+      'normal',
+      'normal',
+      'normal',
+    ]);
+  });
+
+  it('is set for the whole match, humans included (it is what sails their ship if they go away)', () => {
+    const state = createGame(
+      createSkirmishConfig({ humans: 2, ais: 1, teamMode: 'ffa', aiDifficulty: 'hard' }),
+    );
+
+    for (const player of Object.values(state.players)) {
+      expect(player.aiDifficulty).toBe('hard');
+    }
+  });
+
+  it('applies to the classic duel too', () => {
+    const state = createGame(createDuelConfig({ aiDifficulty: 'easy' }));
+
+    expect(state.players.enemy.aiDifficulty).toBe('easy');
+  });
+
+  it('can differ per ship', () => {
+    const config = createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' });
+    const state = createGame({
+      ...config,
+      participants: config.participants.map((participant, index) =>
+        index === 1 ? { ...participant, aiDifficulty: 'easy' as const } : participant,
+      ),
+    });
+
+    expect(state.players.p2.aiDifficulty).toBe('easy');
+    expect(state.players.p3.aiDifficulty).toBe('normal');
+  });
+
+  it('can be applied to an existing config', () => {
+    const config = withAiDifficulty(createDuelConfig(), 'hard');
+
+    expect(config.participants.every((participant) => participant.aiDifficulty === 'hard')).toBe(true);
   });
 });

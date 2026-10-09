@@ -330,6 +330,7 @@ export class Room {
     const base = createSkirmishConfig({
       humans: players.length,
       ais: this.options.ais,
+      aiDifficulty: this.options.aiDifficulty,
       teamMode: this.options.teamMode,
       rules: {
         ...DEFAULT_RULES,

@@ -194,7 +194,7 @@ player never gets the host's state, only a **view** of it:
 | Domain | `packages/game-core/src/domain/` | `GameState`, entities, events, positions, directions |
 | Simulation | `packages/game-core/src/simulation/` | `createGame`, `resolveTurn` (4 phases), movement, collision, combat, damage, tokens |
 | Controller | `packages/game-core/src/controller/GameController.ts` | Flow orchestration only (no rules) |
-| AI | `packages/game-core/src/ai/` | `AIController` interface + `simpleAI` |
+| AI | `packages/game-core/src/ai/` | `AIController` interface, the planner (`simpleAI`) and the difficulty profiles |
 | Config | `packages/game-core/src/config/` | `matchConfig` (who plays, where, rules), `gameRules`, `shipTypes`, `weaponTypes` |
 | Events | `packages/game-core/src/events/EventBus.ts` | Typed pub/sub |
 | Phaser | `apps/client/src/phaser/` | Scenes, views, animations, camera |
@@ -217,6 +217,34 @@ player on their own team.
   number of ships (spawns are spread around a ring facing the centre).
 - Try one from the URL: `?ais=3`, `?ais=3&teams=teams`, `?ais=5&w=30&h=30`
   (see `apps/client/src/app/matchFromUrl.ts`).
+
+### The AI and its difficulty levels
+
+Every computer-sailed ship plans like this (`packages/game-core/src/ai/`): it
+looks at **every plan it can afford** with the movement tokens it actually holds
+(hold, or play a token, in each of the four phases: at most 256 plans) and plays
+the best one. A plan is worth the shots that would land, minus how many moves it
+still needs to reach a *firing position* (a square and heading from which a
+broadside hits the target; found with a breadth-first search over the real
+movement rules, so it knows to zig-zag round a target and never gets stuck),
+minus what its tokens cost. It assumes the other ships stay where they are.
+
+| Level | How it plays |
+| --- | --- |
+| **Easy** | Spends at most 2 moves a turn, often picks one of its 6 best plans instead of the best, and lets about 4 shots in 10 go by. Still heads for you. |
+| **Normal** | Plans well and hunts you down; about 1 turn in 10 it picks a worse plan. |
+| **Hard** | Always plays its best plan, and also avoids squares your broadsides cover and the board's edges. |
+
+A level is only a profile of numbers (`ai/profiles.ts`), so tuning one, or adding
+another, is an edit there. The AI is deterministic: its "mistakes" come from a
+generator seeded by the match, turn and player, so the same situation always
+gives the same plan. Over 480 full simulated matches Hard beat Normal 43 to 0
+(the rest were mutual kills), Hard beat Easy 65 to 9, Normal beat Easy 64 to 9,
+and each level was even against itself.
+
+Choose the level in the menu (*Play against the computer*), in the online lobby
+(*AI skill*, host only), or with `?difficulty=hard`. It is stored on every
+player, humans included: it is what sails a human's ship while they are away.
 
 ### Core rules
 

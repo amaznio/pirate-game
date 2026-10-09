@@ -54,6 +54,7 @@ describe('redactState', () => {
     // The only place p2 appears is as a public summary.
     expect(Object.keys(view.players.p2).sort()).toEqual([
       'activity',
+      'aiDifficulty',
       'controller',
       'id',
       'lockedIn',
@@ -153,5 +154,32 @@ describe('viewToState', () => {
 
     expect(rebuilt.players.p2.ammo).toBe(0);
     expect(rebuilt.players.p2.queue.every((slot) => slot === null)).toBe(true);
+  });
+});
+
+describe('AI difficulty in the view', () => {
+  const state = (): GameState => {
+    const base = createGame(
+      createSkirmishConfig({ humans: 2, ais: 1, teamMode: 'ffa', aiDifficulty: 'hard' }),
+    );
+    return base;
+  };
+
+  it('shows how well a computer-sailed ship plays, and nothing for a human', () => {
+    const view = redactState(state(), 'p1', null);
+
+    expect(view.players.p3.aiDifficulty).toBe('hard');
+    expect(view.players.p1.aiDifficulty).toBeNull();
+    expect(view.players.p2.aiDifficulty).toBeNull();
+  });
+
+  it('shows it for a human ship once an AI has taken over', () => {
+    const taken = state();
+    const away: GameState = {
+      ...taken,
+      players: { ...taken.players, p2: { ...taken.players.p2, controller: 'ai' } },
+    };
+
+    expect(redactState(away, 'p1', null).players.p2.aiDifficulty).toBe('hard');
   });
 });

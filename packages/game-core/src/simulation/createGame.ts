@@ -1,4 +1,8 @@
-import type { GameState, PlayerState } from '../domain/GameState';
+import {
+  DEFAULT_AI_DIFFICULTY,
+  type GameState,
+  type PlayerState,
+} from '../domain/GameState';
 import type { Obstacle } from '../domain/Board';
 import type { EntityId, PlayerId, TeamId } from '../domain/Entity';
 import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
@@ -80,6 +84,7 @@ export function createGame(config: MatchConfig = createDuelConfig()): GameState 
       teamId: participant.teamId,
       shipId: id,
       controller: participant.controller,
+      aiDifficulty: participant.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
       tokens: cloneInventory(config.startingTokens),
       ammo: config.startingAmmo,
       queue: emptyQueue(),

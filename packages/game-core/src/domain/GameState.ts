@@ -11,6 +11,13 @@ import type { MatchRules } from './Rules';
 
 export type ControllerKind = 'human' | 'ai';
 
+/** How well an AI plays. */
+export type AiDifficulty = 'easy' | 'normal' | 'hard';
+
+export const AI_DIFFICULTIES: readonly AiDifficulty[] = ['easy', 'normal', 'hard'];
+
+export const DEFAULT_AI_DIFFICULTY: AiDifficulty = 'normal';
+
 /**
  * Everything one participant owns: their resources and their plan for the
  * current turn. Keyed by PlayerId in GameState, so a match can have any number
@@ -24,6 +31,11 @@ export interface PlayerState {
   /** The single ship this player commands. */
   readonly shipId: EntityId;
   readonly controller: ControllerKind;
+  /**
+   * How well this ship is sailed whenever an AI is in command: a computer
+   * opponent always, a human only while they are away.
+   */
+  readonly aiDifficulty: AiDifficulty;
   readonly tokens: TokenInventory;
   /** Cannonballs in the shared pool (used by either broadside). */
   readonly ammo: number;

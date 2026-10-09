@@ -1,6 +1,6 @@
 import type { PlayerId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
-import type { TokenGenerationConfig } from '../domain/GameState';
+import type { AiDifficulty, TokenGenerationConfig } from '../domain/GameState';
 import type { PlayerActions } from '../domain/TurnResult';
 import type { GameView } from '../view/GameView';
 
@@ -18,6 +18,8 @@ export type TeamMode = 'ffa' | 'teams';
 export interface RoomOptions {
   /** AI-controlled ships to add. */
   readonly ais: number;
+  /** How well the AIs play. */
+  readonly aiDifficulty: AiDifficulty;
   readonly teamMode: TeamMode;
   /** Planning time per turn in seconds, or null for no timer. */
   readonly turnDurationSeconds: number | null;
@@ -33,6 +35,7 @@ export const ROOM_LIMITS = {
 
 export const DEFAULT_ROOM_OPTIONS: RoomOptions = {
   ais: 1,
+  aiDifficulty: 'normal',
   teamMode: 'ffa',
   turnDurationSeconds: 30,
 };

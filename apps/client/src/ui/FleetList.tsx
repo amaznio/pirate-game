@@ -1,5 +1,6 @@
 import { useGameUIStore } from '../store/useGameUIStore';
 import { HullBar } from './ShipStatus';
+import { aiLevelLabel } from './menu/aiLevels';
 
 interface FleetListProps {
   /** Tighter rows for the small mobile HUD. */
@@ -26,6 +27,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       alive: hull > 0,
       you: true,
       bot: false,
+      difficulty: null,
     },
     ...others.map((other) => ({
       id: other.playerId,
@@ -36,6 +38,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       alive: other.alive,
       you: false,
       bot: other.bot,
+      difficulty: other.difficulty,
     })),
   ];
 
@@ -63,7 +66,11 @@ export function FleetList({ compact = false }: FleetListProps) {
           {row.bot && (
             <span
               className="rounded bg-parchment/15 px-1 text-[9px] font-bold uppercase tracking-wide text-parchment/70"
-              title="An AI is sailing this ship"
+              title={
+                row.difficulty
+                  ? `An AI is sailing this ship (${aiLevelLabel(row.difficulty)})`
+                  : 'An AI is sailing this ship'
+              }
             >
               AI
             </span>

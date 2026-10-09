@@ -124,3 +124,37 @@ export function Stepper({
     </div>
   );
 }
+
+/** A row of mutually exclusive choices. */
+export function Segmented<T extends string | number | null>({
+  value,
+  choices,
+  onChange,
+  disabled,
+}: {
+  value: T;
+  choices: ReadonlyArray<{ label: string; value: T }>;
+  onChange: (value: T) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {choices.map((choice) => (
+        <button
+          key={choice.label}
+          type="button"
+          disabled={disabled}
+          aria-pressed={choice.value === value}
+          onClick={() => onChange(choice.value)}
+          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition active:scale-95 disabled:cursor-default ${
+            choice.value === value
+              ? 'bg-parchment text-ink'
+              : 'bg-parchment/10 text-parchment hover:bg-parchment/20 disabled:hover:bg-parchment/10'
+          }`}
+        >
+          {choice.label}
+        </button>
+      ))}
+    </div>
+  );
+}

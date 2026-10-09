@@ -697,3 +697,67 @@ describe('leaving a room', () => {
     expect(lobby.seats).toHaveLength(2);
   });
 });
+
+describe('AI difficulty', () => {
+  it('is part of the room options, defaults to normal, and everyone sees changes', async () => {
+    const host = track(await createRoom(server.port, 'Anne'));
+    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    expect(host.seat.lobby.options.aiDifficulty).toBe('normal');
+
+    const result = await host.client.request<{ lobby: LobbyState }>('room:configure', {
+      aiDifficulty: 'hard',
+    });
+
+    expectOk(result);
+    expect(result.lobby.options.aiDifficulty).toBe('hard');
+    const seen = await guest.client.waitFor<LobbyState>(
+      'lobby:update',
+      (lobby) => lobby.options.aiDifficulty === 'hard',
+    );
+    expect(seen.options.ais).toBe(1);
+  });
+
+  it('refuses a difficulty that does not exist, and keeps the old one', async () => {
+    const host = track(await createRoom(server.port, 'Anne', { aiDifficulty: 'easy' }));
+
+    expect(await host.client.request('room:configure', { aiDifficulty: 'impossible' })).toMatchObject({
+      ok: false,
+      error: 'bad_request',
+    });
+    const retry = await host.client.request<{ lobby: LobbyState }>('room:configure', {});
+    expectOk(retry);
+    expect(retry.lobby.options.aiDifficulty).toBe('easy');
+  });
+
+  it('is used for the computer ships in the match, and is not shown for humans', async () => {
+    const host = track(
+      await createRoom(server.port, 'Anne', { ais: 2, aiDifficulty: 'hard', turnDurationSeconds: null }),
+    );
+    expectOk(await host.client.request('room:start'));
+
+    const view = await host.client.waitFor<GameView>('game:view');
+
+    expect(view.players.p1.aiDifficulty).toBeNull();
+    expect(view.players.p2.aiDifficulty).toBe('hard');
+    expect(view.players.p3.aiDifficulty).toBe('hard');
+  });
+
+  it('is also what sails a human ship while they are away', async () => {
+    await server.close();
+    server = await startServer({ awayGraceMs: 150 });
+    const host = track(
+      await createRoom(server.port, 'Anne', { ais: 0, aiDifficulty: 'easy', turnDurationSeconds: null }),
+    );
+    const guest = track(await joinRoom(server.port, host.seat.roomId, 'Bart'));
+    expectOk(await host.client.request('room:start'));
+    await host.client.waitFor<GameView>('game:view');
+
+    guest.client.close();
+
+    const view = await host.client.waitFor<GameView>(
+      'game:view',
+      (candidate) => candidate.players.p2.controller === 'ai',
+    );
+    expect(view.players.p2.aiDifficulty).toBe('easy');
+  });
+});

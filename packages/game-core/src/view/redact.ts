@@ -1,4 +1,8 @@
-import type { GameState, PlayerState } from '../domain/GameState';
+import {
+  DEFAULT_AI_DIFFICULTY,
+  type GameState,
+  type PlayerState,
+} from '../domain/GameState';
 import type { PlayerId } from '../domain/Entity';
 import type { PlayerActions } from '../domain/TurnResult';
 import {
@@ -59,6 +63,7 @@ export function redactState(
       teamId: player.teamId,
       shipId: player.shipId,
       controller: player.controller,
+      aiDifficulty: player.controller === 'ai' ? player.aiDifficulty : null,
       lockedIn: player.lockedIn,
       activity: planActivity({
         movement: player.queue,
@@ -105,6 +110,7 @@ export function viewToState(view: GameView, draft?: PlayerActions): GameState {
             teamId: pub.teamId,
             shipId: pub.shipId,
             controller: pub.controller,
+            aiDifficulty: pub.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
             tokens: emptyTokenInventory(),
             ammo: 0,
             queue: emptyQueue(),

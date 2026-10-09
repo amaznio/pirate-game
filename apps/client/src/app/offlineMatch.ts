@@ -7,6 +7,10 @@ import {
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
+import {
+  DEFAULT_AI_DIFFICULTY,
+  type AiDifficulty,
+} from '@pirate/game-core/domain/GameState';
 
 /**
  * A match hosted in this page. The player still plays through a client over a
@@ -35,11 +39,15 @@ export function startOfflineMatch(config: MatchConfig): OfflineMatch {
 }
 
 /** The match for "play against N AI opponents": the classic duel for one. */
-export function offlineConfig(opponents: number, name: string): MatchConfig {
+export function offlineConfig(
+  opponents: number,
+  name: string,
+  aiDifficulty: AiDifficulty = DEFAULT_AI_DIFFICULTY,
+): MatchConfig {
   const base =
     opponents <= 1
-      ? createDuelConfig()
-      : createSkirmishConfig({ humans: 1, ais: opponents, teamMode: 'ffa' });
+      ? createDuelConfig({ aiDifficulty })
+      : createSkirmishConfig({ humans: 1, ais: opponents, teamMode: 'ffa', aiDifficulty });
   const trimmed = name.trim();
   if (!trimmed) {
     return base;

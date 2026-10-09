@@ -5,15 +5,19 @@ import {
   Notice,
   PrimaryButton,
   SecondaryButton,
+  Segmented,
   Stepper,
 } from './MenuLayout';
+import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
+import { useStoredDifficulty } from './useStoredDifficulty';
 import { useStoredName } from './useStoredName';
+import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import { onlineSession, useOnlineSession } from '../../app/onlineSession';
 
 interface MainMenuProps {
   /** A room code from the page link (?room=ABCDE), to prefill the join box. */
   initialRoomCode?: string;
-  onPlayOffline: (opponents: number, name: string) => void;
+  onPlayOffline: (opponents: number, name: string, difficulty: AiDifficulty) => void;
 }
 
 /** The first screen: play against the computer, or play with friends online. */
@@ -21,6 +25,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const session = useOnlineSession();
   const [name, setName] = useStoredName();
   const [opponents, setOpponents] = useState(1);
+  const [difficulty, setDifficulty] = useStoredDifficulty();
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
   const [busy, setBusy] = useState(false);
 
@@ -61,7 +66,17 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
             onChange={setOpponents}
           />
         </div>
-        <PrimaryButton onClick={() => onPlayOffline(opponents, cleanName)}>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">Skill</span>
+          <Segmented
+            value={difficulty}
+            disabled={false}
+            onChange={setDifficulty}
+            choices={AI_LEVELS.map((level) => ({ label: level.label, value: level.value }))}
+          />
+          <p className="text-xs text-parchment/50">{aiLevelBlurb(difficulty)}</p>
+        </div>
+        <PrimaryButton onClick={() => onPlayOffline(opponents, cleanName, difficulty)}>
           Set sail
         </PrimaryButton>
       </Card>

@@ -1,6 +1,7 @@
 import type { Board, Obstacle } from '../domain/Board';
 import type { EntityId, PlayerId, TeamId } from '../domain/Entity';
 import type {
+  AiDifficulty,
   ControllerKind,
   GameStatus,
   Outcome,
@@ -16,6 +17,8 @@ export interface PublicPlayerView {
   readonly teamId: TeamId;
   readonly shipId: EntityId;
   readonly controller: ControllerKind;
+  /** How well the AI sails this ship, or null while a human is in command. */
+  readonly aiDifficulty: AiDifficulty | null;
   readonly lockedIn: boolean;
   /**
    * How busy their plan looks, from 0 (nothing planned) to 1 (full). It says

@@ -2,7 +2,11 @@ import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import type { PlayerId, TeamId } from '../domain/Entity';
 import type { TokenInventory } from '../domain/Action';
-import type { ControllerKind } from '../domain/GameState';
+import {
+  DEFAULT_AI_DIFFICULTY,
+  type AiDifficulty,
+  type ControllerKind,
+} from '../domain/GameState';
 import type { MatchRules } from '../domain/Rules';
 import {
   BOARD_HEIGHT,
@@ -27,6 +31,8 @@ export interface ParticipantConfig {
   readonly shipTypeId: string;
   readonly spawn: SpawnConfig;
   readonly controller: ControllerKind;
+  /** How well an AI sails this ship. Defaults to normal. */
+  readonly aiDifficulty?: AiDifficulty;
 }
 
 export interface ObstacleConfig {
@@ -59,11 +65,30 @@ export const DEFAULT_RULES: MatchRules = {
 
 const DEFAULT_SHIP_TYPE = 'sloop';
 
-/** The standard 1v1: you (bottom) against one AI (top) on the default board. */
-export function createDuelConfig(
-  overrides: Partial<Pick<MatchConfig, 'seed' | 'rules'>> = {},
+/**
+ * The same AI difficulty for every ship in the match. Humans get it too: it is
+ * what sails their ship if they go away.
+ */
+export function withAiDifficulty(
+  config: MatchConfig,
+  aiDifficulty: AiDifficulty,
 ): MatchConfig {
   return {
+    ...config,
+    participants: config.participants.map((participant) => ({
+      ...participant,
+      aiDifficulty,
+    })),
+  };
+}
+
+/** The standard 1v1: you (bottom) against one AI (top) on the default board. */
+export function createDuelConfig(
+  overrides: Partial<Pick<MatchConfig, 'seed' | 'rules'>> & {
+    aiDifficulty?: AiDifficulty;
+  } = {},
+): MatchConfig {
+  const config: MatchConfig = {
     seed: overrides.seed ?? 1,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
     obstacles: OBSTACLE_LAYOUT,
@@ -89,6 +114,7 @@ export function createDuelConfig(
     startingTokens: INITIAL_TOKEN_POOL,
     startingAmmo: CANNON_STARTING_AMMO,
   };
+  return withAiDifficulty(config, overrides.aiDifficulty ?? DEFAULT_AI_DIFFICULTY);
 }
 
 export interface SkirmishOptions {
@@ -100,6 +126,8 @@ export interface SkirmishOptions {
   readonly height?: number;
   readonly seed?: number;
   readonly rules?: MatchRules;
+  /** How well the AIs play (and what sails a human's ship while they are away). */
+  readonly aiDifficulty?: AiDifficulty;
 }
 
 /** Cells in from the board edge where generated spawns are placed. */
@@ -224,13 +252,16 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
       !spawnCells.has(`${obstacle.x},${obstacle.y}`),
   );
 
-  return {
-    seed: options.seed ?? 1,
-    board: { width, height },
-    obstacles,
-    participants,
-    rules: options.rules ?? DEFAULT_RULES,
-    startingTokens: INITIAL_TOKEN_POOL,
-    startingAmmo: CANNON_STARTING_AMMO,
-  };
+  return withAiDifficulty(
+    {
+      seed: options.seed ?? 1,
+      board: { width, height },
+      obstacles,
+      participants,
+      rules: options.rules ?? DEFAULT_RULES,
+      startingTokens: INITIAL_TOKEN_POOL,
+      startingAmmo: CANNON_STARTING_AMMO,
+    },
+    options.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
+  );
 }

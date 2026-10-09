@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameStatus } from '@pirate/game-core/domain/GameState';
+import type { AiDifficulty, GameStatus } from '@pirate/game-core/domain/GameState';
 import type { ClientSnapshot, GameClient } from '@pirate/game-core/client/GameClient';
 import type {
   ActionSlot,
@@ -25,6 +25,8 @@ export interface ShipSummary {
   alive: boolean;
   /** An AI is sailing it (a computer opponent, or a player who is away). */
   bot: boolean;
+  /** How well that AI plays, when one is sailing it. */
+  difficulty: AiDifficulty | null;
 }
 
 export type MatchResult = 'win' | 'loss' | 'draw';
@@ -105,6 +107,7 @@ function snapshot({
         ally: player.teamId === self.teamId,
         alive: (other?.hp ?? 0) > 0,
         bot: player.controller === 'ai',
+        difficulty: player.aiDifficulty,
       };
     });
 

@@ -3,7 +3,11 @@ import {
   MOVEMENT_ACTIONS,
   type MovementAction,
 } from '../domain/Action';
-import type { TokenGenerationConfig } from '../domain/GameState';
+import {
+  AI_DIFFICULTIES,
+  type AiDifficulty,
+  type TokenGenerationConfig,
+} from '../domain/GameState';
 import type { PlayerActions } from '../domain/TurnResult';
 import {
   DEFAULT_ROOM_OPTIONS,
@@ -133,7 +137,7 @@ export function parseRoomOptions(
     return null;
   }
 
-  let { ais, teamMode, turnDurationSeconds } = base;
+  let { ais, aiDifficulty, teamMode, turnDurationSeconds } = base;
 
   if ('ais' in value) {
     if (
@@ -145,6 +149,16 @@ export function parseRoomOptions(
       return null;
     }
     ais = value.ais;
+  }
+
+  if ('aiDifficulty' in value) {
+    if (
+      typeof value.aiDifficulty !== 'string' ||
+      !(AI_DIFFICULTIES as readonly string[]).includes(value.aiDifficulty)
+    ) {
+      return null;
+    }
+    aiDifficulty = value.aiDifficulty as AiDifficulty;
   }
 
   if ('teamMode' in value) {
@@ -170,5 +184,5 @@ export function parseRoomOptions(
     }
   }
 
-  return { ais, teamMode, turnDurationSeconds };
+  return { ais, aiDifficulty, teamMode, turnDurationSeconds };
 }

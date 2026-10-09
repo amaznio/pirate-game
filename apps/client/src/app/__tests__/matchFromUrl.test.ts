@@ -26,3 +26,26 @@ describe('matchConfigFromSearch', () => {
     expect(matchConfigFromSearch('?ais=3&w=4&h=4').participants).toHaveLength(2);
   });
 });
+
+describe('AI difficulty from the URL', () => {
+  const levels = (search: string) =>
+    matchConfigFromSearch(search).participants.map((participant) => participant.aiDifficulty);
+
+  it('is normal unless asked for', () => {
+    expect(levels('')).toEqual(['normal', 'normal']);
+    expect(levels('?ais=2')).toEqual(['normal', 'normal', 'normal']);
+  });
+
+  it('can be set for a skirmish and for the duel', () => {
+    expect(levels('?ais=2&difficulty=hard')).toEqual(['hard', 'hard', 'hard']);
+    expect(levels('?difficulty=easy')).toEqual(['easy', 'easy']);
+  });
+
+  it('ignores a level that does not exist', () => {
+    expect(levels('?ais=1&difficulty=impossible')).toEqual(['normal', 'normal']);
+  });
+
+  it('survives falling back to the duel when the board is too small', () => {
+    expect(levels('?ais=3&w=4&h=4&difficulty=hard')).toEqual(['hard', 'hard']);
+  });
+});

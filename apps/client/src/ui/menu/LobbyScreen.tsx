@@ -11,8 +11,10 @@ import {
   Notice,
   PrimaryButton,
   SecondaryButton,
+  Segmented,
   Stepper,
 } from './MenuLayout';
+import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
 import { onlineSession, useOnlineSession } from '../../app/onlineSession';
 
 const TIMER_CHOICES: ReadonlyArray<{ label: string; seconds: number | null }> = [
@@ -23,39 +25,6 @@ const TIMER_CHOICES: ReadonlyArray<{ label: string; seconds: number | null }> = 
   { label: '60s', seconds: 60 },
   { label: '90s', seconds: 90 },
 ];
-
-function Segmented<T extends string | number | null>({
-  value,
-  choices,
-  onChange,
-  disabled,
-}: {
-  value: T;
-  choices: ReadonlyArray<{ label: string; value: T }>;
-  onChange: (value: T) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {choices.map((choice) => (
-        <button
-          key={choice.label}
-          type="button"
-          disabled={disabled}
-          aria-pressed={choice.value === value}
-          onClick={() => onChange(choice.value)}
-          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition active:scale-95 disabled:cursor-default ${
-            choice.value === value
-              ? 'bg-parchment text-ink'
-              : 'bg-parchment/10 text-parchment hover:bg-parchment/20 disabled:hover:bg-parchment/10'
-          }`}
-        >
-          {choice.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /** A room that has not started yet: who is here, the options, and Start. */
 export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
@@ -156,6 +125,16 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
             disabled={!isHost}
             onChange={(ais) => set({ ais })}
           />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">AI skill</span>
+          <Segmented
+            value={options.aiDifficulty}
+            disabled={!isHost}
+            onChange={(aiDifficulty) => set({ aiDifficulty })}
+            choices={AI_LEVELS.map((level) => ({ label: level.label, value: level.value }))}
+          />
+          <p className="text-xs text-parchment/50">{aiLevelBlurb(options.aiDifficulty)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-parchment">Teams</span>
