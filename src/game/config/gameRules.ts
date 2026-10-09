@@ -64,3 +64,13 @@ export const AUTO_TOKEN_ROTATION: readonly MovementAction[] = [
 export const CANNON_STARTING_AMMO = 3;
 export const CANNON_RELOAD_AMOUNT = 1;
 export const CANNON_RELOAD_INTERVAL_TURNS = 1;
+
+/**
+ * How much each kind of planned action adds to the "activity" bar other
+ * players can see above a ship. The bar only shows how busy a plan is, never
+ * what it contains. Tune these (or replace planActivity in game/view/redact.ts)
+ * to change how much a plan gives away, e.g. weight cannons at 0 so a ship that
+ * is only planning to fire looks idle.
+ */
+export const ACTIVITY_MOVE_WEIGHT = 1;
+export const ACTIVITY_CANNON_WEIGHT = 0.5;

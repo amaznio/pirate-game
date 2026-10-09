@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { GameState, GameStatus } from '../game/domain/GameState';
+import type { GameStatus } from '../game/domain/GameState';
+import type { ClientSnapshot } from '../game/client/GameClient';
 import type {
   ActionSlot,
   CannonQueue,
@@ -8,7 +9,7 @@ import type {
   TokenInventory,
 } from '../game/domain/Action';
 import type { PlayerId } from '../game/domain/Entity';
-import { gameController } from '../app/gameInstance';
+import { gameClient } from '../app/gameInstance';
 
 /** Another ship in the match, as the local player sees it (public info only). */
 export interface ShipSummary {
@@ -68,87 +69,94 @@ interface GameUIStore extends GameUISnapshot {
   restart: () => void;
 }
 
-/** Derives the read-only UI projection from authoritative game state. */
-function snapshot(state: GameState): GameUISnapshot {
-  const viewerId = gameController.getViewerId();
-  const viewer = state.players[viewerId];
-  const ship = state.ships[viewer.shipId];
+/** Derives the read-only UI projection from the client's view and draft. */
+function snapshot({
+  view,
+  draft,
+  deadline,
+  canEdit,
+  tokensLeft,
+}: ClientSnapshot): GameUISnapshot {
+  const self = view.self;
+  const ship = view.ships[self.shipId];
 
-  const others: ShipSummary[] = Object.values(state.players)
-    .filter((player) => player.id !== viewerId)
+  const others: ShipSummary[] = Object.values(view.players)
+    .filter((player) => player.id !== view.viewerId)
     .map((player) => {
-      const other = state.ships[player.shipId];
+      const other = view.ships[player.shipId];
       return {
         playerId: player.id,
         hull: other?.hp ?? 0,
         maxHull: other?.maxHp ?? 0,
-        ally: player.teamId === viewer.teamId,
+        ally: player.teamId === self.teamId,
       };
     });
 
   let result: MatchResult | null = null;
-  if (state.outcome) {
+  if (view.outcome) {
     result =
-      state.outcome.kind === 'draw'
+      view.outcome.kind === 'draw'
         ? 'draw'
-        : state.outcome.teamId === viewer.teamId
+        : view.outcome.teamId === self.teamId
           ? 'win'
           : 'loss';
   }
 
   return {
-    turn: state.turn,
-    status: state.status,
+    turn: view.turn,
+    status: view.status,
     hull: ship?.hp ?? 0,
     maxHull: ship?.maxHp ?? 0,
     others,
-    tokens: { ...viewer.tokens },
-    queue: [...viewer.queue],
-    cannonQueue: viewer.cannonQueue.map((slot) => ({ ...slot })),
-    ammo: viewer.ammo,
-    auto: viewer.tokenGeneration.auto,
-    requested: viewer.tokenGeneration.requested,
-    lockedIn: viewer.lockedIn,
-    waitingFor: Object.values(state.players).filter(
+    tokens: tokensLeft,
+    queue: [...draft.movement],
+    cannonQueue: draft.cannons,
+    ammo: self.ammo,
+    auto: self.tokenGeneration.auto,
+    requested: self.tokenGeneration.requested,
+    lockedIn: self.lockedIn,
+    waitingFor: Object.values(view.players).filter(
       (player) =>
         player.controller === 'human' &&
-        player.id !== viewerId &&
+        player.id !== view.viewerId &&
         !player.lockedIn,
     ).length,
-    canPlan: state.status === 'planning' && !viewer.lockedIn,
+    canPlan: canEdit,
     result,
-    deadline: gameController.getPlanningDeadline(),
-    turnDurationSeconds: state.rules.turnDurationSeconds ?? 0,
+    deadline,
+    turnDurationSeconds: view.rules.turnDurationSeconds ?? 0,
   };
 }
 
 export const useGameUIStore = create<GameUIStore>(() => ({
-  ...snapshot(gameController.getState()),
+  ...snapshot(gameClient.getSnapshot()),
   activeSlot: null,
   panelOpen: true,
   setPanelOpen: (open) => useGameUIStore.setState({ panelOpen: open }),
   setActiveSlot: (slot) => useGameUIStore.setState({ activeSlot: slot }),
   queuePlayerAction: (action) => {
     const { activeSlot } = useGameUIStore.getState();
-    gameController.queuePlayerAction(action, activeSlot ?? undefined);
+    gameClient.queueToken(action, activeSlot ?? undefined);
     useGameUIStore.setState({ activeSlot: null });
   },
-  removePlayerAction: (index) => gameController.removePlayerAction(index),
-  toggleCannon: (phase, side) => gameController.togglePlayerCannon(phase, side),
+  removePlayerAction: (index) => gameClient.removeToken(index),
+  toggleCannon: (phase, side) => gameClient.toggleCannon(phase, side),
   clearPlayerActions: () => {
-    gameController.clearPlayerActions();
+    gameClient.clearDraft();
     useGameUIStore.setState({ activeSlot: null });
   },
-  setAuto: (auto) => gameController.setAutoTokenGeneration(auto),
-  setRequested: (token) => gameController.setRequestedTokenType(token),
-  lockIn: () => gameController.lockInTurn(),
-  passTurn: () => gameController.lockInTurn(),
-  restart: () => gameController.startNewGame(),
+  setAuto: (auto) => gameClient.setTokenGeneration({ auto }),
+  setRequested: (token) => gameClient.setTokenGeneration({ requested: token }),
+  lockIn: () => gameClient.lockIn(),
+  passTurn: () => gameClient.lockIn(),
+  restart: () => gameClient.restart(),
 }));
 
-gameController.subscribe((state) => {
-  const next = snapshot(state);
+gameClient.subscribe((clientSnapshot) => {
+  const next = snapshot(clientSnapshot);
   useGameUIStore.setState(
-    state.status === 'planning' ? next : { ...next, activeSlot: null },
+    clientSnapshot.view.status === 'planning'
+      ? next
+      : { ...next, activeSlot: null },
   );
 });

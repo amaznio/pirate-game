@@ -3,6 +3,7 @@ import { EventBus } from '../../events/EventBus';
 import { GameController } from '../GameController';
 import { createGame } from '../../simulation/createGame';
 import type { GameState } from '../../domain/GameState';
+import type { PlayerActions } from '../../domain/TurnResult';
 import { pos } from '../../domain/Position';
 import { createSkirmishConfig } from '../../config/matchConfig';
 
@@ -30,336 +31,341 @@ function gameOverSetup(): GameState {
   };
 }
 
-function makeController(
+const NO_FIRE = Array.from({ length: 4 }, () => ({ left: false, right: false }));
+
+function plan(
+  movement: PlayerActions['movement'] = [null, null, null, null],
+  cannons: PlayerActions['cannons'] = NO_FIRE,
+): PlayerActions {
+  return { movement, cannons };
+}
+
+/** Fires the given broadsides in phase 0. */
+function firePlan(left: boolean, right: boolean): PlayerActions {
+  return plan(undefined, [{ left, right }, ...NO_FIRE.slice(1)]);
+}
+
+/** A host for the classic duel with the human's client connected. */
+function makeHost(
   options: ConstructorParameters<typeof GameController>[1] = {
     turnDurationMs: null,
   },
 ): GameController {
-  return new GameController(new EventBus(), options);
+  const host = new GameController(new EventBus(), options);
+  const first = host.getFirstHumanId();
+  if (first) {
+    host.registerClient(first);
+  }
+  return host;
 }
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('move token pool', () => {
-  it('spends a token when queued and returns it when removed', () => {
-    const controller = makeController();
-    const start = controller.getState().players.player.tokens.FORWARD;
+describe('storing plans', () => {
+  it('keeps a draft without locking the player in or spending tokens', () => {
+    const host = makeHost();
+    const before = host.getState().players.player.tokens;
 
-    controller.queuePlayerAction('FORWARD');
-    expect(controller.getState().players.player.queue[0]).toBe('FORWARD');
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(
-      start - 1,
-    );
+    const reason = host.submitDraft('player', plan(['FORWARD', 'FORWARD', null, null]));
 
-    controller.removePlayerAction(0);
-    expect(controller.getState().players.player.queue[0]).toBeNull();
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(start);
+    expect(reason).toBeNull();
+    const player = host.getState().players.player;
+    expect(player.queue).toEqual(['FORWARD', 'FORWARD', null, null]);
+    expect(player.lockedIn).toBe(false);
+    expect(player.tokens).toEqual(before);
+    expect(host.getState().status).toBe('planning');
   });
 
-  it('cannot queue a token that is not in the pool', () => {
-    const controller = makeController();
-    controller.queuePlayerAction('FORWARD');
-    controller.queuePlayerAction('FORWARD');
-    controller.queuePlayerAction('FORWARD');
+  it('lets a draft be replaced until the player locks in', () => {
+    const host = makeHost({ turnDurationMs: null });
+    host.submitDraft('player', plan(['FORWARD', null, null, null]));
+    host.submitDraft('player', plan([null, 'TURN_LEFT', null, null]));
 
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(0);
-    controller.queuePlayerAction('FORWARD');
-
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(0);
-    expect(
-      controller.getState().players.player.queue.filter((slot) => slot !== null),
-    ).toHaveLength(3);
-  });
-
-  it('returns all queued tokens on clear', () => {
-    const controller = makeController();
-    controller.queuePlayerAction('FORWARD');
-    controller.queuePlayerAction('TURN_LEFT');
-
-    controller.clearPlayerActions();
-
-    expect(controller.getState().players.player.queue.every((slot) => slot === null)).toBe(
-      true,
-    );
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(3);
-    expect(controller.getState().players.player.tokens.TURN_LEFT).toBe(2);
-  });
-
-  it('can place a move into a specific slot, leaving earlier slots empty', () => {
-    const controller = makeController();
-
-    controller.queuePlayerAction('FORWARD', 2);
-
-    expect(controller.getState().players.player.queue).toEqual([
+    expect(host.getState().players.player.queue).toEqual([
       null,
-      null,
-      'FORWARD',
-      null,
-    ]);
-  });
-
-  it('falls back to the first empty slot when the target is filled', () => {
-    const controller = makeController();
-    controller.queuePlayerAction('FORWARD', 0);
-    controller.queuePlayerAction('TURN_LEFT', 0);
-
-    expect(controller.getState().players.player.queue).toEqual([
-      'FORWARD',
       'TURN_LEFT',
       null,
       null,
     ]);
   });
+
+  it('rejects a plan that needs tokens the player does not hold', () => {
+    const host = makeHost();
+
+    const reason = host.submitDraft('player', plan(['TURN_RIGHT', 'TURN_RIGHT', null, null]));
+
+    expect(reason).toBe('not_enough_tokens');
+    expect(host.getState().players.player.queue).toEqual([null, null, null, null]);
+  });
+
+  it('rejects plans for AI players and unknown players', () => {
+    const host = makeHost();
+
+    expect(host.submitDraft('enemy', plan())).toBe('unknown_player');
+    expect(host.submitPlayerPlan('nobody', plan())).toBe('unknown_player');
+  });
+
+  it('does not accept plans while the turn is resolving', () => {
+    const host = makeHost();
+    host.submitPlayerPlan('player', plan());
+
+    expect(host.submitDraft('player', plan(['FORWARD', null, null, null]))).toBe(
+      'not_planning',
+    );
+  });
 });
 
 describe('turn flow', () => {
   it('resolves a turn, then returns to planning on the next turn', () => {
-    const controller = makeController();
-    controller.queuePlayerAction('FORWARD');
+    const host = makeHost();
+    host.submitPlayerPlan('player', plan(['FORWARD', null, null, null]));
 
-    const result = controller.lockInTurn();
-    expect(result).not.toBeNull();
-    expect(controller.getState().status).toBe('animating');
-    expect(controller.getPendingTurn()).toBe(result);
+    expect(host.getState().status).toBe('animating');
+    expect(host.getPendingTurn()).not.toBeNull();
 
-    controller.onAnimationComplete();
-    expect(controller.getState().status).toBe('planning');
-    expect(controller.getState().turn).toBe(2);
-    expect(controller.getPendingTurn()).toBeNull();
-    expect(
-      controller.getState().players.player.queue.every((slot) => slot === null),
-    ).toBe(true);
+    host.acknowledgeTurn('player');
+
+    const state = host.getState();
+    expect(state.status).toBe('planning');
+    expect(state.turn).toBe(2);
+    expect(host.getPendingTurn()).toBeNull();
+    expect(state.players.player.queue.every((slot) => slot === null)).toBe(true);
   });
 
-  it('does not accept input while resolving or animating', () => {
-    const controller = makeController();
-    controller.queuePlayerAction('FORWARD');
-    controller.lockInTurn();
+  it('spends the tokens a plan uses when the turn resolves', () => {
+    const host = makeHost();
+    const start = host.getState().players.player.tokens.FORWARD;
 
-    const snapshot = controller.getState().players.player.tokens.FORWARD;
-    controller.queuePlayerAction('FORWARD');
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(snapshot);
+    host.submitPlayerPlan('player', plan(['FORWARD', 'FORWARD', null, null]));
+
+    expect(host.getState().players.player.tokens.FORWARD).toBe(start - 2);
+  });
+
+  it('spends AI tokens at resolution too', () => {
+    const host = makeHost();
+    const enemy = host.getState().players.enemy.tokens;
+    const total = (t: typeof enemy) => t.FORWARD + t.TURN_LEFT + t.TURN_RIGHT;
+
+    host.submitPlayerPlan('player', plan());
+
+    expect(total(host.getState().players.enemy.tokens)).toBeLessThanOrEqual(
+      total(enemy),
+    );
+  });
+
+  it('waits for every connected client to finish animating', () => {
+    const config = createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'ffa' });
+    const host = new GameController(new EventBus(), { turnDurationMs: null, config });
+    host.registerClient('p1');
+    host.registerClient('p2');
+    host.submitPlayerPlan('p1', plan());
+    host.submitPlayerPlan('p2', plan());
+
+    host.acknowledgeTurn('p1');
+    expect(host.getState().status).toBe('animating');
+
+    host.acknowledgeTurn('p2');
+    expect(host.getState().status).toBe('planning');
+  });
+
+  it('does not wait for a human nobody has connected', () => {
+    const config = createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'ffa' });
+    const host = new GameController(new EventBus(), { turnDurationMs: null, config });
+    host.registerClient('p1');
+    host.submitPlayerPlan('p1', plan());
+    host.submitPlayerPlan('p2', plan());
+
+    host.acknowledgeTurn('p1');
+
+    expect(host.getState().status).toBe('planning');
+  });
+
+  it('moves on straight away when no client is connected', () => {
+    const host = new GameController(new EventBus(), { turnDurationMs: null });
+    host.submitPlayerPlan('player', plan());
+
+    expect(host.getState().status).toBe('planning');
+    expect(host.getState().turn).toBe(2);
   });
 });
 
 describe('token generation settings', () => {
-  it('exposes auto and requested token settings', () => {
-    const controller = makeController();
-    expect(controller.getState().players.player.tokenGeneration.auto).toBe(true);
+  it('changes how one player produces their next token', () => {
+    const host = makeHost();
+    expect(host.getState().players.player.tokenGeneration.auto).toBe(true);
 
-    controller.setAutoTokenGeneration(false);
-    controller.setRequestedTokenType('TURN_RIGHT');
+    host.setTokenGeneration('player', { auto: false, requested: 'TURN_RIGHT' });
 
-    expect(controller.getState().players.player.tokenGeneration.auto).toBe(false);
-    expect(controller.getState().players.player.tokenGeneration.requested).toBe('TURN_RIGHT');
+    const generation = host.getState().players.player.tokenGeneration;
+    expect(generation.auto).toBe(false);
+    expect(generation.requested).toBe('TURN_RIGHT');
+    expect(host.getState().players.enemy.tokenGeneration.auto).toBe(true);
   });
 });
 
 describe('passing a turn', () => {
-  it('locks in an empty queue as a pass without moving the player ship', () => {
-    const controller = makeController();
-    const result = controller.lockInTurn();
+  it('locks in an empty plan as a pass without moving the player ship', () => {
+    const host = makeHost();
+    host.submitPlayerPlan('player', plan());
 
-    expect(result).not.toBeNull();
-    expect(result?.phases).toHaveLength(4);
-
-    const playerMoved = result?.events.some(
-      (event) => event.type === 'SHIP_MOVED' && event.shipId === 'player-ship',
-    );
-    expect(playerMoved).toBe(false);
-    expect(controller.getState().status).toBe('animating');
+    const moved = host
+      .getPendingTurn()
+      ?.events.some(
+        (event) => event.type === 'SHIP_MOVED' && event.shipId === 'player-ship',
+      );
+    expect(host.getPendingTurn()?.phases).toHaveLength(4);
+    expect(moved).toBe(false);
+    expect(host.getState().status).toBe('animating');
   });
 });
 
-describe('cannon queueing', () => {
-  it('toggles a broadside on and off without spending a movement token', () => {
-    const controller = makeController();
-    const before = controller.getState().players.player.tokens.FORWARD;
-
-    controller.togglePlayerCannon(0, 'left');
-    expect(controller.getState().players.player.cannonQueue[0].left).toBe(true);
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(before);
-
-    controller.togglePlayerCannon(0, 'left');
-    expect(controller.getState().players.player.cannonQueue[0].left).toBe(false);
-  });
-
-  it('cannot queue more shots than the cannonball pool', () => {
-    const controller = makeController();
-
-    controller.togglePlayerCannon(0, 'left');
-    controller.togglePlayerCannon(0, 'right');
-    controller.togglePlayerCannon(1, 'left');
-    controller.togglePlayerCannon(1, 'right');
-
-    const queued = controller
-      .getState()
-      .players.player.cannonQueue.reduce(
-        (total, slot) => total + (slot.left ? 1 : 0) + (slot.right ? 1 : 0),
-        0,
-      );
-    expect(queued).toBe(3);
-    expect(controller.getState().players.player.cannonQueue[1].right).toBe(false);
-  });
-
-  it('clears queued shots and returns movement tokens', () => {
-    const controller = makeController();
-    controller.queuePlayerAction('FORWARD');
-    controller.togglePlayerCannon(0, 'left');
-
-    controller.clearPlayerActions();
-
-    expect(
-      controller
-        .getState()
-        .players.player.cannonQueue.every((slot) => !slot.left && !slot.right),
-    ).toBe(true);
-    expect(controller.getState().players.player.tokens.FORWARD).toBe(3);
-  });
-
+describe('cannons', () => {
   it('spends cannonballs when queued shots resolve', () => {
-    const controller = makeController();
-    controller.togglePlayerCannon(0, 'left');
-    controller.togglePlayerCannon(0, 'right');
-    const before = controller.getState().players.player.ammo;
+    const host = makeHost();
+    const before = host.getState().players.player.ammo;
 
-    controller.lockInTurn();
+    host.submitPlayerPlan('player', firePlan(true, true));
 
-    expect(controller.getState().players.player.ammo).toBe(before - 2);
+    expect(host.getState().players.player.ammo).toBe(before - 2);
+  });
+
+  it('rejects more shots than the cannonball pool', () => {
+    const host = makeHost();
+    const all = NO_FIRE.map(() => ({ left: true, right: true }));
+
+    expect(host.submitDraft('player', plan(undefined, all))).toBe(
+      'not_enough_ammo',
+    );
   });
 });
 
 describe('game over timing', () => {
   it('keeps animating until the killing turn finishes, then shows game over', () => {
-    const controller = new GameController(new EventBus(), {
+    const host = new GameController(new EventBus(), {
       turnDurationMs: null,
       initialState: gameOverSetup(),
       ai: { chooseActions: () => ({ movement: [], cannons: [] }) },
     });
+    host.registerClient('player');
 
-    controller.togglePlayerCannon(0, 'left');
-    controller.lockInTurn();
+    host.submitPlayerPlan('player', firePlan(true, false));
 
-    expect(controller.getState().status).toBe('animating');
-    expect(controller.getState().outcome).toEqual({
-      kind: 'win',
-      teamId: 'player',
-    });
-    expect(controller.getPendingTurn()).not.toBeNull();
+    expect(host.getState().status).toBe('animating');
+    expect(host.getState().outcome).toEqual({ kind: 'win', teamId: 'player' });
+    expect(host.getPendingTurn()).not.toBeNull();
 
-    controller.onAnimationComplete();
+    host.acknowledgeTurn('player');
 
-    expect(controller.getState().status).toBe('game_over');
-    expect(controller.getPendingTurn()).toBeNull();
+    expect(host.getState().status).toBe('game_over');
+    expect(host.getPendingTurn()).toBeNull();
   });
 });
 
 describe('planning timer', () => {
-  it('auto locks in when the planning window elapses', () => {
+  it('auto resolves when the planning window elapses', () => {
     vi.useFakeTimers();
-    const controller = makeController({ turnDurationMs: 30000 });
+    const host = makeHost({ turnDurationMs: 30000 });
 
-    expect(controller.getState().status).toBe('planning');
-    expect(controller.getPlanningDeadline()).not.toBeNull();
+    expect(host.getState().status).toBe('planning');
+    expect(host.getPlanningDeadline()).not.toBeNull();
 
     vi.advanceTimersByTime(30000);
 
-    expect(controller.getState().status).not.toBe('planning');
-    controller.dispose();
+    expect(host.getState().status).not.toBe('planning');
+    host.dispose();
   });
 
-  it('clears the deadline once locked in', () => {
-    const controller = makeController({ turnDurationMs: 30000 });
-    expect(controller.getPlanningDeadline()).not.toBeNull();
+  it('uses the plan the host holds when time runs out', () => {
+    vi.useFakeTimers();
+    const host = makeHost({ turnDurationMs: 30000 });
+    host.submitDraft('player', plan(['FORWARD', null, null, null]));
 
-    controller.lockInTurn();
+    vi.advanceTimersByTime(30000);
 
-    expect(controller.getPlanningDeadline()).toBeNull();
-    controller.dispose();
+    const moved = host
+      .getPendingTurn()
+      ?.events.some(
+        (event) => event.type === 'SHIP_MOVED' && event.shipId === 'player-ship',
+      );
+    expect(moved).toBe(true);
+    host.dispose();
+  });
+
+  it('clears the deadline once the turn resolves', () => {
+    const host = makeHost({ turnDurationMs: 30000 });
+    expect(host.getPlanningDeadline()).not.toBeNull();
+
+    host.submitPlayerPlan('player', plan());
+
+    expect(host.getPlanningDeadline()).toBeNull();
+    host.dispose();
   });
 
   it('re-arms the timer when the next planning turn begins', () => {
-    const controller = makeController({ turnDurationMs: 30000 });
-    controller.lockInTurn();
-    controller.onAnimationComplete();
+    const host = makeHost({ turnDurationMs: 30000 });
+    host.submitPlayerPlan('player', plan());
+    host.acknowledgeTurn('player');
 
-    expect(controller.getState().status).toBe('planning');
-    expect(controller.getPlanningDeadline()).not.toBeNull();
-    controller.dispose();
+    expect(host.getState().status).toBe('planning');
+    expect(host.getPlanningDeadline()).not.toBeNull();
+    host.dispose();
   });
 
   it('is disabled when turnDurationMs is null', () => {
-    const controller = makeController({ turnDurationMs: null });
-    expect(controller.getPlanningDeadline()).toBeNull();
+    const host = makeHost({ turnDurationMs: null });
+    expect(host.getPlanningDeadline()).toBeNull();
+  });
+
+  it('reports the seconds remaining', () => {
+    vi.useFakeTimers();
+    const host = makeHost({ turnDurationMs: 30000 });
+
+    vi.advanceTimersByTime(10000);
+
+    expect(host.getPlanningSecondsRemaining()).toBeCloseTo(20, 0);
+    host.dispose();
   });
 });
 
 describe('matches with several AI ships', () => {
-  const skirmish = () =>
-    new GameController(new EventBus(), {
+  const skirmish = () => {
+    const host = new GameController(new EventBus(), {
       turnDurationMs: null,
       config: createSkirmishConfig({ humans: 1, ais: 3, teamMode: 'ffa' }),
     });
+    host.registerClient('p1');
+    return host;
+  };
 
-  it('plans for the first human and resolves every ship', () => {
-    const controller = skirmish();
-    expect(controller.getViewerId()).toBe('p1');
+  it('resolves every ship, with the human passing', () => {
+    const host = skirmish();
+    expect(host.getFirstHumanId()).toBe('p1');
 
-    const before = controller.getState().players;
-    const result = controller.lockInTurn();
+    host.submitPlayerPlan('p1', plan());
 
-    expect(result?.phases).toHaveLength(4);
+    const turn = host.getPendingTurn();
+    expect(turn?.phases).toHaveLength(4);
     const moved = new Set(
-      result?.events.flatMap((event) =>
+      turn?.events.flatMap((event) =>
         event.type === 'SHIP_MOVED' ? [event.shipId] : [],
       ),
     );
-    // The human passed, so only AI ships can move.
     expect(moved.has('p1-ship')).toBe(false);
     expect(moved.size).toBeGreaterThan(0);
-
-    for (const id of ['p2', 'p3', 'p4']) {
-      const total = (tokens: { FORWARD: number; TURN_LEFT: number; TURN_RIGHT: number }) =>
-        tokens.FORWARD + tokens.TURN_LEFT + tokens.TURN_RIGHT;
-      expect(total(controller.getState().players[id].tokens)).toBeLessThanOrEqual(
-        total(before[id].tokens),
-      );
-    }
   });
 
-  it('starts the next turn with a token for every player', () => {
-    const controller = skirmish();
-    controller.lockInTurn();
-    controller.onAnimationComplete();
+  it('starts the next turn with every plan cleared', () => {
+    const host = skirmish();
+    host.submitPlayerPlan('p1', plan());
+    host.acknowledgeTurn('p1');
 
-    expect(controller.getState().turn).toBe(2);
-    expect(controller.getState().status).toBe('planning');
-    for (const player of Object.values(controller.getState().players)) {
+    expect(host.getState().turn).toBe(2);
+    expect(host.getState().status).toBe('planning');
+    for (const player of Object.values(host.getState().players)) {
       expect(player.queue.every((slot) => slot === null)).toBe(true);
     }
-  });
-
-  it('controls only the local human (others pass)', () => {
-    const controller = new GameController(new EventBus(), {
-      turnDurationMs: null,
-      config: createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'teams' }),
-    });
-
-    controller.queuePlayerAction('FORWARD');
-    expect(controller.getState().players.p1.queue[0]).toBe('FORWARD');
-    expect(controller.getState().players.p2.queue[0]).toBeNull();
-  });
-
-  it('refuses a match with no human to control', () => {
-    expect(
-      () =>
-        new GameController(new EventBus(), {
-          turnDurationMs: null,
-          config: createSkirmishConfig({ humans: 0, ais: 2, teamMode: 'ffa' }),
-        }),
-    ).toThrow();
   });
 });
 
@@ -369,123 +375,103 @@ describe('locking in with several humans', () => {
     rules: Partial<GameState['rules']> = {},
   ) => {
     const config = createSkirmishConfig({ humans: 2, ais: 0, teamMode: 'ffa' });
-    return new GameController(new EventBus(), {
+    const host = new GameController(new EventBus(), {
       turnDurationMs: null,
       config: { ...config, rules: { ...config.rules, ...rules } },
       ...options,
     });
+    host.registerClient('p1');
+    host.registerClient('p2');
+    return host;
   };
 
-  const emptyPlan = {
-    movement: [null, null, null, null],
-    cannons: Array.from({ length: 4 }, () => ({ left: false, right: false })),
-  };
+  it('waits for the other human after one locks in', () => {
+    const host = twoHumans();
 
-  it('waits for the other human after you lock in', () => {
-    const controller = twoHumans();
+    expect(host.lockInPlayer('p1')).toBeNull();
 
-    const result = controller.lockInTurn();
-
-    expect(result).toBeNull();
-    expect(controller.getState().status).toBe('planning');
-    expect(controller.getState().players.p1.lockedIn).toBe(true);
-    expect(controller.getState().players.p2.lockedIn).toBe(false);
+    expect(host.getState().status).toBe('planning');
+    expect(host.getState().players.p1.lockedIn).toBe(true);
+    expect(host.getState().players.p2.lockedIn).toBe(false);
   });
 
   it('resolves as soon as the last human locks in', () => {
-    const controller = twoHumans();
-    controller.lockInTurn();
+    const host = twoHumans();
+    host.lockInPlayer('p1');
 
-    expect(controller.submitPlayerPlan('p2', emptyPlan)).toBeNull();
+    expect(host.submitPlayerPlan('p2', plan())).toBeNull();
 
-    expect(controller.getState().status).toBe('animating');
-    expect(controller.getPendingTurn()).not.toBeNull();
+    expect(host.getState().status).toBe('animating');
   });
 
   it('applies the plan a remote human submitted', () => {
-    const controller = twoHumans();
-    controller.lockInTurn();
+    const host = twoHumans();
+    host.lockInPlayer('p1');
 
-    controller.submitPlayerPlan('p2', {
-      ...emptyPlan,
-      movement: ['FORWARD', null, null, null],
-    });
+    host.submitPlayerPlan('p2', plan(['FORWARD', null, null, null]));
 
-    const moved = controller
+    const moved = host
       .getPendingTurn()
       ?.events.some((event) => event.type === 'SHIP_MOVED' && event.shipId === 'p2-ship');
     expect(moved).toBe(true);
   });
 
   it('rejects an illegal plan without locking the player in', () => {
-    const controller = twoHumans();
+    const host = twoHumans();
 
-    const reason = controller.submitPlayerPlan('p2', {
-      ...emptyPlan,
-      movement: ['TURN_RIGHT', 'TURN_RIGHT', null, null],
-    });
+    const reason = host.submitPlayerPlan(
+      'p2',
+      plan(['TURN_RIGHT', 'TURN_RIGHT', null, null]),
+    );
 
     expect(reason).toBe('not_enough_tokens');
-    expect(controller.getState().players.p2.lockedIn).toBe(false);
+    expect(host.getState().players.p2.lockedIn).toBe(false);
   });
 
-  it('does not accept plans for AI players or unknown players', () => {
-    const controller = new GameController(new EventBus(), {
-      turnDurationMs: null,
-      config: createSkirmishConfig({ humans: 1, ais: 1, teamMode: 'ffa' }),
-    });
+  it('freezes a plan once the player has locked in', () => {
+    const host = twoHumans();
+    host.submitDraft('p1', plan(['FORWARD', null, null, null]));
+    host.lockInPlayer('p1');
 
-    expect(controller.submitPlayerPlan('p2', emptyPlan)).toBe('unknown_player');
-    expect(controller.submitPlayerPlan('nobody', emptyPlan)).toBe('unknown_player');
-  });
-
-  it('freezes your plan once you have locked in', () => {
-    const controller = twoHumans();
-    controller.queuePlayerAction('FORWARD');
-    controller.lockInTurn();
-
-    controller.queuePlayerAction('FORWARD');
-    controller.togglePlayerCannon(0, 'left');
-    controller.removePlayerAction(0);
-    controller.clearPlayerActions();
-
-    const player = controller.getState().players.p1;
-    expect(player.queue).toEqual(['FORWARD', null, null, null]);
-    expect(player.cannonQueue[0].left).toBe(false);
+    expect(host.submitDraft('p1', plan(['TURN_LEFT', null, null, null]))).toBe(
+      'already_locked_in',
+    );
+    expect(host.getState().players.p1.queue).toEqual(['FORWARD', null, null, null]);
   });
 
   it('resolves on the timer with whatever players have queued', () => {
     vi.useFakeTimers();
-    const controller = twoHumans({ turnDurationMs: 30000 });
-    controller.lockInTurn();
+    const host = twoHumans({ turnDurationMs: 30000 });
+    host.lockInPlayer('p1');
 
     vi.advanceTimersByTime(30000);
 
-    expect(controller.getState().status).toBe('animating');
-    controller.dispose();
+    expect(host.getState().status).toBe('animating');
+    host.dispose();
   });
 
   it('waits for the timer when the rules say not to end early', () => {
     vi.useFakeTimers();
-    const controller = twoHumans({ turnDurationMs: 30000 }, { endTurnWhenAllLocked: false });
-    controller.lockInTurn();
-    controller.submitPlayerPlan('p2', emptyPlan);
+    const host = twoHumans({ turnDurationMs: 30000 }, { endTurnWhenAllLocked: false });
+    host.lockInPlayer('p1');
+    host.submitPlayerPlan('p2', plan());
 
-    expect(controller.getState().status).toBe('planning');
+    expect(host.getState().status).toBe('planning');
 
     vi.advanceTimersByTime(30000);
 
-    expect(controller.getState().status).toBe('animating');
-    controller.dispose();
+    expect(host.getState().status).toBe('animating');
+    host.dispose();
   });
 
   it('unlocks everyone when the next turn begins', () => {
-    const controller = twoHumans();
-    controller.lockInTurn();
-    controller.submitPlayerPlan('p2', emptyPlan);
-    controller.onAnimationComplete();
+    const host = twoHumans();
+    host.lockInPlayer('p1');
+    host.submitPlayerPlan('p2', plan());
+    host.acknowledgeTurn('p1');
+    host.acknowledgeTurn('p2');
 
-    for (const player of Object.values(controller.getState().players)) {
+    for (const player of Object.values(host.getState().players)) {
       expect(player.lockedIn).toBe(false);
     }
   });
@@ -500,14 +486,14 @@ describe('a controller per AI player', () => {
         return { movement: [], cannons: [] };
       },
     });
-    const controller = new GameController(new EventBus(), {
+    const host = new GameController(new EventBus(), {
       turnDurationMs: null,
       config: createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' }),
       ai: recorder('default'),
       aiByPlayer: { p3: recorder('special') },
     });
 
-    controller.lockInTurn();
+    host.submitPlayerPlan('p1', plan());
 
     expect(asked.sort()).toEqual(['default:p2', 'special:p3']);
   });

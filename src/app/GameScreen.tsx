@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPhaserGame, type PhaserHandle } from '../phaser/PhaserGame';
-import { eventBus, gameController } from './gameInstance';
+import { gameClient } from './gameInstance';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { BattleHUD } from '../ui/BattleHUD';
 import { MobilePlanningSheet } from '../ui/MobilePlanningSheet';
@@ -20,7 +20,7 @@ export function GameScreen() {
     if (!containerRef.current) {
       return;
     }
-    const handle = createPhaserGame(containerRef.current, gameController, eventBus);
+    const handle = createPhaserGame(containerRef.current, gameClient);
     handleRef.current = handle;
     return () => {
       handle.destroy();

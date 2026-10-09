@@ -22,12 +22,10 @@ export type PlanResult =
 
 /**
  * Validates a complete plan against what the player actually holds and, if it
- * is legal, stores it as their queues (spending the movement tokens it uses,
- * exactly as queueing them one by one would). Pure: it is what a server runs on
- * a plan received from a remote player, so nothing a client claims is trusted.
- *
- * Any plan the player had already queued is replaced; its tokens are refunded
- * before the new cost is checked.
+ * is legal, stores it as their queues. Movement tokens are NOT spent here: the
+ * plan is only a draft until the turn resolves (see spendMovementTokens), so a
+ * player can keep changing it. Pure: it is what a server runs on a plan
+ * received from a remote player, so nothing a client claims is trusted.
  */
 export function applyPlayerPlan(
   state: GameState,
@@ -58,19 +56,14 @@ export function applyPlayerPlan(
     return { ok: false, reason: 'malformed_plan' };
   }
 
-  const tokens = cloneInventory(player.tokens);
-  for (const action of player.queue) {
-    if (action) {
-      tokens[action] += 1;
-    }
-  }
+  const cost = cloneInventory({ FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 });
   for (const action of plan.movement) {
     if (action) {
-      tokens[action] -= 1;
-      if (tokens[action] < 0) {
-        return { ok: false, reason: 'not_enough_tokens' };
-      }
+      cost[action] += 1;
     }
+  }
+  if (MOVEMENT_ACTIONS.some((action) => cost[action] > player.tokens[action])) {
+    return { ok: false, reason: 'not_enough_tokens' };
   }
 
   if (totalQueuedShots(plan.cannons) > player.ammo) {
@@ -85,7 +78,6 @@ export function applyPlayerPlan(
         ...state.players,
         [playerId]: {
           ...player,
-          tokens,
           queue: [...plan.movement],
           cannonQueue: plan.cannons.map((slot) => ({
             left: slot.left,

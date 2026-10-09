@@ -1,8 +1,7 @@
 import Phaser from 'phaser';
-import type { GameState } from '../../game/domain/GameState';
+import type { GameView } from '../../game/view/GameView';
+import type { ClientSnapshot, GameClient } from '../../game/client/GameClient';
 import type { GameEvent } from '../../game/domain/GameEvent';
-import type { GameController } from '../../game/controller/GameController';
-import { getShipByOwner } from '../../game/simulation/selectors';
 import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
@@ -20,7 +19,7 @@ export class BattleScene extends Phaser.Scene {
   private cameraController!: BattleCameraController;
   private preview!: PlanPreviewView;
   private unsubscribePreviewSetting?: () => void;
-  private controller!: GameController;
+  private client!: GameClient;
   private unsubscribeState?: () => void;
   private unsubscribeEvents?: () => void;
   private buffer: GameEvent[] = [];
@@ -30,10 +29,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { controller, eventBus } = getPhaserContext();
-    this.controller = controller;
+    const { client } = getPhaserContext();
+    this.client = client;
 
-    const state = controller.getState();
+    const state = client.getView();
     const worldWidth = state.board.width * TILE_SIZE;
     const worldHeight = state.board.height * TILE_SIZE;
 
@@ -65,18 +64,18 @@ export class BattleScene extends Phaser.Scene {
     this.syncViews(state);
     this.recenterOnPlayer();
 
-    this.preview = new PlanPreviewView(this, controller.getViewerId());
-    this.unsubscribeState = controller.subscribe((next) =>
-      this.onStateChange(next),
+    this.preview = new PlanPreviewView(this, client.viewerId);
+    this.unsubscribeState = client.subscribe((snapshot) =>
+      this.onSnapshot(snapshot),
     );
     this.unsubscribePreviewSetting = usePreviewSettings.subscribe(() =>
       this.refreshPreview(),
     );
-    this.unsubscribeEvents = eventBus.on(this.onEvent);
+    this.unsubscribeEvents = client.onEvents(this.onEvent);
 
     // If a turn was resolved before this scene existed, its events were already
     // emitted. Replay them so the game cannot hang waiting for an animation.
-    if (controller.getState().status === 'animating') {
+    if (client.getView().status === 'animating') {
       this.playPendingTurn();
     }
 
@@ -92,13 +91,11 @@ export class BattleScene extends Phaser.Scene {
   recenterOnPlayer(): void {
     // The scene may be queried before create() has run (e.g. a recenter tap
     // while the game loop is still starting), so guard against that.
-    if (!this.controller) {
+    if (!this.client) {
       return;
     }
-    const player = getShipByOwner(
-      this.controller.getState(),
-      this.controller.getViewerId(),
-    );
+    const view = this.client.getView();
+    const player = view.ships[view.self.shipId];
     if (!player) {
       return;
     }
@@ -120,13 +117,13 @@ export class BattleScene extends Phaser.Scene {
 
   private refreshPreview(): void {
     this.preview.update(
-      this.controller.getState(),
+      this.client.getPreviewState(),
       usePreviewSettings.getState().showPlanPreview,
     );
   }
 
   private drawGrid(
-    state: GameState,
+    state: Pick<GameView, 'board'>,
     worldWidth: number,
     worldHeight: number,
     margin: number,
@@ -156,9 +153,8 @@ export class BattleScene extends Phaser.Scene {
    * flight (initial load, after a turn resolves, on restart) so ships never
    * teleport mid-animation.
    */
-  private syncViews(state: GameState): void {
-    const viewerTeamId =
-      state.players[this.controller.getViewerId()]?.teamId ?? '';
+  private syncViews(state: GameView): void {
+    const viewerTeamId = state.players[this.client.viewerId]?.teamId ?? '';
     for (const ship of Object.values(state.ships)) {
       if (ship.hp <= 0) {
         this.views.remove(ship.id);
@@ -190,11 +186,15 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private onStateChange(state: GameState): void {
-    if (state.status === 'planning' || state.status === 'game_over') {
-      this.syncViews(state);
+  private onSnapshot(snapshot: ClientSnapshot): void {
+    const view = snapshot.view;
+    if (view.status === 'planning' || view.status === 'game_over') {
+      this.syncViews(view);
     }
-    this.preview?.update(state, usePreviewSettings.getState().showPlanPreview);
+    this.preview?.update(
+      this.client.getPreviewState(),
+      usePreviewSettings.getState().showPlanPreview,
+    );
   }
 
   private onEvent = (event: GameEvent): void => {
@@ -206,20 +206,20 @@ export class BattleScene extends Phaser.Scene {
     const batch = this.buffer;
     this.buffer = [];
     void this.animator.play(batch).then(() => {
-      this.controller.onAnimationComplete();
-      this.syncViews(this.controller.getState());
+      this.client.acknowledgeTurn();
+      this.syncViews(this.client.getView());
     });
   };
 
   /** Replays a turn whose events were emitted before this scene subscribed. */
   private playPendingTurn(): void {
-    const pending = this.controller.getPendingTurn();
+    const pending = this.client.getPendingEvents();
     if (!pending) {
       return;
     }
-    void this.animator.play(pending.events).then(() => {
-      this.controller.onAnimationComplete();
-      this.syncViews(this.controller.getState());
+    void this.animator.play(pending).then(() => {
+      this.client.acknowledgeTurn();
+      this.syncViews(this.client.getView());
     });
   }
 }

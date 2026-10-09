@@ -1,12 +1,10 @@
 import Phaser from 'phaser';
-import type { GameController } from '../game/controller/GameController';
-import type { EventBus } from '../game/events/EventBus';
+import type { GameClient } from '../game/client/GameClient';
 import { BootScene } from './scenes/BootScene';
 import { BattleScene } from './scenes/BattleScene';
 
 export interface PhaserContext {
-  controller: GameController;
-  eventBus: EventBus;
+  client: GameClient;
   /** Latest UI inset, kept here so a scene that boots late still gets it. */
   bottomInset: number;
 }
@@ -29,14 +27,13 @@ export interface PhaserHandle {
 
 /**
  * Boots the Phaser game inside a DOM container. The scene receives the same
- * controller/event bus the React UI uses, so there is a single source of truth.
+ * client the React UI uses, so both see the same view of the match.
  */
 export function createPhaserGame(
   parent: HTMLElement,
-  controller: GameController,
-  eventBus: EventBus,
+  client: GameClient,
 ): PhaserHandle {
-  context = { controller, eventBus, bottomInset: 0 };
+  context = { client, bottomInset: 0 };
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,

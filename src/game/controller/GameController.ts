@@ -1,20 +1,17 @@
-import type { GameState, PlayerState } from '../domain/GameState';
-import type { CannonSide, MovementAction } from '../domain/Action';
+import type {
+  GameState,
+  PlayerState,
+  TokenGenerationConfig,
+} from '../domain/GameState';
 import type { PlayerId } from '../domain/Entity';
 import type { PlayerActions, TurnResult } from '../domain/TurnResult';
-import {
-  cloneInventory,
-  emptyCannonQueue,
-  emptyQueue,
-  totalQueuedShots,
-} from '../domain/Action';
 import { createGame } from '../simulation/createGame';
 import { resolveTurn } from '../simulation/resolveTurn';
 import { beginNextTurn, spendMovementTokens } from '../simulation/tokens';
+import { applyPlayerPlan, type PlanRejection } from '../simulation/plans';
 import { EventBus } from '../events/EventBus';
 import type { AIController } from '../ai/AIController';
 import { createSimpleAI } from '../ai/simpleAI';
-import { applyPlayerPlan, type PlanRejection } from '../simulation/plans';
 import { createDuelConfig, type MatchConfig } from '../config/matchConfig';
 
 export type GameListener = (state: GameState) => void;
@@ -33,27 +30,23 @@ export interface GameControllerOptions {
   config?: MatchConfig;
   /** Overrides the starting state. Useful for tests. Defaults to createGame(). */
   initialState?: GameState;
-  /**
-   * The local human this controller plans for. Defaults to the first human
-   * participant. Other humans are not controllable from here (that is the job
-   * of a network transport) and pass their turn.
-   */
-  viewerId?: PlayerId;
 }
 
 /**
- * Coordinates application flow: accepts the local player's input, asks the AI
- * for every AI player's actions, runs the pure simulation, publishes events for
- * Phaser and exposes the resulting state to React.
+ * The authoritative host of one match. It holds the full state, accepts plans
+ * from human players, asks the AI for every AI player's plan, runs the pure
+ * simulation, publishes events, and runs the turn timer. It is the only thing
+ * that sees everyone's plans. Players never touch it directly: they connect
+ * through a transport (see game/client), which gives each of them a redacted
+ * view.
  *
  * It owns NO game rules; all rules live in game/simulation. The planning
- * countdown is flow/presentation state, so it lives here rather than in the
- * deterministic simulation.
+ * countdown is flow state, so it lives here rather than in the deterministic
+ * simulation.
  */
 export class GameController {
   private state: GameState;
   private readonly config: MatchConfig;
-  private readonly viewerId: PlayerId;
   private readonly listeners = new Set<GameListener>();
   private readonly ai: AIController;
   private readonly aiByPlayer: Readonly<Record<PlayerId, AIController>>;
@@ -61,6 +54,9 @@ export class GameController {
   private planningDeadline: number | null = null;
   private timerId: ReturnType<typeof setTimeout> | null = null;
   private pendingTurn: TurnResult | null = null;
+  /** Humans whose client is connected (they must finish animating each turn). */
+  private readonly clients = new Set<PlayerId>();
+  private readonly acknowledged = new Set<PlayerId>();
 
   constructor(
     private readonly eventBus: EventBus,
@@ -70,15 +66,6 @@ export class GameController {
     this.aiByPlayer = options.aiByPlayer ?? {};
     this.config = options.config ?? createDuelConfig();
     this.state = options.initialState ?? createGame(this.config);
-
-    const humans = Object.values(this.state.players).filter(
-      (player) => player.controller === 'human',
-    );
-    const viewerId = options.viewerId ?? humans[0]?.id;
-    if (!viewerId || !this.state.players[viewerId]) {
-      throw new Error('A match needs at least one human player to control');
-    }
-    this.viewerId = viewerId;
 
     const rulesSeconds = this.state.rules.turnDurationSeconds;
     this.turnDurationMs =
@@ -94,9 +81,11 @@ export class GameController {
     return this.state;
   }
 
-  /** The player this controller plans for (the local human). */
-  getViewerId(): PlayerId {
-    return this.viewerId;
+  /** The first human player, a sensible default viewer for a local game. */
+  getFirstHumanId(): PlayerId | undefined {
+    return Object.values(this.state.players).find(
+      (player) => player.controller === 'human',
+    )?.id;
   }
 
   /** Epoch-ms at which the current planning window closes, or null. */
@@ -118,8 +107,8 @@ export class GameController {
   }
 
   /**
-   * The turn currently being animated, if any. Lets the presentation layer
-   * replay a turn whose events were emitted before it subscribed.
+   * The turn currently being animated, if any. Lets a client that connects
+   * mid-turn replay events that were emitted before it subscribed.
    */
   getPendingTurn(): TurnResult | null {
     return this.pendingTurn;
@@ -138,26 +127,6 @@ export class GameController {
     for (const listener of [...this.listeners]) {
       listener(state);
     }
-  }
-
-  private viewer(): PlayerState {
-    return this.state.players[this.viewerId];
-  }
-
-  /** The local player may edit their plan until they lock in. */
-  private canEdit(): boolean {
-    return this.state.status === 'planning' && !this.viewer().lockedIn;
-  }
-
-  /** Applies a change to the local player's state and notifies listeners. */
-  private updateViewer(patch: Partial<PlayerState>): void {
-    this.setState({
-      ...this.state,
-      players: {
-        ...this.state.players,
-        [this.viewerId]: { ...this.viewer(), ...patch },
-      },
-    });
   }
 
   /**
@@ -187,134 +156,68 @@ export class GameController {
 
   startNewGame(): void {
     this.pendingTurn = null;
+    this.acknowledged.clear();
     this.armPlanningTimer();
     this.setState(createGame(this.config));
   }
 
-  // --- Planning commands -------------------------------------------------
+  // --- Clients ------------------------------------------------------------
 
   /**
-   * Spends a movement token into a movement slot. Pass `slot` to target a
-   * specific phase (so earlier slots can be left empty); otherwise the first
-   * empty slot is used.
+   * Registers a connected human. The next turn only begins once every
+   * registered human has finished animating the last one. A human nobody has
+   * connected for (e.g. a placeholder in a local game) never holds things up.
    */
-  queuePlayerAction(action: MovementAction, slot?: number): void {
-    if (!this.canEdit()) {
-      return;
-    }
-    const player = this.viewer();
-    const inventory = cloneInventory(player.tokens);
-    if (inventory[action] <= 0) {
-      return;
-    }
-
-    const queue = [...player.queue];
-    const target =
-      slot !== undefined &&
-      slot >= 0 &&
-      slot < queue.length &&
-      queue[slot] === null
-        ? slot
-        : queue.indexOf(null);
-    if (target === -1) {
-      return;
-    }
-
-    queue[target] = action;
-    inventory[action] -= 1;
-    this.updateViewer({ queue, tokens: inventory });
+  registerClient(playerId: PlayerId): () => void {
+    this.clients.add(playerId);
+    return () => {
+      this.clients.delete(playerId);
+      this.acknowledged.delete(playerId);
+      this.advanceIfEveryoneAcknowledged();
+    };
   }
 
-  /** Removes a movement slot and returns its token to the pool. */
-  removePlayerAction(index: number): void {
-    if (!this.canEdit()) {
-      return;
-    }
-    const player = this.viewer();
-    const queue = [...player.queue];
-    const action = queue[index];
-    if (!action) {
-      return;
-    }
-
-    queue[index] = null;
-    const inventory = cloneInventory(player.tokens);
-    inventory[action] += 1;
-    this.updateViewer({ queue, tokens: inventory });
-  }
+  // --- Planning -----------------------------------------------------------
 
   /**
-   * Toggles a broadside on/off for one phase. Cannonballs are not spent here
-   * (the simulation deducts actual shots), but a shot cannot be queued beyond
-   * the remaining pool.
+   * Stores a player's work-in-progress plan after validating it against what
+   * they hold. It does not lock them in and can be replaced until they do.
+   * Returns null on success or the reason it was rejected.
    */
-  togglePlayerCannon(phase: number, side: CannonSide): void {
-    if (!this.canEdit()) {
-      return;
+  submitDraft(playerId: PlayerId, plan: PlayerActions): PlanRejection | null {
+    const player = this.state.players[playerId];
+    if (!player || player.controller !== 'human') {
+      return 'unknown_player';
     }
-
-    const player = this.viewer();
-    const cannonQueue = player.cannonQueue.map((slot) => ({ ...slot }));
-    const slot = cannonQueue[phase];
-    if (!slot) {
-      return;
+    const result = applyPlayerPlan(this.state, playerId, plan);
+    if (!result.ok) {
+      return result.reason;
     }
-
-    if (slot[side]) {
-      slot[side] = false;
-    } else {
-      const available = player.ammo - totalQueuedShots(player.cannonQueue);
-      if (available <= 0) {
-        return;
-      }
-      slot[side] = true;
-    }
-
-    this.updateViewer({ cannonQueue });
-  }
-
-  clearPlayerActions(): void {
-    if (!this.canEdit()) {
-      return;
-    }
-    const player = this.viewer();
-    const inventory = cloneInventory(player.tokens);
-    for (const action of player.queue) {
-      if (action) {
-        inventory[action] += 1;
-      }
-    }
-
-    this.updateViewer({
-      queue: emptyQueue(),
-      cannonQueue: emptyCannonQueue(),
-      tokens: inventory,
-    });
-  }
-
-  setAutoTokenGeneration(auto: boolean): void {
-    this.updateViewer({
-      tokenGeneration: { ...this.viewer().tokenGeneration, auto },
-    });
-  }
-
-  setRequestedTokenType(token: MovementAction): void {
-    this.updateViewer({
-      tokenGeneration: { ...this.viewer().tokenGeneration, requested: token },
-    });
-  }
-
-  // --- Turn resolution ---------------------------------------------------
-
-  /** Locks in the local player's plan. Resolves the turn if everyone is ready. */
-  lockInTurn(): TurnResult | null {
-    return this.lockInPlayer(this.viewerId);
+    this.setState(result.state);
+    return null;
   }
 
   /**
-   * Marks a human player as locked in; their plan can no longer change. When
+   * Accepts a human player's final plan, validates it, and locks them in. When
    * every human is locked in the turn ends early (unless the match rules say to
-   * wait for the timer). Returns the result if this call resolved the turn.
+   * wait for the timer). Returns null on success or the rejection reason.
+   */
+  submitPlayerPlan(
+    playerId: PlayerId,
+    plan: PlayerActions,
+  ): PlanRejection | null {
+    const reason = this.submitDraft(playerId, plan);
+    if (reason) {
+      return reason;
+    }
+    this.lockInPlayer(playerId);
+    return null;
+  }
+
+  /**
+   * Locks a human in with the plan the host already holds for them (their last
+   * draft). Their plan can no longer change. Returns the result if this call
+   * resolved the turn.
    */
   lockInPlayer(playerId: PlayerId): TurnResult | null {
     const player = this.state.players[playerId];
@@ -337,24 +240,28 @@ export class GameController {
     return this.resolveIfReady();
   }
 
-  /**
-   * Accepts a complete plan for a human player (the path a remote player's plan
-   * takes), validates it against what that player holds, and locks them in.
-   * Returns null on success or the reason it was rejected.
-   */
-  submitPlayerPlan(playerId: PlayerId, plan: PlayerActions): PlanRejection | null {
+  /** Changes how a player's next movement token is chosen. */
+  setTokenGeneration(
+    playerId: PlayerId,
+    patch: Partial<TokenGenerationConfig>,
+  ): void {
     const player = this.state.players[playerId];
-    if (!player || player.controller !== 'human') {
-      return 'unknown_player';
+    if (!player) {
+      return;
     }
-    const result = applyPlayerPlan(this.state, playerId, plan);
-    if (!result.ok) {
-      return result.reason;
-    }
-    this.setState(result.state);
-    this.lockInPlayer(playerId);
-    return null;
+    this.setState({
+      ...this.state,
+      players: {
+        ...this.state.players,
+        [playerId]: {
+          ...player,
+          tokenGeneration: { ...player.tokenGeneration, ...patch },
+        },
+      },
+    });
   }
+
+  // --- Turn resolution ----------------------------------------------------
 
   private resolveIfReady(): TurnResult | null {
     const everyoneLocked = Object.values(this.state.players)
@@ -372,27 +279,24 @@ export class GameController {
     }
     this.clearPlanningTimer();
 
-    // Humans submit the plan they built (a human who never locked in submits
-    // what they have queued); AI players plan now and pay for their movement
-    // tokens from their own pool, like everyone else.
+    // Humans submit the plan the host holds for them (a human who never locked
+    // in submits their last draft); AI players plan now. Every player pays for
+    // their movement tokens from their own pool when the turn resolves.
     const submitted: Record<PlayerId, PlayerActions> = {};
     const players: Record<PlayerId, PlayerState> = {};
     for (const player of Object.values(this.state.players)) {
-      if (player.controller === 'ai') {
-        const controller = this.aiByPlayer[player.id] ?? this.ai;
-        const actions = controller.chooseActions(this.state, player.id);
-        submitted[player.id] = actions;
-        players[player.id] = {
-          ...player,
-          tokens: spendMovementTokens(player.tokens, actions.movement),
-        };
-      } else {
-        submitted[player.id] = {
-          movement: player.queue,
-          cannons: player.cannonQueue,
-        };
-        players[player.id] = player;
-      }
+      const actions: PlayerActions =
+        player.controller === 'ai'
+          ? (this.aiByPlayer[player.id] ?? this.ai).chooseActions(
+              this.state,
+              player.id,
+            )
+          : { movement: player.queue, cannons: player.cannonQueue };
+      submitted[player.id] = actions;
+      players[player.id] = {
+        ...player,
+        tokens: spendMovementTokens(player.tokens, actions.movement),
+      };
     }
 
     const resolving: GameState = {
@@ -404,21 +308,38 @@ export class GameController {
 
     const result = resolveTurn(resolving, submitted);
 
-    // Always animate first, even on the killing blow, so the player sees the
+    // Always animate first, even on the killing blow, so players see the
     // outcome before any game-over dialog appears.
     this.pendingTurn = result;
+    this.acknowledged.clear();
     this.setState({ ...result.nextState, status: 'animating' });
 
     this.eventBus.emitMany(result.events);
+    this.advanceIfEveryoneAcknowledged();
     return result;
   }
 
-  /** Called by the presentation layer once the turn animation has finished. */
-  onAnimationComplete(): void {
+  /** A client reports that it has finished animating the resolved turn. */
+  acknowledgeTurn(playerId: PlayerId): void {
     if (this.state.status !== 'animating') {
       return;
     }
+    this.acknowledged.add(playerId);
+    this.advanceIfEveryoneAcknowledged();
+  }
+
+  private advanceIfEveryoneAcknowledged(): void {
+    if (this.state.status !== 'animating') {
+      return;
+    }
+    for (const id of this.clients) {
+      if (!this.acknowledged.has(id)) {
+        return;
+      }
+    }
+
     this.pendingTurn = null;
+    this.acknowledged.clear();
 
     if (this.state.outcome !== null) {
       this.setState({ ...this.state, status: 'game_over' });

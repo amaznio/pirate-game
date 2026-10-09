@@ -10,7 +10,7 @@ const plan = (
 ): PlayerActions => ({ movement, cannons });
 
 describe('applyPlayerPlan', () => {
-  it('stores a legal plan and spends the movement tokens it uses', () => {
+  it('stores a legal plan without spending tokens (it is only a draft)', () => {
     const state = createGame();
 
     const result = applyPlayerPlan(
@@ -23,7 +23,7 @@ describe('applyPlayerPlan', () => {
     if (!result.ok) return;
     const player = result.state.players.player;
     expect(player.queue).toEqual(['FORWARD', 'TURN_LEFT', null, 'FORWARD']);
-    expect(player.tokens).toEqual({ FORWARD: 1, TURN_LEFT: 1, TURN_RIGHT: 1 });
+    expect(player.tokens).toEqual(state.players.player.tokens);
   });
 
   it('does not change the input state', () => {
@@ -35,7 +35,7 @@ describe('applyPlayerPlan', () => {
     expect(JSON.stringify(state)).toBe(before);
   });
 
-  it('replaces a plan that was already queued, refunding its tokens first', () => {
+  it('replaces a plan that was already stored', () => {
     const first = applyPlayerPlan(
       createGame(),
       'player',
@@ -46,16 +46,12 @@ describe('applyPlayerPlan', () => {
     const second = applyPlayerPlan(
       first.state,
       'player',
-      plan(['FORWARD', 'FORWARD', 'FORWARD', 'TURN_LEFT']),
+      plan([null, null, null, 'TURN_LEFT']),
     );
 
     expect(second.ok).toBe(true);
     if (!second.ok) return;
-    expect(second.state.players.player.tokens).toEqual({
-      FORWARD: 0,
-      TURN_LEFT: 1,
-      TURN_RIGHT: 1,
-    });
+    expect(second.state.players.player.queue).toEqual([null, null, null, 'TURN_LEFT']);
   });
 
   it('rejects a plan that needs tokens the player does not hold', () => {

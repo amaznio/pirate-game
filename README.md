@@ -26,22 +26,39 @@ npm run typecheck  # tsc --noEmit
 ## How it works
 
 ```
-React UI (ui/, store/) ──commands──▶ GameController ──▶ Simulation ──▶ TurnResult
-                                          │                                 │
-                                          │                          domain events
-                                          ▼                                 ▼
-                                    (state projection)            Phaser animates events
+ HOST (authoritative; later a Node server)          CLIENT (one per player)
+ ┌──────────────────────────────────────┐           ┌──────────────────────────┐
+ │ GameController ─▶ Simulation          │  redacted │ GameClient               │
+ │  • timer, AIs, lock-in, validation   │  view  ─▶ │  • local draft plan      │
+ │  • sees every plan                   │ ◀─ plans  │  • view + events         │
+ └──────────────▲───────────────────────┘           └───────┬──────────────────┘
+                │         GameTransport                     │
+                └──── LocalTransport (in page) / socket ────┘   React UI + Phaser
 ```
 
-The **simulation is the single source of truth**. React and Phaser never keep
-their own authoritative copy of the game state:
+The **simulation is the single source of truth**, and it runs on the host. A
+player never gets the host's state, only a **view** of it:
 
-- React holds a read-only **projection** (`src/store/useGameUIStore.ts`) updated
-  by one controller subscription.
-- Phaser holds only view objects in a `Map<EntityId, GameObject>`
-  (`src/phaser/views/EntityViewRegistry.ts`) and animates simulation events.
+- `src/game/view/redact.ts` builds a `GameView` per player. The board is public
+  (ships, hulls, obstacles) but other players' plans, tokens, cannonballs and
+  settings are dropped. All a player learns about someone else's plan is an
+  `activity` number (0 to 1) saying how busy it looks, weighted in
+  `config/gameRules.ts`. The turn timer is sent as seconds remaining, not a
+  timestamp, so clocks do not need to agree.
+- `src/game/client/GameClient.ts` owns the **draft plan**. Editing it (queueing
+  tokens, toggling cannons) is instant and local; the host is sent the draft
+  (so it survives a reconnect and drives the activity bar) and, on lock-in, the
+  final plan, which it **validates against what the player really holds**.
+  Movement tokens are only spent when the turn resolves.
+- `src/game/client/GameTransport.ts` is everything a client needs from a host.
+  `LocalTransport` runs the host in the same page and behaves like a network
+  connection (views out, whole plans in). A socket transport replaces it later;
+  React and Phaser would not change.
+- React holds a read-only projection (`src/store/useGameUIStore.ts`) of the
+  client. Phaser holds only view objects in a `Map<EntityId, GameObject>`
+  (`src/phaser/views/EntityViewRegistry.ts`) and animates events.
 
-`src/game/**` contains **no** React, Phaser, DOM or timers.
+`src/game/**` contains **no** React, Phaser or DOM.
 
 ## Where things live
 
@@ -103,12 +120,12 @@ player on their own team.
 - Locking in: a human can lock in their plan, after which it can no longer be
   edited. With `rules.endTurnWhenAllLocked` (default on) the turn resolves the
   moment every human has locked in; otherwise (or when the timer expires) it
-  resolves with whatever each player has queued. AI players plan at resolution.
-  A plan for another human arrives whole through
-  `GameController.submitPlayerPlan(playerId, plan)`, which validates it against
-  what that player holds (`simulation/plans.ts`) before locking them in; this
-  is the seam a network transport will use. `aiByPlayer` assigns a different AI
-  to individual players.
+  resolves with whatever each player has stored. AI players plan at resolution.
+  The host stores a human's plan through `submitDraft` (work in progress) and
+  `submitPlayerPlan` (final, locks in), both validated by
+  `simulation/plans.ts`. `aiByPlayer` assigns a different AI to individual
+  players. The next turn begins once every connected client has finished
+  animating the last one (`acknowledgeTurn`).
 - Each planning turn is timed (**30s** by default, `rules.turnDurationSeconds`,
   `null` disables it). When the
   countdown reaches zero the turn is locked in automatically with whatever is
@@ -125,7 +142,8 @@ player on their own team.
 - When the match ends, the game-over dialog only appears after that turn's
   animation finishes (the controller stays in `animating` until the
   presentation reports completion).
-- Movement tokens are spent when queued and returned when removed. One token is
+- Queueing a movement token only reserves it in your draft; tokens are spent when
+  the turn resolves. One token is
   produced for each player at the start of every new turn, from that player's
   own settings (the deterministic auto rotation, or the token they request).
   AI players plan only moves their own pool can afford, so everyone shares the
