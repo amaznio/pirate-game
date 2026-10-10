@@ -12,6 +12,7 @@ export function tweenTo(
   x: number,
   y: number,
   duration = 240,
+  ease = 'Sine.easeInOut',
 ): Promise<void> {
   return new Promise((resolve) => {
     scene.tweens.add({
@@ -19,7 +20,7 @@ export function tweenTo(
       x,
       y,
       duration,
-      ease: 'Sine.easeInOut',
+      ease,
       onComplete: () => resolve(),
     });
   });
@@ -64,7 +65,7 @@ export function animateTurn(
  * the short way (a 90-degree turn should never animate as 270 degrees the other
  * way).
  */
-function nearestEquivalentAngle(current: number, target: number): number {
+export function nearestEquivalentAngle(current: number, target: number): number {
   const twoPi = Math.PI * 2;
   let delta = (target - current + Math.PI) % twoPi;
   if (delta < 0) {

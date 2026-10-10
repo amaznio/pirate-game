@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AssetKeys } from '../assets/AssetKeys';
+import { generateTerrainTextures } from '../assets/terrainTextures';
 import { TILE_SIZE } from '../Grid';
 
 /**
@@ -24,6 +25,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    generateTerrainTextures(this);
     this.scene.start('BattleScene');
   }
 }

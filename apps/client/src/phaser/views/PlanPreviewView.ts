@@ -40,17 +40,23 @@ export class PlanPreviewView {
     container.add(g);
 
     let previous = gridToWorld(preview.start.position);
+    let previousHeading = preview.start.heading;
     for (const step of preview.steps) {
       const at = gridToWorld(step.position);
+      // The sea can carry or turn a ship in a phase where it has no move planned.
+      const carried =
+        !step.hasMove &&
+        (at.x !== previous.x || at.y !== previous.y || step.heading !== previousHeading);
+      previousHeading = step.heading;
 
-      if (step.hasMove) {
-        g.lineStyle(3, step.blocked ? 0xff5a4f : 0xffffff, 0.45);
+      if (step.hasMove || carried) {
+        g.lineStyle(3, step.blocked ? 0xff5a4f : 0xffffff, step.hasMove ? 0.45 : 0.25);
         g.lineBetween(previous.x, previous.y, at.x, at.y);
 
         const ghost = this.scene.add
           .image(at.x, at.y, AssetKeys.ships, ShipFrames.player)
           .setScale(0.5)
-          .setAlpha(step.blocked ? 0.2 : 0.35)
+          .setAlpha(step.blocked ? 0.2 : step.hasMove ? 0.35 : 0.2)
           .setRotation(headingToAngle(step.heading));
         const label = this.scene.add
           .text(at.x, at.y, String(step.phase + 1), {

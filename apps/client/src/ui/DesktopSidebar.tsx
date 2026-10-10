@@ -1,6 +1,7 @@
 import { usePreviewSettings } from '../store/previewSettings';
 import { FleetList } from './FleetList';
 import { PlanningControls } from './PlanningControls';
+import { SeaLegend } from './SeaLegend';
 import { TimerBar } from './TimerBar';
 import { STATUS_LABEL, formatSeconds, useTurnClock } from './useTurnClock';
 
@@ -55,6 +56,7 @@ export function DesktopSidebar() {
           />
           Show plan preview on board
         </label>
+        <SeaLegend className="border-b border-parchment/10 pb-2" />
         <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] text-parchment/60">
           {SHORTCUTS.map(([keys, label]) => (
             <div key={keys} className="flex gap-1.5">

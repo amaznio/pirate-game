@@ -10,6 +10,7 @@ import type {
 } from '@pirate/game-core/domain/Action';
 import type { PlayerId } from '@pirate/game-core/domain/Entity';
 import { assignTeamStyles } from '../presentation/teamStyle';
+import { NO_HAZARDS, seaHazards, type SeaHazards } from '../presentation/seaHazards';
 
 /** Another ship in the match, as the local player sees it (public info only). */
 export interface ShipSummary {
@@ -42,6 +43,8 @@ export interface GameUISnapshot {
   spectating: boolean;
   /** Every other ship in the match. */
   others: ShipSummary[];
+  /** Which kinds of wind and whirlpool the board has. */
+  hazards: SeaHazards;
   tokens: TokenInventory;
   queue: ActionSlot[];
   cannonQueue: CannonQueue;
@@ -129,6 +132,7 @@ function snapshot({
     selfColor: styles.get(self.teamId)?.css ?? '#4f86c6',
     spectating: (ship?.hp ?? 0) <= 0 && view.outcome === null,
     others,
+    hazards: seaHazards(view.terrain),
     tokens: tokensLeft,
     queue: [...draft.movement],
     cannonQueue: draft.cannons,
@@ -158,6 +162,7 @@ const EMPTY: GameUISnapshot = {
   selfColor: '#4f86c6',
   spectating: false,
   others: [],
+  hazards: NO_HAZARDS,
   tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 },
   queue: [null, null, null, null],
   cannonQueue: [],

@@ -8,6 +8,7 @@ import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
 import { createShipView, headingToAngle } from '../views/ShipView';
 import { createObstacleView } from '../views/ObstacleView';
+import { createTerrainViews } from '../views/TerrainView';
 import { ShipHudView } from '../views/ShipHudView';
 import {
   OffscreenIndicators,
@@ -60,6 +61,7 @@ export class BattleScene extends Phaser.Scene {
       .setOrigin(0)
       .setDepth(0);
     this.drawGrid(state, worldWidth, worldHeight, margin);
+    createTerrainViews(this, state.terrain);
 
     this.views = new EntityViewRegistry();
     this.animator = new EventAnimator(this, this.views, {

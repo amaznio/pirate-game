@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { PlanningControls } from './PlanningControls';
+import { SeaLegend } from './SeaLegend';
 import { ResourceChips } from './ResourceChips';
 import { TimerBar } from './TimerBar';
 
@@ -105,6 +106,7 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
           </button>
         </div>
         <PlanningControls />
+        <SeaLegend className="mt-3 border-t border-parchment/10 pt-2" />
       </div>
     </section>
   );

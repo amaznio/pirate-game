@@ -6,6 +6,7 @@ import { animateBlocked, animateMovement, animateTurn } from './animateMovement'
 import { spawnMuzzleFlash, spawnDryFire } from './animateFire';
 import { spawnImpact, spawnSplash, tweenProjectile } from './animateImpact';
 import { animateDestroyed } from './animateDestroyed';
+import { animatePush, animateSpin } from './animateTerrain';
 
 type PhaseGroup = GameEvent[];
 
@@ -92,6 +93,24 @@ export class EventAnimator {
       }),
     );
 
+    // Then the sea acts on the ships: wind carries them, whirlpools turn them.
+    // Ships go in parallel; one ship's pushes and spin play in order.
+    const board = events.filter(
+      (event) => event.type === 'SHIP_PUSHED' || event.type === 'SHIP_SPUN',
+    );
+    const carried = [
+      ...new Set(board.map((event) => (event as { shipId: string }).shipId)),
+    ];
+    await Promise.all(
+      carried.map(async (shipId) => {
+        for (const event of board) {
+          if ((event as { shipId: string }).shipId === shipId) {
+            await this.animateBoard(event);
+          }
+        }
+      }),
+    );
+
     for (const event of events) {
       if (event.type === 'CANNON_FIRED') {
         this.spawnFire(event);
@@ -148,6 +167,21 @@ export class EventAnimator {
       case 'SHIP_BLOCKED':
         return animateBlocked(this.scene, view);
     }
+  }
+
+  private animateBoard(event: GameEvent): Promise<void> {
+    if (event.type !== 'SHIP_PUSHED' && event.type !== 'SHIP_SPUN') {
+      return Promise.resolve();
+    }
+    const view = this.registry.get(event.shipId) as
+      | Phaser.GameObjects.Container
+      | undefined;
+    if (!view) {
+      return Promise.resolve();
+    }
+    return event.type === 'SHIP_PUSHED'
+      ? animatePush(this.scene, view, event)
+      : animateSpin(this.scene, view, event);
   }
 
   private spawnFire(event: Extract<GameEvent, { type: 'CANNON_FIRED' }>): void {
