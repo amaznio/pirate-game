@@ -6,6 +6,7 @@ import type {
 import type { PlayerId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
 import type { GameState, TokenGenerationConfig } from '../domain/GameState';
+import { ONE_CANNON_A_SIDE, cannonCountsOf, type CannonCounts } from '../domain/Ship';
 import type { GameView } from '../view/GameView';
 import { viewToState } from '../view/redact';
 import type { GameTransport } from './GameTransport';
@@ -19,6 +20,12 @@ import {
   emptyDraft,
   type PlanDraft,
 } from './draft';
+
+/** How many cannons the viewer's ship has on each side (one each if unknown). */
+export function cannonCountsFor(view: GameView): CannonCounts {
+  const ship = view.ships[view.self.shipId];
+  return ship ? cannonCountsOf(ship) : ONE_CANNON_A_SIDE;
+}
 
 /** Everything the UI needs, rebuilt whenever the view or the draft changes. */
 export interface ClientSnapshot {
@@ -117,7 +124,13 @@ export class GameClient {
   toggleCannon(phase: number, side: CannonSide): void {
     if (this.snapshot.canEdit) {
       this.setDraft(
-        toggleCannon(this.snapshot.draft, this.snapshot.view.self.ammo, phase, side),
+        toggleCannon(
+          this.snapshot.draft,
+          this.snapshot.view.self.ammo,
+          phase,
+          side,
+          cannonCountsFor(this.snapshot.view),
+        ),
       );
     }
   }
@@ -196,7 +209,7 @@ export class GameClient {
           : view.self.tokens,
       ammoLeft:
         view.status === 'planning'
-          ? remainingAmmo(view.self.ammo, seed.cannons)
+          ? remainingAmmo(view.self.ammo, seed.cannons, cannonCountsFor(view))
           : view.self.ammo,
     };
   }

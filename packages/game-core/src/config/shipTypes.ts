@@ -20,6 +20,23 @@ export interface ShipTokenStats {
   readonly rotation?: readonly MovementAction[];
 }
 
+/**
+ * How a ship type fires. Every value is optional and falls back to the classic
+ * rules (one cannon a side, `CANNON_STARTING_AMMO`, `CANNON_RELOAD_AMOUNT`).
+ */
+export interface ShipCannonStats {
+  /**
+   * One cannon per entry on each broadside, as a lane (cells along the heading:
+   * 0 abeam, +1 fore, -1 aft). The order is the firing order, so if cannonballs
+   * run short the first lanes fire.
+   */
+  readonly lanes?: readonly number[];
+  /** Cannonballs held at the start of a match. */
+  readonly ammo?: number;
+  /** Cannonballs reloaded each turn. */
+  readonly reload?: number;
+}
+
 export interface ShipType {
   readonly id: string;
   readonly name: string;
@@ -31,6 +48,7 @@ export interface ShipType {
   /** Placeholder fill colour used until Scallywag sprites are wired up. */
   readonly color: number;
   readonly tokens?: ShipTokenStats;
+  readonly cannons?: ShipCannonStats;
   /**
    * Voyage numbers for the roguelite run (not used by a battle): supplies spent
    * per leg of a route, and how many supplies the hold can carry.
@@ -71,6 +89,8 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
       cap: 10,
       restBonus: 1,
     },
+    // Two cannons a side: one abeam and one forward.
+    cannons: { lanes: [0, 1], ammo: 5, reload: 2 },
     supplyUse: 2,
     cargoCap: 12,
   },
@@ -88,12 +108,19 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
       restBonus: 1,
       rotation: ['FORWARD', 'FORWARD', 'TURN_LEFT', 'FORWARD', 'FORWARD', 'TURN_RIGHT'],
     },
+    // Three cannons a side: abeam, forward and aft.
+    cannons: { lanes: [0, 1, -1], ammo: 7, reload: 2 },
     supplyUse: 3,
     cargoCap: 18,
   },
 };
 
 export const DEFAULT_SHIP_TYPE_ID = 'sloop';
+
+/** The lanes of a ship type's cannons on each side (one cannon abeam if unset). */
+export function cannonLanesOf(type: ShipType): readonly number[] {
+  return type.cannons?.lanes ?? [0];
+}
 
 export function getShipType(id: string): ShipType {
   const ship = SHIP_TYPES[id];

@@ -16,6 +16,16 @@ export interface AnimatorHooks {
   onDestroyed?(shipId: string): void;
 }
 
+/**
+ * Matches a shot's launch to its impact. Several cannons on one side start from
+ * different cells, so the cell is part of the key.
+ */
+function projectileKey(
+  event: Extract<GameEvent, { type: 'CANNON_FIRED' | 'PROJECTILE_HIT' | 'PROJECTILE_MISSED' }>,
+): string {
+  return `${event.shipId}:${event.side}:${event.from.x},${event.from.y}`;
+}
+
 function groupPhases(events: readonly GameEvent[]): PhaseGroup[] {
   const groups: PhaseGroup[] = [];
   let current: PhaseGroup | null = null;
@@ -191,7 +201,7 @@ export class EventAnimator {
       projectile.x,
       projectile.y,
     );
-    this.pendingProjectiles.set(`${event.shipId}:${event.side}`, projectile);
+    this.pendingProjectiles.set(projectileKey(event), projectile);
   }
 
   private spawnDryFire(shipId: string): void {
@@ -210,7 +220,7 @@ export class EventAnimator {
       { type: 'PROJECTILE_HIT' | 'PROJECTILE_MISSED' }
     >,
   ): Promise<void> {
-    const key = `${event.shipId}:${event.side}`;
+    const key = projectileKey(event);
     const projectile = this.pendingProjectiles.get(key);
     this.pendingProjectiles.delete(key);
 

@@ -5,12 +5,12 @@ import type {
   MovementAction,
   TokenInventory,
 } from '../domain/Action';
+import { cloneInventory, emptyCannonQueue, emptyQueue } from '../domain/Action';
 import {
-  cloneInventory,
-  emptyCannonQueue,
-  emptyQueue,
-  totalQueuedShots,
-} from '../domain/Action';
+  ONE_CANNON_A_SIDE,
+  cannonQueueCost,
+  type CannonCounts,
+} from '../domain/Ship';
 import type { PlayerActions } from '../domain/TurnResult';
 
 /**
@@ -62,9 +62,13 @@ export function remainingTokens(
   };
 }
 
-/** Cannonballs still free to queue. */
-export function remainingAmmo(ammo: number, cannons: CannonQueue): number {
-  return ammo - totalQueuedShots(cannons);
+/** Cannonballs still free to queue (a side costs one per cannon on it). */
+export function remainingAmmo(
+  ammo: number,
+  cannons: CannonQueue,
+  counts: CannonCounts = ONE_CANNON_A_SIDE,
+): number {
+  return ammo - cannonQueueCost(cannons, counts);
 }
 
 /**
@@ -106,18 +110,22 @@ export function removeToken(draft: PlanDraft, index: number): PlanDraft {
   return { ...draft, movement };
 }
 
-/** Turns one broadside on or off for a phase (on only if a cannonball is free). */
+/**
+ * Turns one broadside on or off for a phase. It only goes on if there are
+ * cannonballs free for every cannon on that side, and the side has a cannon.
+ */
 export function toggleCannon(
   draft: PlanDraft,
   ammo: number,
   phase: number,
   side: CannonSide,
+  counts: CannonCounts = ONE_CANNON_A_SIDE,
 ): PlanDraft {
   const current = draft.cannons[phase];
   if (!current) {
     return draft;
   }
-  if (!current[side] && remainingAmmo(ammo, draft.cannons) <= 0) {
+  if (!current[side] && remainingAmmo(ammo, draft.cannons, counts) < Math.max(1, counts[side])) {
     return draft;
   }
   const cannons = draft.cannons.map((slot, index) =>

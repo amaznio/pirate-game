@@ -1,13 +1,14 @@
-import type { Ship, WeaponSide } from '../domain/Ship';
-import { isShip } from '../domain/Ship';
+import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
+import { isShip, mountsOnSide } from '../domain/Ship';
 import type { CannonSlot } from '../domain/Action';
 import { CANNON_SIDES } from '../domain/Action';
 import type { EntityId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
+import type { Position } from '../domain/Position';
 import type { MutableGameState } from './internal';
 import { leftBroadside, rightBroadside } from '../domain/Direction';
 import { getWeaponType } from '../config/weaponTypes';
-import { firstEntityAlongRay, rayEndpoint } from './collision';
+import { firstEntityAlongRay, mountOrigin, rayEndpoint } from './collision';
 import { applyDamage } from './damage';
 
 function broadsideDirection(ship: Ship, side: WeaponSide) {
@@ -29,8 +30,10 @@ interface PendingDamage {
 
 /**
  * Resolves the cannon moves for one phase, for every ship at once. Each flagged
- * broadside fires one shot, spending one cannonball from the owner's shared
- * pool (so a "both sides" move spends two).
+ * broadside fires every cannon on that side, each spending one cannonball from
+ * the owner's shared pool (so a "both sides" move on a two-cannon ship spends
+ * four). A cannon fires from its lane: if the cell it fires from is taken, or
+ * the pool runs dry, it does not fire and reports why.
  *
  * Fire is simultaneous: every shot is ray-cast against the positions after this
  * phase's movement and before any of this phase's damage lands. Damage is
@@ -53,20 +56,34 @@ export function resolveFirePhase(
         continue;
       }
 
-      const owner = state.players[ship.ownerId];
-      if (!owner || owner.ammo <= 0) {
-        events.push({
-          type: 'CANNON_BLOCKED',
-          shipId: ship.id,
-          side,
-          reason: 'out_of_ammo',
-          phase,
-        });
-        continue;
-      }
+      for (const mount of mountsOnSide(ship, side)) {
+        const origin = mountOrigin(state, ship.id, ship.position, ship.heading, mount.lane ?? 0);
+        if (!origin) {
+          events.push({
+            type: 'CANNON_BLOCKED',
+            shipId: ship.id,
+            side,
+            reason: 'obstructed',
+            phase,
+          });
+          continue;
+        }
 
-      state.players[ship.ownerId] = { ...owner, ammo: owner.ammo - 1 };
-      events.push(...fireBroadside(state, ship, side, phase, pending));
+        const owner = state.players[ship.ownerId];
+        if (!owner || owner.ammo <= 0) {
+          events.push({
+            type: 'CANNON_BLOCKED',
+            shipId: ship.id,
+            side,
+            reason: 'out_of_ammo',
+            phase,
+          });
+          continue;
+        }
+
+        state.players[ship.ownerId] = { ...owner, ammo: owner.ammo - 1 };
+        events.push(...fireMount(state, ship, mount, origin, phase, pending));
+      }
     }
   }
 
@@ -81,22 +98,19 @@ export function resolveFirePhase(
 }
 
 /**
- * Fires a single broadside (one shot). Ammo is handled by the caller. Damage to
+ * Fires one cannon from `origin`. Ammo is handled by the caller. Damage to
  * ships is queued in `pending` rather than applied, so all shots in a phase see
  * the same board.
  */
-function fireBroadside(
+function fireMount(
   state: MutableGameState,
   ship: Ship,
-  side: WeaponSide,
+  mount: WeaponMount,
+  origin: Position,
   phase: number,
   pending: PendingDamage[],
 ): GameEvent[] {
-  const mount = ship.weapons.find((weapon) => weapon.side === side);
-  if (!mount) {
-    return [];
-  }
-
+  const side = mount.side;
   const events: GameEvent[] = [];
   const weapon = getWeaponType(mount.weaponTypeId);
   const direction = broadsideDirection(ship, side);
@@ -106,27 +120,21 @@ function fireBroadside(
     shipId: ship.id,
     side,
     direction,
-    from: { ...ship.position },
+    from: { ...origin },
     weaponTypeId: weapon.id,
     range: weapon.range,
     phase,
   });
 
-  const hit = firstEntityAlongRay(
-    state,
-    ship.position,
-    direction,
-    weapon.range,
-    ship.id,
-  );
+  const hit = firstEntityAlongRay(state, origin, direction, weapon.range, ship.id);
 
   if (!hit) {
     events.push({
       type: 'PROJECTILE_MISSED',
       shipId: ship.id,
       side,
-      from: { ...ship.position },
-      to: rayEndpoint(ship.position, direction, weapon.range),
+      from: { ...origin },
+      to: rayEndpoint(origin, direction, weapon.range),
       direction,
       phase,
     });
@@ -148,7 +156,7 @@ function fireBroadside(
     side,
     targetId: hit.entity.id,
     targetKind: hit.entity.kind,
-    from: { ...ship.position },
+    from: { ...origin },
     to: { ...hit.position },
     damage,
     phase,

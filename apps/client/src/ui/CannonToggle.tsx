@@ -1,5 +1,7 @@
 interface CannonToggleProps {
   active: boolean;
+  /** Cannons on this side; shown when there is more than one. */
+  count?: number;
   disabled: boolean;
   label: string;
   onClick: () => void;
@@ -8,6 +10,7 @@ interface CannonToggleProps {
 /** A cannonball checkbox for one broadside in one phase. */
 export function CannonToggle({
   active,
+  count = 1,
   disabled,
   label,
   onClick,
@@ -32,8 +35,12 @@ export function CannonToggle({
             : 'border border-parchment/30 bg-black/30'
         }`}
       >
-        {active && (
-          <span className="absolute top-1 left-1 h-1.5 w-1.5 rounded-full bg-white/60" />
+        {count > 1 ? (
+          <span className="text-[11px] font-black leading-none text-parchment">{count}</span>
+        ) : (
+          active && (
+            <span className="absolute top-1 left-1 h-1.5 w-1.5 rounded-full bg-white/60" />
+          )
         )}
       </span>
     </button>

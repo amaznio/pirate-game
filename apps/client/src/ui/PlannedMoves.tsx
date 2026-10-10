@@ -21,6 +21,7 @@ export function PlannedMoves() {
   const toggleCannon = useGameUIStore((state) => state.toggleCannon);
 
   const available = useAmmo().remaining;
+  const perSide = useGameUIStore((state) => state.cannonsPerSide);
 
   return (
     <ol className="flex flex-col gap-1">
@@ -28,13 +29,14 @@ export function PlannedMoves() {
         const meta = slot ? TOKEN_META[slot] : null;
         const cannon = cannonQueue[index] ?? { left: false, right: false };
         const armed = activeSlot === index;
-        const leftDisabled = !canPlan || (!cannon.left && available <= 0);
-        const rightDisabled = !canPlan || (!cannon.right && available <= 0);
+        const leftDisabled = !canPlan || (!cannon.left && available < Math.max(1, perSide.left));
+        const rightDisabled = !canPlan || (!cannon.right && available < Math.max(1, perSide.right));
 
         return (
           <li key={index} className="flex items-center gap-2">
             <CannonToggle
               active={cannon.left}
+              count={perSide.left}
               disabled={leftDisabled}
               label={`Fire left in phase ${index + 1}`}
               onClick={() => toggleCannon(index, 'left')}
@@ -76,6 +78,7 @@ export function PlannedMoves() {
 
             <CannonToggle
               active={cannon.right}
+              count={perSide.right}
               disabled={rightDisabled}
               label={`Fire right in phase ${index + 1}`}
               onClick={() => toggleCannon(index, 'right')}

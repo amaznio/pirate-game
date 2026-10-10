@@ -15,14 +15,14 @@ import { ACTIONS_PER_TURN, CANNON_SIDES, cloneInventory } from '../domain/Action
 import { inBounds } from '../domain/Board';
 import { DIRECTIONS, leftBroadside, rightBroadside, vectorFor } from '../domain/Direction';
 import { positionsEqual, translate } from '../domain/Position';
-import { isShip } from '../domain/Ship';
+import { isShip, mountsOnSide } from '../domain/Ship';
 import { blockingEntityAt, getHostiles, getShipByOwner } from '../simulation/selectors';
 import {
   resolveHoldOutcome,
   resolveMovementOutcome,
   type MovementOutcome,
 } from '../simulation/movement';
-import { firstEntityAlongRay } from '../simulation/collision';
+import { firstEntityAlongRay, mountOrigin } from '../simulation/collision';
 import { getWeaponType } from '../config/weaponTypes';
 import type { AIController } from './AIController';
 import { profileFor, type AiProfile } from './profiles';
@@ -44,6 +44,12 @@ interface Candidate {
   readonly order: number;
 }
 
+/** One cannon that would fire, and the enemy ship its shot would hit (if any). */
+interface Shot {
+  readonly victim: Ship | null;
+  readonly damage: number;
+}
+
 /** Everything one planning run needs, with caches for the repeated lookups. */
 interface Planning {
   readonly state: GameState;
@@ -51,11 +57,8 @@ interface Planning {
   readonly target: Ship;
   readonly hostiles: readonly Ship[];
   readonly profile: AiProfile;
-  /** Cannon range and damage of this ship's broadsides. */
-  readonly range: number;
-  readonly damage: number;
   readonly outcomes: Map<string, MovementOutcome>;
-  readonly victims: Map<string, Ship | null>;
+  readonly volleys: Map<string, readonly Shot[]>;
   readonly threats: Map<string, number>;
   /** Moves still needed from each (cell, heading) to fire at the target; built on first use. */
   goalSteps: Map<string, number> | null;
@@ -94,42 +97,47 @@ function holdOf(
   return resolveHoldOutcome(plan.state, plan.me.id, position, heading);
 }
 
-/** The enemy ship a broadside would hit from here, if any (cached). */
-function victimOf(
+/**
+ * The cannons of one broadside that would fire from here, in firing order, each
+ * with the enemy ship it would hit if any (cached). A cannon whose lane cell is
+ * taken does not fire, so it is left out.
+ */
+function volleyOf(
   plan: Planning,
   position: Position,
   heading: Direction,
   side: CannonSide,
-): Ship | null {
+): readonly Shot[] {
   const key = `${position.x},${position.y},${heading},${side}`;
-  const cached = plan.victims.get(key);
-  if (cached !== undefined) {
+  const cached = plan.volleys.get(key);
+  if (cached) {
     return cached;
   }
-  const mounted = plan.me.weapons.some((weapon) => weapon.side === side);
-  let victim: Ship | null = null;
-  if (mounted) {
+  const shots: Shot[] = [];
+  for (const mount of mountsOnSide(plan.me, side)) {
+    const origin = mountOrigin(plan.state, plan.me.id, position, heading, mount.lane ?? 0);
+    if (!origin) {
+      continue;
+    }
+    const weapon = getWeaponType(mount.weaponTypeId);
     const hit = firstEntityAlongRay(
       plan.state,
-      position,
+      origin,
       broadsideDirection(heading, side),
-      plan.range,
+      weapon.range,
       plan.me.id,
     );
-    if (
-      hit &&
-      isShip(hit.entity) &&
-      hit.entity.hp > 0 &&
-      hit.entity.teamId !== plan.me.teamId
-    ) {
-      victim = hit.entity;
-    }
+    const victim =
+      hit && isShip(hit.entity) && hit.entity.hp > 0 && hit.entity.teamId !== plan.me.teamId
+        ? hit.entity
+        : null;
+    shots.push({ victim, damage: weapon.damage });
   }
-  plan.victims.set(key, victim);
-  return victim;
+  plan.volleys.set(key, shots);
+  return shots;
 }
 
-/** How many enemy broadsides (as they are now) would cover this cell. */
+/** How many enemy cannons (as they are now) would cover this cell. */
 function threatsAt(plan: Planning, position: Position): number {
   const key = `${position.x},${position.y}`;
   const cached = plan.threats.get(key);
@@ -139,14 +147,20 @@ function threatsAt(plan: Planning, position: Position): number {
 
   let count = 0;
   for (const enemy of plan.hostiles) {
-    for (const side of CANNON_SIDES) {
-      const mount = enemy.weapons.find((weapon) => weapon.side === side);
-      if (!mount) {
+    for (const mount of enemy.weapons) {
+      const origin = mountOrigin(
+        plan.state,
+        enemy.id,
+        enemy.position,
+        enemy.heading,
+        mount.lane ?? 0,
+      );
+      if (!origin) {
         continue;
       }
-      const direction = broadsideDirection(enemy.heading, side);
+      const direction = broadsideDirection(enemy.heading, mount.side);
       const range = getWeaponType(mount.weaponTypeId).range;
-      let cursor = enemy.position;
+      let cursor = origin;
       for (let step = 0; step < range; step += 1) {
         cursor = translate(cursor, vectorFor(direction));
         if (!inBounds(plan.state.board, cursor)) {
@@ -197,7 +211,13 @@ function goalStepsOf(plan: Planning): Map<string, number> {
       }
       for (const heading of DIRECTIONS) {
         const here = stateKey(position, heading);
-        if (CANNON_SIDES.some((side) => victimOf(plan, position, heading, side)?.id === plan.target.id)) {
+        if (
+          CANNON_SIDES.some((side) =>
+            volleyOf(plan, position, heading, side).some(
+              (shot) => shot.victim?.id === plan.target.id,
+            ),
+          )
+        ) {
           firing.push(here);
         }
         for (const action of OPTIONS) {
@@ -324,7 +344,8 @@ function search(
       pool[option] -= 1;
     }
 
-    // Fire whatever lines up, as long as cannonballs last.
+    // Fire every broadside that lines up a hit, as long as the cannonballs last
+    // for all of its cannons (a side fires all of them or none).
     let ammo = ammoLeft;
     let value = 0;
     const fires = { left: false, right: false };
@@ -332,13 +353,18 @@ function search(
       if (ammo <= 0) {
         break;
       }
-      const victim = victimOf(plan, nextPosition, nextHeading, side);
-      if (victim) {
-        fires[side] = true;
+      const shots = volleyOf(plan, nextPosition, nextHeading, side);
+      if (shots.length === 0 || ammo < shots.length || !shots.some((shot) => shot.victim)) {
+        continue;
+      }
+      fires[side] = true;
+      for (const shot of shots) {
         ammo -= 1;
-        value +=
-          plan.profile.hitValue +
-          (victim.hp <= plan.damage ? plan.profile.killBonus : 0);
+        if (shot.victim) {
+          value +=
+            plan.profile.hitValue +
+            (shot.victim.hp <= shot.damage ? plan.profile.killBonus : 0);
+        }
       }
     }
 
@@ -395,8 +421,6 @@ export function planAiActions(
   }
 
   const profile = profileFor(difficulty ?? player.aiDifficulty);
-  const mount = me.weapons[0];
-  const weapon = mount ? getWeaponType(mount.weaponTypeId) : null;
 
   const plan: Planning = {
     state,
@@ -404,10 +428,8 @@ export function planAiActions(
     target,
     hostiles: getHostiles(state, me),
     profile,
-    range: weapon?.range ?? 0,
-    damage: weapon?.damage ?? 1,
     outcomes: new Map(),
-    victims: new Map(),
+    volleys: new Map(),
     threats: new Map(),
     goalSteps: null,
   };

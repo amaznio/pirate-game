@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AiDifficulty, GameStatus } from '@pirate/game-core/domain/GameState';
-import type { ClientSnapshot, GameClient } from '@pirate/game-core/client/GameClient';
+import { cannonCountsFor, type ClientSnapshot, type GameClient } from '@pirate/game-core/client/GameClient';
+import { ONE_CANNON_A_SIDE, type CannonCounts } from '@pirate/game-core/domain/Ship';
 import type {
   ActionSlot,
   CannonQueue,
@@ -52,6 +53,8 @@ export interface GameUISnapshot {
   queue: ActionSlot[];
   cannonQueue: CannonQueue;
   ammo: number;
+  /** Cannons on each side of the local ship; a broadside costs one cannonball per cannon. */
+  cannonsPerSide: CannonCounts;
   auto: boolean;
   requested: MovementAction;
   /** The local player has locked in and can no longer change their plan. */
@@ -143,6 +146,7 @@ function snapshot({
     queue: [...draft.movement],
     cannonQueue: draft.cannons,
     ammo: self.ammo,
+    cannonsPerSide: cannonCountsFor(view),
     auto: self.tokenGeneration.auto,
     requested: self.tokenGeneration.requested,
     lockedIn: self.lockedIn,
@@ -174,6 +178,7 @@ const EMPTY: GameUISnapshot = {
   queue: [null, null, null, null],
   cannonQueue: [],
   ammo: 0,
+  cannonsPerSide: ONE_CANNON_A_SIDE,
   auto: true,
   requested: 'FORWARD',
   lockedIn: false,

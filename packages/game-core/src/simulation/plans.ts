@@ -5,8 +5,8 @@ import {
   ACTIONS_PER_TURN,
   MOVEMENT_ACTIONS,
   cloneInventory,
-  totalQueuedShots,
 } from '../domain/Action';
+import { ONE_CANNON_A_SIDE, cannonCountsOf, cannonQueueCost } from '../domain/Ship';
 
 export type PlanRejection =
   | 'unknown_player'
@@ -66,7 +66,9 @@ export function applyPlayerPlan(
     return { ok: false, reason: 'not_enough_tokens' };
   }
 
-  if (totalQueuedShots(plan.cannons) > player.ammo) {
+  const ship = state.ships[player.shipId];
+  const counts = ship ? cannonCountsOf(ship) : ONE_CANNON_A_SIDE;
+  if (cannonQueueCost(plan.cannons, counts) > player.ammo) {
     return { ok: false, reason: 'not_enough_ammo' };
   }
 

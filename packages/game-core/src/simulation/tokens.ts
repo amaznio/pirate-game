@@ -71,11 +71,15 @@ export function spendMovementTokens(
  * is spent. Kept behind a function so the reload curve can be replaced later
  * without touching other layers.
  */
-export function reloadedAmmo(current: number, completedTurn: number): number {
+export function reloadedAmmo(
+  current: number,
+  completedTurn: number,
+  amount: number = CANNON_RELOAD_AMOUNT,
+): number {
   if (completedTurn % CANNON_RELOAD_INTERVAL_TURNS !== 0) {
     return current;
   }
-  return current + CANNON_RELOAD_AMOUNT;
+  return current + amount;
 }
 
 export interface NextTurnResult {
@@ -100,9 +104,9 @@ export function beginNextTurn(state: GameState): NextTurnResult {
   for (const id of Object.keys(state.players)) {
     const player = state.players[id];
     const shipTypeId = state.ships[player.shipId]?.shipTypeId;
-    const economy = shipTypeId
-      ? tokenEconomyOf(getShipType(shipTypeId))
-      : DEFAULT_TOKEN_ECONOMY;
+    const shipType = shipTypeId ? getShipType(shipTypeId) : null;
+    const economy = shipType ? tokenEconomyOf(shipType) : DEFAULT_TOKEN_ECONOMY;
+    const reload = shipType?.cannons?.reload ?? CANNON_RELOAD_AMOUNT;
     const tokens = cloneInventory(player.tokens);
     const made: MovementAction[] = [];
     let generation = player.tokenGeneration;
@@ -125,7 +129,7 @@ export function beginNextTurn(state: GameState): NextTurnResult {
     players[id] = {
       ...player,
       tokens,
-      ammo: reloadedAmmo(player.ammo, state.turn),
+      ammo: reloadedAmmo(player.ammo, state.turn, reload),
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),
       tokenGeneration: generation,

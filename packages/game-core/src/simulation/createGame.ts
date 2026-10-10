@@ -14,7 +14,7 @@ import {
   emptyCannonQueue,
   emptyQueue,
 } from '../domain/Action';
-import { getShipType } from '../config/shipTypes';
+import { cannonLanesOf, getShipType } from '../config/shipTypes';
 import { createDuelConfig, type MatchConfig } from '../config/matchConfig';
 
 const BROADSIDE_ORDER: readonly WeaponSide[] = ['left', 'right'];
@@ -37,7 +37,14 @@ export function createShip(
   for (const weaponSide of BROADSIDE_ORDER) {
     const weaponTypeId = type.broadsides[weaponSide];
     if (weaponTypeId) {
-      weapons.push({ weaponTypeId, side: weaponSide });
+      for (const lane of cannonLanesOf(type)) {
+        // A mount on the ship's own cell leaves `lane` out, as before.
+        weapons.push(
+          lane === 0
+            ? { weaponTypeId, side: weaponSide }
+            : { weaponTypeId, side: weaponSide, lane },
+        );
+      }
     }
   }
 
@@ -83,7 +90,8 @@ export function createGame(
       participant.spawn.heading,
       participant.shipTypeId,
     );
-    const stats = getShipType(participant.shipTypeId).tokens;
+    const shipType = getShipType(participant.shipTypeId);
+    const stats = shipType.tokens;
     players[participant.playerId] = {
       id: participant.playerId,
       name: participant.name ?? participant.playerId,
@@ -92,7 +100,7 @@ export function createGame(
       controller: participant.controller,
       aiDifficulty: participant.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
       tokens: cloneInventory(stats?.start ?? config.startingTokens),
-      ammo: config.startingAmmo,
+      ammo: shipType.cannons?.ammo ?? config.startingAmmo,
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),
       tokenGeneration: { auto: true, requested: 'FORWARD', rotationIndex: 0 },
