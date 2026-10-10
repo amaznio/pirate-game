@@ -324,7 +324,9 @@ player, humans included: it is what sails a human's ship while they are away.
 
 Every match has its own generated board (`packages/game-core/src/board/generateBoard.ts`),
 built from the match **seed** by a pure function, so the server, every client
-and a replay agree on it. Rocks gather in reefs (smooth noise), wind comes in
+and a replay agree on it. Rocks are single stones, small clumps (up to 2x3) and
+thin winding ridges, kept apart from each other; smooth noise decides where they
+gather and which way ridges run. Wind comes in
 straight lanes and whirlpools are 2x2 vortices. Starting positions are kept
 clear, all open water stays connected and there are no dead-end nooks. The
 **sea** (`calm`, `normal`, `stormy`) sets how many of each there are

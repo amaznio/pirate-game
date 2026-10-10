@@ -20,7 +20,7 @@ describe('createDuelConfig', () => {
   });
 
   it('is the default for createGame()', () => {
-    expect(createGame()).toEqual(createGame(createDuelConfig()));
+    expect(createGame()).toEqual(createGame(createDuelConfig({ sea: 'open' })));
   });
 });
 

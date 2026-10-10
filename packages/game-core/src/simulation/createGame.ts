@@ -55,8 +55,13 @@ export function createShip(
   };
 }
 
-/** Builds the starting GameState for a match. Defaults to the classic 1v1. */
-export function createGame(config: MatchConfig = createDuelConfig()): GameState {
+/**
+ * Builds the starting GameState for a match. With no config it is the classic
+ * 1v1 on open water; real matches pass a config with a generated sea.
+ */
+export function createGame(
+  config: MatchConfig = createDuelConfig({ sea: 'open' }),
+): GameState {
   const obstacles: Record<EntityId, Obstacle> = {};
   for (const layout of config.obstacles) {
     obstacles[layout.id] = {

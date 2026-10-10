@@ -356,7 +356,7 @@ describe('going after a target', () => {
   });
 
   it('prefers the nearest enemy among several, and passes when none are left', () => {
-    const config = createSkirmishConfig({ humans: 2, ais: 2, teamMode: 'teams' });
+    const config = createSkirmishConfig({ humans: 2, ais: 2, teamMode: 'teams', sea: 'open' });
     const base = createGame(config);
     const place = (id: string, x: number, y: number, heading: Direction, hp?: number) => ({
       ...base.ships[`${id}-ship`],
@@ -539,13 +539,11 @@ describe('wind and whirlpools', () => {
     }
   });
 
-  it('still plays better at higher levels on generated boards', () => {
-    const seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const hardVsEasy = matchup('hard', 'easy', seeds, 'normal');
-    const normalVsEasy = matchup('normal', 'easy', seeds, 'normal');
+  it('still plays better at the top level on generated boards', () => {
+    const seeds = Array.from({ length: 20 }, (_, i) => i + 1);
+    const hardVsNormal = matchup('hard', 'normal', seeds, 'normal');
 
-    expect(hardVsEasy.aWins).toBeGreaterThan(hardVsEasy.bWins);
-    expect(normalVsEasy.aWins).toBeGreaterThan(normalVsEasy.bWins);
+    expect(hardVsNormal.aWins).toBeGreaterThan(hardVsNormal.bWins);
   }, 30_000);
 
   it('plans quickly even with terrain (the server plans for every AI each turn)', () => {

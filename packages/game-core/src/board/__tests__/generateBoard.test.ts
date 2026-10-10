@@ -130,21 +130,67 @@ describe('generateBoard', () => {
     }
   });
 
-  it('clusters rocks rather than scattering them', () => {
-    // Noise puts rocks next to each other far more often than chance would.
-    let touching = 0;
-    let total = 0;
-    for (const seed of SEEDS) {
-      const rocks = rockSet(boardFor(seed).board);
-      for (const key of rocks) {
-        const [x, y] = key.split(',').map(Number);
-        total += 1;
-        if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => rocks.has(`${x + dx},${y + dy}`))) {
-          touching += 1;
+  it('builds single stones, small clumps (up to 2x3) and thin ridges, never a big mass', () => {
+    const sizes = new Map<number, number>();
+    let ridges = 0;
+    for (const style of MAP_STYLES) {
+      for (const seed of SEEDS) {
+        const rocks = rockSet(boardFor(seed, style, 4).board);
+        const seen = new Set<string>();
+        for (const start of rocks) {
+          if (seen.has(start)) continue;
+          // One formation = rocks touching each other (diagonals count).
+          const group = [start];
+          seen.add(start);
+          for (let i = 0; i < group.length; i += 1) {
+            const [x, y] = group[i].split(',').map(Number);
+            for (let dy = -1; dy <= 1; dy += 1) {
+              for (let dx = -1; dx <= 1; dx += 1) {
+                const key = `${x + dx},${y + dy}`;
+                if (rocks.has(key) && !seen.has(key)) {
+                  seen.add(key);
+                  group.push(key);
+                }
+              }
+            }
+          }
+          sizes.set(group.length, (sizes.get(group.length) ?? 0) + 1);
+          expect(group.length).toBeLessThanOrEqual(8);
+
+          const xs = group.map((key) => Number(key.split(',')[0]));
+          const ys = group.map((key) => Number(key.split(',')[1]));
+          const w = Math.max(...xs) - Math.min(...xs) + 1;
+          const h = Math.max(...ys) - Math.min(...ys) + 1;
+          const compact = Math.max(w, h) <= 3 && Math.min(w, h) <= 2;
+          if (!compact) {
+            // Anything bigger than a 2x3 is a ridge: a line, never a solid block.
+            ridges += 1;
+            for (const key of group) {
+              const [x, y] = key.split(',').map(Number);
+              expect(
+                [`${x},${y}`, `${x + 1},${y}`, `${x},${y + 1}`, `${x + 1},${y + 1}`].every(
+                  (cell) => rocks.has(cell),
+                ),
+              ).toBe(false);
+            }
+          }
         }
       }
     }
-    expect(touching / total).toBeGreaterThan(0.6);
+    // A real mix of all three.
+    expect(sizes.get(1) ?? 0).toBeGreaterThan(100);
+    expect(ridges).toBeGreaterThan(100);
+    expect([...sizes.keys()].some((size) => size >= 4 && size <= 6)).toBe(true);
+  });
+
+  it('reaches roughly the rock cover the sea asks for', () => {
+    for (const style of MAP_STYLES) {
+      let total = 0;
+      for (const seed of SEEDS) total += boardFor(seed, style).board.obstacles.length;
+      const share = total / SEEDS.length / (SIZE * SIZE);
+      expect(share).toBeGreaterThan(MAP_PROFILES[style].rockDensity * 0.7);
+      expect(share).toBeLessThan(MAP_PROFILES[style].rockDensity + 0.04);
+    }
   });
 
   it('follows the style: calmer water has fewer hazards than stormy water', () => {

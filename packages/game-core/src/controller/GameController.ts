@@ -65,7 +65,7 @@ export class GameController {
   ) {
     this.ai = options.ai ?? createSimpleAI();
     this.aiByPlayer = options.aiByPlayer ?? {};
-    this.config = options.config ?? createDuelConfig();
+    this.config = options.config ?? createDuelConfig({ sea: 'open' });
     this.state = options.initialState ?? createGame(this.config);
 
     const rulesSeconds = this.state.rules.turnDurationSeconds;

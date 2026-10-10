@@ -8,6 +8,12 @@
 export const AssetKeys = {
   /** 64x64 terrain spritesheet (tiles_sheet.png). */
   tiles: 'tiles',
+  /**
+   * One rock, copied out of the terrain sheet with a transparent margin (see
+   * BootScene). Rocks are drawn rotated, and a rotated frame cut straight from
+   * a sheet shows thin lines of the neighbouring tiles along its edges.
+   */
+  rock: 'rock',
   /** Sparrow atlas: ships, cannonball, effects (shipsMiscellaneous_sheet). */
   ships: 'ships',
 } as const;

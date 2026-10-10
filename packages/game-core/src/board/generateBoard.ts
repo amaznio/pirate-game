@@ -89,6 +89,8 @@ function valueNoise(
 
 class Grid {
   readonly rock: boolean[];
+  /** Which formation each rock belongs to (-1 for none). */
+  readonly formation: number[];
   readonly taken: Set<string> = new Set();
 
   constructor(
@@ -96,6 +98,11 @@ class Grid {
     readonly height: number,
   ) {
     this.rock = new Array<boolean>(width * height).fill(false);
+    this.formation = new Array<number>(width * height).fill(-1);
+  }
+
+  formationAt(x: number, y: number): number {
+    return this.inBounds(x, y) ? this.formation[y * this.width + x] : -1;
   }
 
   inBounds(x: number, y: number): boolean {
@@ -106,8 +113,14 @@ class Grid {
     return this.inBounds(x, y) && this.rock[y * this.width + x];
   }
 
-  setRock(x: number, y: number): void {
+  setRock(x: number, y: number, formation = -1): void {
     this.rock[y * this.width + x] = true;
+    this.formation[y * this.width + x] = formation;
+  }
+
+  clearRock(x: number, y: number): void {
+    this.rock[y * this.width + x] = false;
+    this.formation[y * this.width + x] = -1;
   }
 
   /** Off the board counts as blocked, like a rock. */
@@ -146,11 +159,260 @@ const ORTHOGONAL: ReadonlyArray<readonly [number, number]> = [
   [0, -1],
 ];
 
+/** The eight cells around a cell. */
+const EIGHT: ReadonlyArray<readonly [number, number]> = [
+  [0, -1],
+  [1, -1],
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
+];
+
 /**
- * Rocks: the cells where smooth noise is highest, so they gather in reefs and
- * ridges rather than lying about at random. Then the board is tidied so ships
- * never get trapped: dead-end nooks are filled and cut-off pockets are closed.
- * Returns false if a spawn ended up cut off (the caller tries another seed).
+ * How many cells a clump of rock has, as weighted choices: small clumps up to a
+ * 2x2 or 2x3. Anything bigger as a solid mass starts to look like a block
+ * rather than something the sea left behind (long thin ridges are separate).
+ */
+const CLUMP_SIZES: ReadonlyArray<readonly [size: number, weight: number]> = [
+  [1, 34],
+  [2, 24],
+  [3, 14],
+  [4, 14],
+  [5, 6],
+  [6, 8],
+];
+/** What share of the rocks laid are single stones, small clumps and ridges (the rest). */
+const SINGLE_SHARE = 0.22;
+const CLUMP_SHARE = 0.28;
+/** A clump always fits in a 2x3 (or 3x2) box. */
+const CLUMP_LONG = 3;
+const CLUMP_SHORT = 2;
+const FORMATION_ATTEMPTS = 320;
+
+/** Whether all open water is still one connected piece (ships turn corners, not squeeze through diagonals). */
+function waterIsConnected(grid: Grid): boolean {
+  const { width, height } = grid;
+  let open = 0;
+  let start = -1;
+  for (let i = 0; i < width * height; i += 1) {
+    if (!grid.rock[i]) {
+      open += 1;
+      if (start === -1) {
+        start = i;
+      }
+    }
+  }
+  if (open === 0) {
+    return true;
+  }
+  const seen = new Uint8Array(width * height);
+  const stack = [start];
+  seen[start] = 1;
+  let reached = 0;
+  while (stack.length > 0) {
+    const cell = stack.pop() as number;
+    reached += 1;
+    const cx = cell % width;
+    const cy = (cell - cx) / width;
+    for (const [dx, dy] of ORTHOGONAL) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+        continue;
+      }
+      const next = ny * width + nx;
+      if (!grid.rock[next] && !seen[next]) {
+        seen[next] = 1;
+        stack.push(next);
+      }
+    }
+  }
+  return reached === open;
+}
+
+/**
+ * Whether a rock can go at (x, y) as part of `formation`. A formation never
+ * touches another one (so clumps stay separate islets of rock with water
+ * between), never walls a cell of water in on three sides, and never cuts water off.
+ */
+function canPlaceRock(
+  grid: Grid,
+  spawns: readonly Position[],
+  x: number,
+  y: number,
+  formation: number,
+  ridge = false,
+): boolean {
+  if (
+    !grid.inBounds(x, y) ||
+    grid.isRock(x, y) ||
+    nearAny(x, y, spawns, ROCK_CLEARANCE)
+  ) {
+    return false;
+  }
+  for (const [dx, dy] of EIGHT) {
+    const other = grid.formationAt(x + dx, y + dy);
+    if (other !== -1 && other !== formation) {
+      return false;
+    }
+  }
+
+  // A ridge stays a line: it never fills in a solid 2x2 block.
+  if (ridge) {
+    for (const [sx, sy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]] as const) {
+      const block = [
+        [x + sx, y + sy],
+        [x + sx + 1, y + sy],
+        [x + sx, y + sy + 1],
+        [x + sx + 1, y + sy + 1],
+      ];
+      if (block.every(([cx, cy]) => (cx === x && cy === y) || grid.isRock(cx, cy))) {
+        return false;
+      }
+    }
+  }
+
+  // Would a neighbouring cell of water end up walled in on three sides?
+  grid.setRock(x, y, formation);
+  let nook = false;
+  for (const [dx, dy] of ORTHOGONAL) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (!grid.inBounds(nx, ny) || grid.isRock(nx, ny)) {
+      continue;
+    }
+    const walls = ORTHOGONAL.filter(([ox, oy]) =>
+      grid.isBlocked(nx + ox, ny + oy),
+    ).length;
+    if (walls >= 3) {
+      nook = true;
+    }
+  }
+  // ...or cut a stretch of water off from the rest?
+  const connected = !nook && waterIsConnected(grid);
+  grid.clearRock(x, y);
+  return !nook && connected;
+}
+
+/** How long a ridge is, in cells. */
+const RIDGE_LENGTH: readonly [number, number] = [3, 8];
+
+/**
+ * Grows a ridge from `start`: a winding line of rock that mostly keeps its
+ * heading and now and then bends a step to one side, which gives the diagonals
+ * and elbows of a real reef. It stops when it runs into something it may not
+ * touch. Returns how many cells it placed.
+ */
+function growRun(
+  grid: Grid,
+  rng: Rng,
+  spawns: readonly Position[],
+  start: Position,
+  heading: number,
+  length: number,
+  formation: number,
+): number {
+  let placed = 0;
+  let x = start.x;
+  let y = start.y;
+  let run = heading;
+  for (let step = 0; step < length; step += 1) {
+    let bend = 0;
+    if (rng() < 0.5) {
+      bend = rng() < 0.5 ? 1 : -1;
+    }
+    let moved = false;
+    for (const turn of [bend, -bend, bend === 0 ? 1 : 0]) {
+      const candidate = (run + turn + 8) % 8;
+      const nx = x + EIGHT[candidate][0];
+      const ny = y + EIGHT[candidate][1];
+      if (canPlaceRock(grid, spawns, nx, ny, formation, true)) {
+        grid.setRock(nx, ny, formation);
+        x = nx;
+        y = ny;
+        run = candidate;
+        placed += 1;
+        moved = true;
+        break;
+      }
+    }
+    if (!moved) {
+      break;
+    }
+  }
+  return placed;
+}
+
+/** A random clump size from CLUMP_SIZES. */
+function clumpSize(rng: Rng): number {
+  const total = CLUMP_SIZES.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = rng() * total;
+  for (const [size, weight] of CLUMP_SIZES) {
+    roll -= weight;
+    if (roll < 0) {
+      return size;
+    }
+  }
+  return 1;
+}
+
+/**
+ * Grows a small clump of rock from `start` by adding neighbouring cells one at
+ * a time, as long as the clump still fits in a 2x3 box and every new cell is
+ * allowed. Returns how many cells it placed besides the start.
+ */
+function growClump(
+  grid: Grid,
+  rng: Rng,
+  spawns: readonly Position[],
+  start: Position,
+  size: number,
+  formation: number,
+): number {
+  const cells: Position[] = [start];
+  let minX = start.x;
+  let maxX = start.x;
+  let minY = start.y;
+  let maxY = start.y;
+
+  for (let tries = 0; tries < 24 && cells.length < size; tries += 1) {
+    const from = cells[Math.floor(rng() * cells.length)];
+    // Mostly straight neighbours; a diagonal one now and then.
+    const [dx, dy] = rng() < 0.75
+      ? EIGHT[Math.floor(rng() * 4) * 2]
+      : EIGHT[Math.floor(rng() * 4) * 2 + 1];
+    const x = from.x + dx;
+    const y = from.y + dy;
+
+    const width = Math.max(maxX, x) - Math.min(minX, x) + 1;
+    const height = Math.max(maxY, y) - Math.min(minY, y) + 1;
+    const fits =
+      (width <= CLUMP_LONG && height <= CLUMP_SHORT) ||
+      (width <= CLUMP_SHORT && height <= CLUMP_LONG);
+    if (!fits || !canPlaceRock(grid, spawns, x, y, formation)) {
+      continue;
+    }
+
+    grid.setRock(x, y, formation);
+    cells.push({ x, y });
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  return cells.length - 1;
+}
+
+/**
+ * Rocks: a mix of single stones, small clumps (up to 2x3) and thin winding
+ * ridges, each kept apart from the others with water between. Smooth noise
+ * decides where they gather (so some parts of the sea are rockier than others)
+ * and which way ridges run. Then the board is tidied so ships never get
+ * trapped: any dead-end nook is filled and cut-off pockets are closed. Returns
+ * false if a spawn ended up cut off (the caller tries another seed).
  */
 function placeRocks(
   grid: Grid,
@@ -160,24 +422,49 @@ function placeRocks(
 ): boolean {
   const { width, height } = grid;
   const broad = valueNoise(rng, width, height, 5);
-  const fine = valueNoise(rng, width, height, 2.5);
 
-  const candidates: Array<{ x: number; y: number; value: number }> = [];
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      if (!nearAny(x, y, spawns, ROCK_CLEARANCE)) {
-        candidates.push({
-          x,
-          y,
-          value: 0.65 * broad(x, y) + 0.35 * fine(x, y),
-        });
+  const lean = valueNoise(rng, width, height, 8);
+
+  const target = Math.round(density * width * height);
+  let placedRocks = 0;
+  let formation = 0;
+  for (let attempt = 0; attempt < FORMATION_ATTEMPTS && placedRocks < target; attempt += 1) {
+    // Several random spots; the one where the noise is highest wins, so clumps
+    // favour the rocky parts of the sea without all piling into one.
+    let best: { x: number; y: number; value: number } | null = null;
+    for (let tries = 0; tries < 6; tries += 1) {
+      const x = between(rng, 0, width - 1);
+      const y = between(rng, 0, height - 1);
+      const value = broad(x, y);
+      if (
+        (best === null || value > best.value) &&
+        canPlaceRock(grid, spawns, x, y, formation)
+      ) {
+        best = { x, y, value };
       }
     }
-  }
-  candidates.sort((a, b) => b.value - a.value || a.y - b.y || a.x - b.x);
-  const count = Math.round(density * width * height);
-  for (const cell of candidates.slice(0, count)) {
-    grid.setRock(cell.x, cell.y);
+    if (!best) {
+      continue;
+    }
+
+    grid.setRock(best.x, best.y, formation);
+    const kind = rng();
+    if (kind < SINGLE_SHARE) {
+      placedRocks += 1;
+    } else if (kind < SINGLE_SHARE + CLUMP_SHARE) {
+      placedRocks += 1 + growClump(grid, rng, spawns, best, clumpSize(rng), formation);
+    } else {
+      // A ridge grows both ways from its starting cell, along the way the
+      // noise leans there, so neighbouring ridges run alike.
+      const length = between(rng, RIDGE_LENGTH[0], RIDGE_LENGTH[1]);
+      const heading = Math.floor(lean(best.x, best.y) * 8) % 8;
+      const forward = Math.ceil((length - 1) / 2);
+      placedRocks +=
+        1 +
+        growRun(grid, rng, spawns, best, heading, forward, formation) +
+        growRun(grid, rng, spawns, best, (heading + 4) % 8, length - 1 - forward, formation);
+    }
+    formation += 1;
   }
 
   // Fill nooks that are walled in on three sides.
