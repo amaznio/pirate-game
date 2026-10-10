@@ -334,9 +334,10 @@ At the end of each phase's movement the board acts on every ship, whether it
 sailed or not, using the same conflict rules as sailing (`simulation/movement.ts`):
 
 - **Wind** pushes a ship that ends on a wind cell one cell the way it blows,
-  and again for each wind cell it lands on, so a row of wind is a conveyor. A
-  rock, the board's edge or another ship stops the push. Sailing across wind
-  mid-turn does nothing; only the cell a ship ends on counts.
+  once per phase. If that lands it on more wind it is pushed again in the next
+  phase, so a ship that stays on a row of wind is carried along it a cell per
+  phase. A rock, the board's edge or another ship stops the push. Sailing
+  across wind mid-turn does nothing; only the cell a ship ends on counts.
 - **Whirlpools** carry a ship on any of their four cells to the next cell
   round the ring and turn it a quarter the same way (clockwise or
   counter-clockwise, per whirlpool). A ship that stays in one keeps spinning,
@@ -391,7 +392,7 @@ minimum zoom always keeps the view filled with water (no empty space).
 ## Tests
 
 `packages/game-core/src/**/__tests__` cover forward/turn movement, edge and obstacle blocking,
-wind and whirlpools (chains, conflicts, spin geometry), the board generator
+wind and whirlpools (one push per phase, conflicts, spin geometry), the board generator
 (over hundreds of seeds: clearance, connected water, no wind circles),
 token consumption and refund, cannon queueing and the shared cannonball pool
 (spend, out-of-ammo block, reload cadence), four-phase ordering, cannon range,

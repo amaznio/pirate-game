@@ -146,12 +146,6 @@ interface Mover {
 const MAX_PATH_LENGTH = 2;
 
 /**
- * More pushes than any lane of wind is long. It only matters if wind ever
- * pointed in a circle, which would otherwise carry a ship round for ever.
- */
-const MAX_WIND_STEPS = 8;
-
-/**
  * Works out which of the wanted moves (ship id -> the cell it wants to enter)
  * cannot happen. A move is stopped by the board edge, a rock, another ship
  * wanting the same cell, a swap, or a ship that stays in the cell. Every ship
@@ -249,9 +243,9 @@ function blockedMoves(
  *
  * Then the board acts on every ship, whether or not it sailed this phase:
  *  - Wind: a ship that ends on a wind cell is pushed one cell the way it
- *    blows, again and again while it lands on wind. A push follows the same
- *    conflict rules as sailing; a ship whose push is stopped stays put for the
- *    rest of the phase.
+ *    blows, once per phase (a ship carried onto more wind is pushed again in
+ *    the next phase, not now). A push follows the same conflict rules as
+ *    sailing; a ship whose push is stopped stays put.
  *  - Whirlpool: a ship that is then on a whirlpool is carried to the next cell
  *    of its ring and turned a quarter the same way. It is turned even if
  *    another ship kept it from moving.
@@ -395,30 +389,21 @@ function applyTerrain(
     effects.set(shipId, [...(effects.get(shipId) ?? []), effect]);
   };
 
-  // Wind.
-  const stuck = new Set<EntityId>();
-  for (let step = 0; step < MAX_WIND_STEPS; step += 1) {
-    const desired = new Map<EntityId, Position>();
-    const pushes = new Map<EntityId, Direction>();
-    for (const ship of living) {
-      if (stuck.has(ship.id)) {
-        continue;
-      }
-      const cell = positions.get(ship.id) as Position;
-      const here = terrainAt(state.terrain, cell);
-      if (here?.kind === 'wind') {
-        desired.set(ship.id, translate(cell, vectorFor(here.direction)));
-        pushes.set(ship.id, here.direction);
-      }
+  // Wind: one push per ship per phase.
+  const windMoves = new Map<EntityId, Position>();
+  const pushes = new Map<EntityId, Direction>();
+  for (const ship of living) {
+    const cell = positions.get(ship.id) as Position;
+    const here = terrainAt(state.terrain, cell);
+    if (here?.kind === 'wind') {
+      windMoves.set(ship.id, translate(cell, vectorFor(here.direction)));
+      pushes.set(ship.id, here.direction);
     }
-    if (desired.size === 0) {
-      break;
-    }
-
-    const blocked = blockedMoves(state, living, positions, desired);
-    for (const [shipId, to] of desired) {
+  }
+  if (windMoves.size > 0) {
+    const blocked = blockedMoves(state, living, positions, windMoves);
+    for (const [shipId, to] of windMoves) {
       if (blocked.has(shipId)) {
-        stuck.add(shipId);
         continue;
       }
       record(shipId, {

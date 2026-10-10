@@ -74,14 +74,25 @@ describe('wind', () => {
     ]);
   });
 
-  it('carries a ship along a row of wind, one cell per cell of wind', () => {
+  it('pushes a ship only one cell per phase, even onto more wind', () => {
     const state = board(terrainFrom(windLane({ x: 6, y: 10 }, 'SOUTH', 3)), {
       x: 5,
       y: 10,
     });
-    const { nextState, events } = resolveTurn(state, submitted(['FORWARD']));
+    const { phases } = resolveTurn(state, submitted(['FORWARD']));
+    const perPhase = phases.map((phase) => pushes(phase.events).length);
+    // Phase 0: sails onto the lane and is pushed once. Phases 1 and 2: it is
+    // still on wind, so it is pushed again each phase. Phase 3: off the lane.
+    expect(perPhase).toEqual([1, 1, 1, 0]);
+  });
+
+  it('carries a ship along a row of wind, a cell each phase', () => {
+    const state = board(terrainFrom(windLane({ x: 6, y: 10 }, 'SOUTH', 3)), {
+      x: 5,
+      y: 10,
+    });
+    const { nextState } = resolveTurn(state, submitted(['FORWARD']));
     expect(nextState.ships['player-ship'].position).toEqual({ x: 6, y: 13 });
-    expect(pushes(events)).toHaveLength(3);
   });
 
   it('does not push a ship that only sails across wind on the way', () => {
@@ -312,7 +323,9 @@ describe('terrain in previews and views', () => {
       },
     };
     const preview = previewPlayerPlan(withPlan, 'player');
-    expect(preview?.steps[0].position).toEqual({ x: 6, y: 12 });
+    expect(preview?.steps[0].position).toEqual({ x: 6, y: 11 });
+    // Still on the wind with no move planned, it is carried on a cell.
+    expect(preview?.steps[1].position).toEqual({ x: 6, y: 12 });
   });
 
   it('is public: every viewer gets the terrain, and rebuilding a state keeps it', () => {

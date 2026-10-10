@@ -16,8 +16,8 @@ export function SeaLegend({ className = '' }: { className?: string }) {
         <div className="flex gap-2">
           <dt className="w-4 shrink-0 text-center font-black text-parchment">»</dt>
           <dd>
-            <b className="text-parchment/90">Wind</b> pushes a ship one cell for each
-            wind cell it ends on.
+            <b className="text-parchment/90">Wind</b> pushes a ship one cell, each
+            phase it ends on a wind cell.
           </dd>
         </div>
       )}

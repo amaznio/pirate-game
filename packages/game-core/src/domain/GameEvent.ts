@@ -40,7 +40,7 @@ export type GameEvent =
       phase: number;
     }
   | {
-      /** Wind carried the ship one cell (a row of wind gives several events). */
+      /** Wind carried the ship one cell (at most one per ship per phase). */
       type: 'SHIP_PUSHED';
       shipId: EntityId;
       from: Position;

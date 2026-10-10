@@ -17,8 +17,8 @@ export type WhirlpoolCorner =
  * Cells that act on a ship that ends a phase on them. Unlike a rock they never
  * block anything: ships sail onto them freely and are then carried.
  *
- *  - `wind` pushes the ship one cell in `direction` (a row of wind carries it
- *    along the row).
+ *  - `wind` pushes the ship one cell in `direction`, once per phase (a ship
+ *    left on a row of wind is carried along it, a cell each phase).
  *  - `whirlpool` is a 2x2 vortex. Each of its four cells carries the ship to
  *    the next cell around the ring and turns it a quarter in the same way.
  */
