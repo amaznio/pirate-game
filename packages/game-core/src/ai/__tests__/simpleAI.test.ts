@@ -7,6 +7,8 @@ import {
 import type { TokenInventory } from '../../domain/Action';
 import type { Direction } from '../../domain/Direction';
 import { pos } from '../../domain/Position';
+import type { MapStyle } from '../../board/generateBoard';
+import { terrainFrom, whirlpoolCells, windLane } from '../../domain/Terrain';
 import {
   createDuelConfig,
   createSkirmishConfig,
@@ -74,8 +76,13 @@ function playAgainstIdle(level: AiDifficulty, turns: number, seed = 1) {
 }
 
 /** Two AIs fight a whole duel; returns each side's hull when it ends. */
-function fight(playerLevel: AiDifficulty, enemyLevel: AiDifficulty, seed: number) {
-  const base = createGame(benchmarkConfig({ seed }));
+function fight(
+  playerLevel: AiDifficulty,
+  enemyLevel: AiDifficulty,
+  seed: number,
+  sea?: MapStyle,
+) {
+  const base = createGame(sea ? createDuelConfig({ seed, sea }) : benchmarkConfig({ seed }));
   let state: GameState = {
     ...base,
     players: {
@@ -111,12 +118,12 @@ function fight(playerLevel: AiDifficulty, enemyLevel: AiDifficulty, seed: number
 }
 
 /** Wins for `a` and for `b` over several seeds, each side played both ways round. */
-function matchup(a: AiDifficulty, b: AiDifficulty, seeds: number[]) {
+function matchup(a: AiDifficulty, b: AiDifficulty, seeds: number[], sea?: MapStyle) {
   let aWins = 0;
   let bWins = 0;
   for (const seed of seeds) {
-    const first = fight(a, b, seed);
-    const second = fight(b, a, seed);
+    const first = fight(a, b, seed, sea);
+    const second = fight(b, a, seed, sea);
     if (first.player > first.enemy) aWins += 1;
     if (first.enemy > first.player) bWins += 1;
     if (second.enemy > second.player) aWins += 1;
@@ -465,5 +472,89 @@ describe('createRng', () => {
     const mean = values.reduce((total, value) => total + value, 0) / values.length;
     expect(mean).toBeGreaterThan(0.45);
     expect(mean).toBeLessThan(0.55);
+  });
+});
+
+describe('wind and whirlpools', () => {
+  /** An open sea with the AI's ship placed by hand and no tokens to spend. */
+  function seaState(
+    terrain: ReturnType<typeof terrainFrom>,
+    me: { x: number; y: number; heading: Direction },
+    target: { x: number; y: number },
+  ): GameState {
+    const base = createGame(createDuelConfig({ sea: 'open' }));
+    return {
+      ...base,
+      terrain,
+      ships: {
+        ...base.ships,
+        'enemy-ship': { ...base.ships['enemy-ship'], position: pos(me.x, me.y), heading: me.heading },
+        'player-ship': { ...base.ships['player-ship'], position: pos(target.x, target.y) },
+      },
+      players: {
+        ...base.players,
+        enemy: { ...base.players.enemy, tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 } },
+      },
+    };
+  }
+
+  it('knows a whirlpool turns it while it holds, and fires when that lines up a shot', () => {
+    // Facing east it cannot hit the target; one phase in the vortex turns it
+    // south and carries it east of the start, so its left broadside points at it.
+    const state = seaState(
+      terrainFrom(whirlpoolCells(pos(10, 10), 'right')),
+      { x: 10, y: 10, heading: 'EAST' },
+      { x: 14, y: 10 },
+    );
+
+    const plan = planAiActions(state, 'enemy', 'hard');
+
+    expect(plan.movement).toEqual([null, null, null, null]);
+    expect(plan.cannons[0].left).toBe(true);
+  });
+
+  it('knows wind carries it while it holds, and fires from where it lands', () => {
+    // From its own cell the target is out of range; the wind brings it into range.
+    const state = seaState(
+      terrainFrom(windLane(pos(10, 10), 'SOUTH', 1)),
+      { x: 10, y: 10, heading: 'EAST' },
+      { x: 10, y: 14 },
+    );
+
+    const plan = planAiActions(state, 'enemy', 'hard');
+
+    expect(plan.cannons[0].right).toBe(true);
+    expect(plan.cannons[0].left).toBe(false);
+  });
+
+  it('plans a legal turn on boards full of rocks, wind and whirlpools', () => {
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      for (const level of AI_DIFFICULTIES) {
+        const base = createGame(createDuelConfig({ seed, sea: 'stormy', aiDifficulty: level }));
+        const plan = planAiActions(base, 'enemy');
+        const used = plan.movement.filter((slot) => slot !== null).length;
+        expect(plan.movement).toHaveLength(4);
+        expect(used).toBeLessThanOrEqual(AI_PROFILES[level].maxMoves);
+      }
+    }
+  });
+
+  it('still plays better at higher levels on generated boards', () => {
+    const seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const hardVsEasy = matchup('hard', 'easy', seeds, 'normal');
+    const normalVsEasy = matchup('normal', 'easy', seeds, 'normal');
+
+    expect(hardVsEasy.aWins).toBeGreaterThan(hardVsEasy.bWins);
+    expect(normalVsEasy.aWins).toBeGreaterThan(normalVsEasy.bWins);
+  }, 30_000);
+
+  it('plans quickly even with terrain (the server plans for every AI each turn)', () => {
+    const state = createGame(createDuelConfig({ seed: 3, sea: 'stormy' }));
+    const started = performance.now();
+    for (let turn = 1; turn <= 10; turn += 1) {
+      planAiActions({ ...state, turn }, 'enemy', 'hard');
+    }
+
+    expect((performance.now() - started) / 10).toBeLessThan(150);
   });
 });

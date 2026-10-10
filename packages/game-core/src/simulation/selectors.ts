@@ -23,13 +23,22 @@ export function getHostiles(state: GameState, ship: Ship): Ship[] {
   return getLivingShips(state).filter((other) => other.teamId !== ship.teamId);
 }
 
+/** Obstacles by cell, built once per obstacle map (they never change in a match). */
+const obstacleIndex = new WeakMap<object, Map<string, Obstacle>>();
+
 export function obstacleAt(
   state: GameState,
   position: Position,
 ): Obstacle | undefined {
-  return Object.values(state.obstacles).find((obstacle) =>
-    positionsEqual(obstacle.position, position),
-  );
+  let index = obstacleIndex.get(state.obstacles);
+  if (!index) {
+    index = new Map();
+    for (const obstacle of Object.values(state.obstacles)) {
+      index.set(`${obstacle.position.x},${obstacle.position.y}`, obstacle);
+    }
+    obstacleIndex.set(state.obstacles, index);
+  }
+  return index.get(`${position.x},${position.y}`);
 }
 
 export function shipAt(

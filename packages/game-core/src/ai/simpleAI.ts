@@ -17,7 +17,11 @@ import { DIRECTIONS, leftBroadside, rightBroadside, vectorFor } from '../domain/
 import { positionsEqual, translate } from '../domain/Position';
 import { isShip } from '../domain/Ship';
 import { blockingEntityAt, getHostiles, getShipByOwner } from '../simulation/selectors';
-import { resolveMovementOutcome, type MovementOutcome } from '../simulation/movement';
+import {
+  resolveHoldOutcome,
+  resolveMovementOutcome,
+  type MovementOutcome,
+} from '../simulation/movement';
 import { firstEntityAlongRay } from '../simulation/collision';
 import { getWeaponType } from '../config/weaponTypes';
 import type { AIController } from './AIController';
@@ -79,6 +83,15 @@ function outcomeOf(
     plan.outcomes.set(key, outcome);
   }
   return outcome;
+}
+
+/** Where holding still for a phase leaves this ship: the sea may still carry it. */
+function holdOf(
+  plan: Planning,
+  position: Position,
+  heading: Direction,
+): { position: Position; heading: Direction } {
+  return resolveHoldOutcome(plan.state, plan.me.id, position, heading);
 }
 
 /** The enemy ship a broadside would hit from here, if any (cached). */
@@ -188,10 +201,15 @@ function goalStepsOf(plan: Planning): Map<string, number> {
           firing.push(here);
         }
         for (const action of OPTIONS) {
+          // Holding costs nothing, but on wind or a whirlpool the sea still
+          // moves the ship, which is a free way to go somewhere.
+          let outcome: { position: Position; heading: Direction; moved: boolean };
           if (action === null) {
-            continue;
+            const held = holdOf(plan, position, heading);
+            outcome = { ...held, moved: !positionsEqual(held.position, position) };
+          } else {
+            outcome = outcomeOf(plan, position, heading, action);
           }
-          const outcome = outcomeOf(plan, position, heading, action);
           if (!outcome.moved && outcome.heading === heading) {
             continue;
           }
@@ -289,7 +307,11 @@ function search(
     let nextPosition = position;
     let nextHeading = heading;
 
-    if (option !== null) {
+    if (option === null) {
+      const held = holdOf(plan, position, heading);
+      nextPosition = held.position;
+      nextHeading = held.heading;
+    } else {
       if (pool[option] <= 0 || tokensUsed >= plan.profile.maxMoves) {
         continue;
       }

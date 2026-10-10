@@ -321,9 +321,13 @@ export function resolveMovementPhase(
     });
   }
 
-  const effects = hasTerrain(state.terrain)
-    ? applyTerrain(state, living, positions, sailed)
-    : new Map<EntityId, TerrainEffect[]>();
+  // The sea only acts on a ship that ends on wind or a whirlpool, which is
+  // rare for the hypothetical positions the AI tries, so check before the work.
+  const effects =
+    hasTerrain(state.terrain) &&
+    living.some((ship) => terrainAt(state.terrain, positions.get(ship.id) as Position))
+      ? applyTerrain(state, living, positions, sailed)
+      : new Map<EntityId, TerrainEffect[]>();
 
   const outcomes = new Map<EntityId, MovementOutcome>();
   const stoppedMovers = new Set(
@@ -486,6 +490,27 @@ export function resolveMovementOutcome(
   return resolveMovementPhase(hypothetical, [{ shipId, action }]).get(
     shipId,
   ) as MovementOutcome;
+}
+
+/**
+ * Where a ship ends a phase in which it does not sail, if every other ship
+ * stood still. Only the sea can move it: wind carries it, a whirlpool turns it.
+ */
+export function resolveHoldOutcome(
+  state: GameState,
+  shipId: EntityId,
+  position: Position,
+  heading: Direction,
+): { readonly position: Position; readonly heading: Direction } {
+  if (!hasTerrain(state.terrain) || !terrainAt(state.terrain, position)) {
+    return { position, heading };
+  }
+  const ship = state.ships[shipId];
+  const hypothetical: GameState = {
+    ...state,
+    ships: { ...state.ships, [shipId]: { ...ship, position, heading } },
+  };
+  return resolveMovementPhase(hypothetical, []).get(shipId) ?? { position, heading };
 }
 
 /**
