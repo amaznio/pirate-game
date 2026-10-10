@@ -65,7 +65,7 @@ describe('applyPlayerPlan', () => {
   });
 
   it('rejects more shots than cannonballs', () => {
-    const cannons = emptyCannonQueue().map(() => ({ left: true, right: true }));
+    const cannons = emptyCannonQueue().map(() => ({ left: 1, right: 1 }));
 
     const result = applyPlayerPlan(createGame(), 'player', plan([], cannons));
 

@@ -16,6 +16,7 @@ import {
   remainingAmmo,
   remainingTokens,
   removeToken,
+  setCannonShots,
   toggleCannon,
   emptyDraft,
   type PlanDraft,
@@ -129,6 +130,22 @@ export class GameClient {
           this.snapshot.view.self.ammo,
           phase,
           side,
+          cannonCountsFor(this.snapshot.view),
+        ),
+      );
+    }
+  }
+
+  /** Sets how many cannons a side fires in a phase (clamped to what is legal). */
+  setCannonShots(phase: number, side: CannonSide, shots: number): void {
+    if (this.snapshot.canEdit) {
+      this.setDraft(
+        setCannonShots(
+          this.snapshot.draft,
+          this.snapshot.view.self.ammo,
+          phase,
+          side,
+          shots,
           cannonCountsFor(this.snapshot.view),
         ),
       );

@@ -12,6 +12,11 @@ export function applyDamage(
   amount: number,
   phase: number,
 ): GameEvent[] {
+  // A ship that is already gone cannot be hurt or sunk again (several shots can
+  // reach it in the same phase).
+  if (target.hp <= 0) {
+    return [];
+  }
   const damage = Math.max(0, Math.min(amount, target.hp));
   const hp = target.hp - damage;
   state.ships[target.id] = { ...target, hp };

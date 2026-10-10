@@ -22,7 +22,7 @@ import {
   resolveMovementOutcome,
   type MovementOutcome,
 } from '../simulation/movement';
-import { firstEntityAlongRay, mountOrigin } from '../simulation/collision';
+import { firstEntityAlongRay } from '../simulation/collision';
 import { getWeaponType } from '../config/weaponTypes';
 import type { AIController } from './AIController';
 import { profileFor, type AiProfile } from './profiles';
@@ -99,8 +99,9 @@ function holdOf(
 
 /**
  * The cannons of one broadside that would fire from here, in firing order, each
- * with the enemy ship it would hit if any (cached). A cannon whose lane cell is
- * taken does not fire, so it is left out.
+ * with the enemy ship it would hit if any (cached). Every cannon on a side
+ * fires along the same line from the ship's own cell, so they all meet the same
+ * first thing in the way.
  */
 function volleyOf(
   plan: Planning,
@@ -114,15 +115,12 @@ function volleyOf(
     return cached;
   }
   const shots: Shot[] = [];
-  for (const mount of mountsOnSide(plan.me, side)) {
-    const origin = mountOrigin(plan.state, plan.me.id, position, heading, mount.lane ?? 0);
-    if (!origin) {
-      continue;
-    }
-    const weapon = getWeaponType(mount.weaponTypeId);
+  const mounts = mountsOnSide(plan.me, side);
+  if (mounts.length > 0) {
+    const weapon = getWeaponType(mounts[0].weaponTypeId);
     const hit = firstEntityAlongRay(
       plan.state,
-      origin,
+      position,
       broadsideDirection(heading, side),
       weapon.range,
       plan.me.id,
@@ -131,7 +129,9 @@ function volleyOf(
       hit && isShip(hit.entity) && hit.entity.hp > 0 && hit.entity.teamId !== plan.me.teamId
         ? hit.entity
         : null;
-    shots.push({ victim, damage: weapon.damage });
+    for (const mount of mounts) {
+      shots.push({ victim, damage: getWeaponType(mount.weaponTypeId).damage });
+    }
   }
   plan.volleys.set(key, shots);
   return shots;
@@ -147,20 +147,11 @@ function threatsAt(plan: Planning, position: Position): number {
 
   let count = 0;
   for (const enemy of plan.hostiles) {
+    // Each cannon is a threat of its own (they stack their damage along one line).
     for (const mount of enemy.weapons) {
-      const origin = mountOrigin(
-        plan.state,
-        enemy.id,
-        enemy.position,
-        enemy.heading,
-        mount.lane ?? 0,
-      );
-      if (!origin) {
-        continue;
-      }
       const direction = broadsideDirection(enemy.heading, mount.side);
       const range = getWeaponType(mount.weaponTypeId).range;
-      let cursor = origin;
+      let cursor = enemy.position;
       for (let step = 0; step < range; step += 1) {
         cursor = translate(cursor, vectorFor(direction));
         if (!inBounds(plan.state.board, cursor)) {
@@ -344,26 +335,32 @@ function search(
       pool[option] -= 1;
     }
 
-    // Fire every broadside that lines up a hit, as long as the cannonballs last
-    // for all of its cannons (a side fires all of them or none).
+    // Fire the cannons of every side that lines up a hit: as many as it has
+    // cannonballs for, and no more than it takes to sink the ship in the way.
     let ammo = ammoLeft;
     let value = 0;
-    const fires = { left: false, right: false };
+    const fires = { left: 0, right: 0 };
     for (const side of CANNON_SIDES) {
       if (ammo <= 0) {
         break;
       }
       const shots = volleyOf(plan, nextPosition, nextHeading, side);
-      if (shots.length === 0 || ammo < shots.length || !shots.some((shot) => shot.victim)) {
+      const victim = shots[0]?.victim;
+      if (!victim) {
         continue;
       }
-      fires[side] = true;
-      for (const shot of shots) {
+      const used = Math.min(shots.length, ammo, victim.hp);
+      fires[side] = used;
+      let dealt = 0;
+      for (const shot of shots.slice(0, used)) {
         ammo -= 1;
         if (shot.victim) {
+          // The cannons stack: the one that finishes the ship earns the kill bonus.
+          const before = dealt;
+          dealt += shot.damage;
           value +=
             plan.profile.hitValue +
-            (shot.victim.hp <= shot.damage ? plan.profile.killBonus : 0);
+            (before < shot.victim.hp && dealt >= shot.victim.hp ? plan.profile.killBonus : 0);
         }
       }
     }
@@ -462,8 +459,8 @@ export function planAiActions(
   }
 
   // A distracted AI sometimes lets a shot go by.
-  const keepShot = (wanted: boolean): boolean =>
-    wanted && (profile.fireChance >= 1 || rng() < profile.fireChance);
+  const keepShot = (wanted: number): number =>
+    wanted > 0 && (profile.fireChance >= 1 || rng() < profile.fireChance) ? wanted : 0;
   const cannons: CannonSlot[] = chosen.cannons.map((slot) => ({
     left: keepShot(slot.left),
     right: keepShot(slot.right),

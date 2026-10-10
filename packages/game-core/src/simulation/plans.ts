@@ -50,7 +50,11 @@ export function applyPlayerPlan(
       (slot) => slot === null || MOVEMENT_ACTIONS.includes(slot),
     ) &&
     plan.cannons.every(
-      (slot) => typeof slot.left === 'boolean' && typeof slot.right === 'boolean',
+      (slot) =>
+        Number.isInteger(slot.left) &&
+        Number.isInteger(slot.right) &&
+        slot.left >= 0 &&
+        slot.right >= 0,
     );
   if (!wellFormed) {
     return { ok: false, reason: 'malformed_plan' };
@@ -66,8 +70,12 @@ export function applyPlayerPlan(
     return { ok: false, reason: 'not_enough_tokens' };
   }
 
+  // A phase cannot ask for more cannons than a side has.
   const ship = state.ships[player.shipId];
   const counts = ship ? cannonCountsOf(ship) : ONE_CANNON_A_SIDE;
+  if (plan.cannons.some((slot) => slot.left > counts.left || slot.right > counts.right)) {
+    return { ok: false, reason: 'malformed_plan' };
+  }
   if (cannonQueueCost(plan.cannons, counts) > player.ammo) {
     return { ok: false, reason: 'not_enough_ammo' };
   }

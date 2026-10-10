@@ -100,7 +100,7 @@ export class TestClient {
 }
 
 export function noFire() {
-  return Array.from({ length: 4 }, () => ({ left: false, right: false }));
+  return Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
 }
 
 export function plan(movement: PlayerActions['movement']): PlayerActions {

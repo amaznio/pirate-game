@@ -89,7 +89,7 @@ describe('cannonball reload', () => {
   it('clears every cannon queue when a new turn begins', () => {
     const state = createGame();
     const shots = state.players.player.cannonQueue.map((slot, index) =>
-      index === 0 ? { left: true, right: true } : slot,
+      index === 0 ? { left: 1, right: 1 } : slot,
     );
     const withShots = {
       ...state,

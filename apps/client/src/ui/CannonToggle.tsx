@@ -1,19 +1,19 @@
 interface CannonToggleProps {
   active: boolean;
-  /** Cannons on this side; shown when there is more than one. */
-  count?: number;
   disabled: boolean;
   label: string;
   onClick: () => void;
+  /** Smaller, for a side that has several cannons to show. */
+  small?: boolean;
 }
 
-/** A cannonball checkbox for one broadside in one phase. */
+/** A cannonball checkbox for one cannon of one broadside in one phase. */
 export function CannonToggle({
   active,
-  count = 1,
   disabled,
   label,
   onClick,
+  small = false,
 }: CannonToggleProps) {
   return (
     <button
@@ -22,25 +22,21 @@ export function CannonToggle({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition hover:border-parchment/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${
-        active
-          ? 'border-black/50 bg-ocean-light'
-          : 'border-parchment/25 bg-black/20'
-      }`}
+      className={`flex shrink-0 items-center justify-center rounded-full border transition hover:border-parchment/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${
+        small ? 'h-6 w-6' : 'h-9 w-9'
+      } ${active ? 'border-black/50 bg-ocean-light' : 'border-parchment/25 bg-black/20'}`}
     >
       <span
-        className={`relative flex h-6 w-6 items-center justify-center rounded-full ${
-          active
-            ? 'bg-ink shadow-inner'
-            : 'border border-parchment/30 bg-black/30'
-        }`}
+        className={`relative flex items-center justify-center rounded-full ${
+          small ? 'h-3.5 w-3.5' : 'h-6 w-6'
+        } ${active ? 'bg-ink shadow-inner' : 'border border-parchment/30 bg-black/30'}`}
       >
-        {count > 1 ? (
-          <span className="text-[11px] font-black leading-none text-parchment">{count}</span>
-        ) : (
-          active && (
-            <span className="absolute top-1 left-1 h-1.5 w-1.5 rounded-full bg-white/60" />
-          )
+        {active && (
+          <span
+            className={`absolute rounded-full bg-white/60 ${
+              small ? 'top-px left-px h-1 w-1' : 'top-1 left-1 h-1.5 w-1.5'
+            }`}
+          />
         )}
       </span>
     </button>

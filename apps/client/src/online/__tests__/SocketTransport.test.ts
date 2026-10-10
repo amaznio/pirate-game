@@ -46,7 +46,7 @@ function viewWith(patch: {
   return redactState(state, 'p1', 30);
 }
 
-const noFire = Array.from({ length: 4 }, () => ({ left: false, right: false }));
+const noFire = Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
 const plan = (first: PlayerActions['movement'][number]): PlayerActions => ({
   movement: [first, null, null, null],
   cannons: noFire,

@@ -38,6 +38,23 @@ export interface PlanPreview {
  * other ship standing still, so the preview can never disagree with the rules.
  * Pure: does not touch the controller or the given state.
  */
+/**
+ * Records a shot unless the same line is already there: the cannons of one side
+ * all fire along the same line, and the preview draws it once.
+ */
+function addShot(shots: PreviewShot[], shot: PreviewShot): void {
+  const same = shots.some(
+    (other) =>
+      other.side === shot.side &&
+      other.outcome === shot.outcome &&
+      other.to.x === shot.to.x &&
+      other.to.y === shot.to.y,
+  );
+  if (!same) {
+    shots.push(shot);
+  }
+}
+
 export function previewPlayerPlan(
   state: GameState,
   playerId: PlayerId,
@@ -85,7 +102,7 @@ export function previewPlayerPlan(
           blocked = true;
           break;
         case 'PROJECTILE_MISSED':
-          shots.push({
+          addShot(shots, {
             side: event.side,
             direction: event.direction,
             from: event.from,
@@ -94,7 +111,7 @@ export function previewPlayerPlan(
           });
           break;
         case 'PROJECTILE_HIT': {
-          shots.push({
+          addShot(shots, {
             side: event.side,
             direction: directionBetween(event.from, event.to),
             from: event.from,

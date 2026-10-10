@@ -7,14 +7,13 @@ export type WeaponSide = 'left' | 'right';
 export const WEAPON_SIDES: readonly WeaponSide[] = ['left', 'right'];
 
 /**
- * A weapon mounted on a broadside. `lane` is how many cells along the ship's
- * heading the shot starts from: 0 is the ship's own cell (abeam), +1 one cell
- * ahead (fore), -1 one cell astern (aft). It defaults to 0.
+ * A weapon mounted on a broadside. A side with several cannons has several
+ * mounts; they all fire from the ship's own cell along the same line, one after
+ * the other.
  */
 export interface WeaponMount {
   readonly weaponTypeId: string;
   readonly side: WeaponSide;
-  readonly lane?: number;
 }
 
 /** How many cannons a ship has on each side. */
@@ -26,7 +25,7 @@ export interface CannonCounts {
 /** What a classic one-cannon-a-side ship has, and what the client assumes before it knows. */
 export const ONE_CANNON_A_SIDE: CannonCounts = { left: 1, right: 1 };
 
-/** The mounts on one side, in firing order (the order they were built in). */
+/** The mounts on one side, in firing order. */
 export function mountsOnSide(
   ship: Pick<Ship, 'weapons'>,
   side: WeaponSide,
@@ -42,13 +41,15 @@ export function cannonCountsOf(ship: Pick<Ship, 'weapons'>): CannonCounts {
 }
 
 /**
- * Cannonballs a queued plan would spend: one per cannon on every broadside it
- * fires, so a three-cannon side costs three.
+ * Cannonballs a queued plan would spend: one per cannon it fires, never more
+ * than the ship has on that side.
  */
 export function cannonQueueCost(queue: CannonQueue, counts: CannonCounts): number {
   return queue.reduce(
     (total, slot) =>
-      total + (slot.left ? counts.left : 0) + (slot.right ? counts.right : 0),
+      total +
+      Math.min(Math.max(0, slot.left), counts.left) +
+      Math.min(Math.max(0, slot.right), counts.right),
     0,
   );
 }

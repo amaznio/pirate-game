@@ -16,14 +16,17 @@ export interface AnimatorHooks {
   onDestroyed?(shipId: string): void;
 }
 
+/** Milliseconds between one cannon of a side and the next. */
+const CANNON_STAGGER_MS = 150;
+
 /**
- * Matches a shot's launch to its impact. Several cannons on one side start from
- * different cells, so the cell is part of the key.
+ * Matches a shot's launch to its impact. The cannons of one side all fire from
+ * the same cell, so the cannon's number is part of the key.
  */
 function projectileKey(
   event: Extract<GameEvent, { type: 'CANNON_FIRED' | 'PROJECTILE_HIT' | 'PROJECTILE_MISSED' }>,
 ): string {
-  return `${event.shipId}:${event.side}:${event.from.x},${event.from.y}`;
+  return `${event.shipId}:${event.side}:${event.cannon ?? 0}`;
 }
 
 function groupPhases(events: readonly GameEvent[]): PhaseGroup[] {
@@ -122,22 +125,26 @@ export class EventAnimator {
     );
 
     for (const event of events) {
-      if (event.type === 'CANNON_FIRED') {
-        this.spawnFire(event);
-      }
-    }
-
-    for (const event of events) {
       if (event.type === 'CANNON_BLOCKED') {
         this.spawnDryFire(event.shipId);
       }
     }
 
-    const impacts = events.filter(
-      (event) =>
-        event.type === 'PROJECTILE_HIT' || event.type === 'PROJECTILE_MISSED',
-    );
-    await Promise.all(impacts.map((event) => this.animateImpact(event)));
+    // Every cannon fires, ships and sides together, but the cannons of one side
+    // go one after the other: cannon n waits n steps. Each launch is followed in
+    // the event list by its own impact.
+    const volleys: Promise<void>[] = [];
+    events.forEach((event, index) => {
+      const impact = events[index + 1];
+      if (
+        event.type === 'CANNON_FIRED' &&
+        impact &&
+        (impact.type === 'PROJECTILE_HIT' || impact.type === 'PROJECTILE_MISSED')
+      ) {
+        volleys.push(this.fireAfter((event.cannon ?? 0) * CANNON_STAGGER_MS, event, impact));
+      }
+    });
+    await Promise.all(volleys);
 
     for (const event of events) {
       if (event.type === 'SHIP_DAMAGED') {
@@ -151,6 +158,19 @@ export class EventAnimator {
         await this.animateDestroyed(event);
       }
     }
+  }
+
+  /** Launches one cannon's shot after a delay and plays it out to its impact. */
+  private async fireAfter(
+    delayMs: number,
+    fired: Extract<GameEvent, { type: 'CANNON_FIRED' }>,
+    impact: Extract<GameEvent, { type: 'PROJECTILE_HIT' | 'PROJECTILE_MISSED' }>,
+  ): Promise<void> {
+    if (delayMs > 0) {
+      await new Promise<void>((resolve) => this.scene.time.delayedCall(delayMs, resolve));
+    }
+    this.spawnFire(fired);
+    await this.animateImpact(impact);
   }
 
   private animateMovement(event: GameEvent): Promise<void> {

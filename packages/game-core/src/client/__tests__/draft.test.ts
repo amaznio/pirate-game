@@ -77,11 +77,11 @@ describe('removeToken', () => {
 describe('toggleCannon', () => {
   it('turns a broadside on and off without touching movement tokens', () => {
     const on = toggleCannon(emptyDraft(), 3, 0, 'left');
-    expect(on.cannons[0].left).toBe(true);
+    expect(on.cannons[0].left).toBe(1);
     expect(remainingTokens(POOL, on)).toEqual(POOL);
 
     const off = toggleCannon(on, 3, 0, 'left');
-    expect(off.cannons[0].left).toBe(false);
+    expect(off.cannons[0].left).toBe(0);
   });
 
   it('cannot queue more shots than the cannonball pool', () => {
@@ -99,7 +99,7 @@ describe('toggleCannon', () => {
     let draft = toggleCannon(emptyDraft(), 1, 0, 'left');
     draft = toggleCannon(draft, 1, 0, 'left');
 
-    expect(draft.cannons[0].left).toBe(false);
+    expect(draft.cannons[0].left).toBe(0);
   });
 });
 

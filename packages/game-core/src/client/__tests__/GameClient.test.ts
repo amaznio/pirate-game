@@ -9,7 +9,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const NO_FIRE = Array.from({ length: 4 }, () => ({ left: false, right: false }));
+const NO_FIRE = Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
 
 function setup(
   options: { humans?: number; ais?: number; turnDurationMs?: number | null } = {},
@@ -60,7 +60,7 @@ describe('editing the draft', () => {
     expect(client.getSnapshot().draft.movement[0]).toBeNull();
 
     client.clearDraft();
-    expect(client.getSnapshot().draft.cannons[0].left).toBe(false);
+    expect(client.getSnapshot().draft.cannons[0].left).toBe(0);
   });
 
   it('notifies subscribers when the draft changes', () => {
@@ -122,7 +122,7 @@ describe('locking in and the turn cycle', () => {
       null,
       null,
     ]);
-    expect(client.getSnapshot().draft.cannons[0].left).toBe(false);
+    expect(client.getSnapshot().draft.cannons[0].left).toBe(0);
   });
 
   it('starts a fresh, empty draft each turn', () => {

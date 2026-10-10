@@ -47,17 +47,21 @@ export type CannonSide = 'left' | 'right';
 
 export const CANNON_SIDES: readonly CannonSide[] = ['left', 'right'];
 
-/** One cannon move: which broadside(s) fire during that phase. */
+/**
+ * One cannon move: how many cannons to fire from each broadside during that
+ * phase. 0 fires none; at most the number of cannons the side has. A ship with
+ * three cannons on a side may fire one, two or all three.
+ */
 export interface CannonSlot {
-  readonly left: boolean;
-  readonly right: boolean;
+  readonly left: number;
+  readonly right: number;
 }
 
 /** Exactly ACTIONS_PER_TURN entries, one per phase. */
 export type CannonQueue = readonly CannonSlot[];
 
 export function emptyCannonSlot(): CannonSlot {
-  return { left: false, right: false };
+  return { left: 0, right: 0 };
 }
 
 export function emptyCannonQueue(): CannonSlot[] {
@@ -65,12 +69,12 @@ export function emptyCannonQueue(): CannonSlot[] {
 }
 
 export function cannonSlotIsEmpty(slot: CannonSlot): boolean {
-  return !slot.left && !slot.right;
+  return slot.left <= 0 && slot.right <= 0;
 }
 
-/** A shot costs one cannonball per broadside, so "both" costs two. */
+/** Every cannon fired costs one cannonball. */
 export function countCannonShots(slot: CannonSlot): number {
-  return (slot.left ? 1 : 0) + (slot.right ? 1 : 0);
+  return Math.max(0, slot.left) + Math.max(0, slot.right);
 }
 
 export function totalQueuedShots(queue: CannonQueue): number {

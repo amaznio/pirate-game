@@ -39,7 +39,7 @@ describe('previewPlayerPlan', () => {
     const enemy = defaultEnemy({ position: { x: 7, y: 5 } });
     const base = gameWith(player, enemy);
     const cannons = emptyCannonQueue();
-    cannons[0] = { left: false, right: true };
+    cannons[0] = { left: 0, right: 1 };
     const state = withQueue(base, 'player', { cannonQueue: cannons });
     const ammoBefore = state.players.player.ammo;
 

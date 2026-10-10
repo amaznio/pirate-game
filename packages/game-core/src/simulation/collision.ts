@@ -66,29 +66,6 @@ export function firstEntityAlongRay(
   return undefined;
 }
 
-/**
- * The cell a cannon fires from: the ship's own cell for a mount abeam, or the
- * cell `lane` steps along the heading for a fore or aft mount. Null when that
- * cell is off the board or taken by a rock or another ship, in which case the
- * cannon cannot fire.
- */
-export function mountOrigin(
-  state: GameState,
-  shipId: string,
-  position: Position,
-  heading: Direction,
-  lane: number,
-): Position | null {
-  if (lane === 0) {
-    return position;
-  }
-  const origin = translate(position, {
-    x: vectorFor(heading).x * lane,
-    y: vectorFor(heading).y * lane,
-  });
-  return checkBlocked(state, origin, shipId).blocked ? null : origin;
-}
-
 /** The cell a shot reaches when nothing blocks it. */
 export function rayEndpoint(
   origin: Position,

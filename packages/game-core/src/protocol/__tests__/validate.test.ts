@@ -12,7 +12,7 @@ import {
 } from '../validate';
 import { DEFAULT_ROOM_OPTIONS } from '../messages';
 
-const noFire = Array.from({ length: 4 }, () => ({ left: false, right: false }));
+const noFire = Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
 
 describe('parsePlayerActions', () => {
   it('accepts a well-formed plan and returns a clean copy', () => {
@@ -42,10 +42,31 @@ describe('parsePlayerActions', () => {
     ['an unknown action', { movement: ['SPIN', null, null, null], cannons: noFire }],
     ['a non-string action', { movement: [1, null, null, null], cannons: noFire }],
     [
-      'a non-boolean cannon flag',
+      'a cannon count that is not a number',
       {
         movement: [null, null, null, null],
-        cannons: [{ left: 1, right: false }, ...noFire.slice(1)],
+        cannons: [{ left: 'two', right: 0 }, ...noFire.slice(1)],
+      },
+    ],
+    [
+      'a negative cannon count',
+      {
+        movement: [null, null, null, null],
+        cannons: [{ left: -1, right: 0 }, ...noFire.slice(1)],
+      },
+    ],
+    [
+      'a fractional cannon count',
+      {
+        movement: [null, null, null, null],
+        cannons: [{ left: 1.5, right: 0 }, ...noFire.slice(1)],
+      },
+    ],
+    [
+      'an absurd cannon count',
+      {
+        movement: [null, null, null, null],
+        cannons: [{ left: 9, right: 0 }, ...noFire.slice(1)],
       },
     ],
     [
@@ -296,5 +317,28 @@ describe('ship classes on the wire', () => {
     expect(parseShipTypeId('__proto__')).toBeNull();
     expect(parseShipTypeId(undefined)).toBeNull();
     expect(parseShipTypeId({ id: 'sloop' })).toBeNull();
+  });
+});
+
+describe('cannon counts in a plan', () => {
+  const idle = [null, null, null, null];
+  const empty = { left: 0, right: 0 };
+
+  it('accepts how many cannons to fire from each side', () => {
+    expect(
+      parsePlayerActions({
+        movement: idle,
+        cannons: [{ left: 2, right: 3 }, empty, empty, empty],
+      })?.cannons[0],
+    ).toEqual({ left: 2, right: 3 });
+  });
+
+  it('still understands the older true and false for one cannon', () => {
+    expect(
+      parsePlayerActions({
+        movement: idle,
+        cannons: [{ left: true, right: false }, empty, empty, empty],
+      })?.cannons[0],
+    ).toEqual({ left: 1, right: 0 });
   });
 });

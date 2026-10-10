@@ -4,11 +4,10 @@ import type { CannonSlot } from '../domain/Action';
 import { CANNON_SIDES } from '../domain/Action';
 import type { EntityId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
-import type { Position } from '../domain/Position';
 import type { MutableGameState } from './internal';
 import { leftBroadside, rightBroadside } from '../domain/Direction';
 import { getWeaponType } from '../config/weaponTypes';
-import { firstEntityAlongRay, mountOrigin, rayEndpoint } from './collision';
+import { firstEntityAlongRay, rayEndpoint } from './collision';
 import { applyDamage } from './damage';
 
 function broadsideDirection(ship: Ship, side: WeaponSide) {
@@ -29,11 +28,11 @@ interface PendingDamage {
 }
 
 /**
- * Resolves the cannon moves for one phase, for every ship at once. Each flagged
- * broadside fires every cannon on that side, each spending one cannonball from
- * the owner's shared pool (so a "both sides" move on a two-cannon ship spends
- * four). A cannon fires from its lane: if the cell it fires from is taken, or
- * the pool runs dry, it does not fire and reports why.
+ * Resolves the cannon moves for one phase, for every ship at once. Each side
+ * fires as many of its cannons as the move asks for (one, two, three...), one
+ * after the other, from the ship's own cell along the same line. Each cannon
+ * spends one cannonball from the owner's shared pool; when the pool runs dry the
+ * rest report `out_of_ammo`.
  *
  * Fire is simultaneous: every shot is ray-cast against the positions after this
  * phase's movement and before any of this phase's damage lands. Damage is
@@ -52,23 +51,13 @@ export function resolveFirePhase(
 
   for (const { ship, slot } of plans) {
     for (const side of CANNON_SIDES) {
-      if (!slot[side]) {
+      if (slot[side] <= 0) {
         continue;
       }
 
-      for (const mount of mountsOnSide(ship, side)) {
-        const origin = mountOrigin(state, ship.id, ship.position, ship.heading, mount.lane ?? 0);
-        if (!origin) {
-          events.push({
-            type: 'CANNON_BLOCKED',
-            shipId: ship.id,
-            side,
-            reason: 'obstructed',
-            phase,
-          });
-          continue;
-        }
-
+      // The slot says how many cannons to fire; they go in order from the first.
+      const mounts = mountsOnSide(ship, side);
+      mounts.slice(0, slot[side]).forEach((mount, index) => {
         const owner = state.players[ship.ownerId];
         if (!owner || owner.ammo <= 0) {
           events.push({
@@ -78,12 +67,14 @@ export function resolveFirePhase(
             reason: 'out_of_ammo',
             phase,
           });
-          continue;
+          return;
         }
 
         state.players[ship.ownerId] = { ...owner, ammo: owner.ammo - 1 };
-        events.push(...fireMount(state, ship, mount, origin, phase, pending));
-      }
+        events.push(
+          ...fireMount(state, ship, mount, mounts.length > 1 ? index : undefined, phase, pending),
+        );
+      });
     }
   }
 
@@ -98,22 +89,25 @@ export function resolveFirePhase(
 }
 
 /**
- * Fires one cannon from `origin`. Ammo is handled by the caller. Damage to
- * ships is queued in `pending` rather than applied, so all shots in a phase see
- * the same board.
+ * Fires one cannon from the ship's own cell. Ammo is handled by the caller.
+ * Damage to ships is queued in `pending` rather than applied, so all shots in a
+ * phase see the same board. `cannon` numbers the cannons of a side that has
+ * several, so the events can be told apart; it is left out for a lone cannon.
  */
 function fireMount(
   state: MutableGameState,
   ship: Ship,
   mount: WeaponMount,
-  origin: Position,
+  cannon: number | undefined,
   phase: number,
   pending: PendingDamage[],
 ): GameEvent[] {
   const side = mount.side;
+  const origin = ship.position;
   const events: GameEvent[] = [];
   const weapon = getWeaponType(mount.weaponTypeId);
   const direction = broadsideDirection(ship, side);
+  const numbered = cannon === undefined ? {} : { cannon };
 
   events.push({
     type: 'CANNON_FIRED',
@@ -123,6 +117,7 @@ function fireMount(
     from: { ...origin },
     weaponTypeId: weapon.id,
     range: weapon.range,
+    ...numbered,
     phase,
   });
 
@@ -136,6 +131,7 @@ function fireMount(
       from: { ...origin },
       to: rayEndpoint(origin, direction, weapon.range),
       direction,
+      ...numbered,
       phase,
     });
     return events;
@@ -159,6 +155,7 @@ function fireMount(
     from: { ...origin },
     to: { ...hit.position },
     damage,
+    ...numbered,
     phase,
   });
 

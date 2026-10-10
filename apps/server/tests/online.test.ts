@@ -264,7 +264,7 @@ describe('playing', () => {
     client.queueToken('TURN_RIGHT');
     (client as unknown as { transport: { lockIn(plan: object): void } }).transport.lockIn({
       movement: ['TURN_RIGHT', 'TURN_RIGHT', null, null],
-      cannons: Array.from({ length: 4 }, () => ({ left: false, right: false })),
+      cannons: Array.from({ length: 4 }, () => ({ left: 0, right: 0 })),
     });
 
     const state = await until(anne, (s) => s.notice !== null);

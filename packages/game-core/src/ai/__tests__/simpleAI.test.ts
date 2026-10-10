@@ -20,7 +20,7 @@ import { createSimpleAI, planAiActions } from '../simpleAI';
 import { AI_PROFILES } from '../profiles';
 import { createRng } from '../rng';
 
-const idle = { movement: [null, null, null, null], cannons: Array.from({ length: 4 }, () => ({ left: false, right: false })) };
+const idle = { movement: [null, null, null, null], cannons: Array.from({ length: 4 }, () => ({ left: 0, right: 0 })) };
 
 const distance = (state: GameState) => {
   const a = state.ships['enemy-ship'].position;
@@ -510,7 +510,7 @@ describe('wind and whirlpools', () => {
     const plan = planAiActions(state, 'enemy', 'hard');
 
     expect(plan.movement).toEqual([null, null, null, null]);
-    expect(plan.cannons[0].left).toBe(true);
+    expect(plan.cannons[0].left).toBe(1);
   });
 
   it('knows wind carries it while it holds, and fires from where it lands', () => {
@@ -523,8 +523,8 @@ describe('wind and whirlpools', () => {
 
     const plan = planAiActions(state, 'enemy', 'hard');
 
-    expect(plan.cannons[0].right).toBe(true);
-    expect(plan.cannons[0].left).toBe(false);
+    expect(plan.cannons[0].right).toBe(1);
+    expect(plan.cannons[0].left).toBe(0);
   });
 
   it('plans a legal turn on boards full of rocks, wind and whirlpools', () => {

@@ -66,8 +66,7 @@ export type GameEvent =
       type: 'CANNON_BLOCKED';
       shipId: EntityId;
       side: ProjectileSide;
-      /** Out of cannonballs, or the cell this cannon fires from is taken. */
-      reason: 'out_of_ammo' | 'obstructed';
+      reason: 'out_of_ammo';
       phase: number;
     }
   | {
@@ -78,6 +77,8 @@ export type GameEvent =
       from: Position;
       weaponTypeId: string;
       range: number;
+      /** Which cannon of the side this is (0 first); present only when the side has several. */
+      cannon?: number;
       phase: number;
     }
   | {
@@ -89,6 +90,8 @@ export type GameEvent =
       from: Position;
       to: Position;
       damage: number;
+      /** Which cannon of the side fired it; present only when the side has several. */
+      cannon?: number;
       phase: number;
     }
   | {
@@ -98,6 +101,8 @@ export type GameEvent =
       from: Position;
       to: Position;
       direction: Direction;
+      /** Which cannon of the side fired it; present only when the side has several. */
+      cannon?: number;
       phase: number;
     }
   | {

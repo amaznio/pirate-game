@@ -111,8 +111,38 @@ export function removeToken(draft: PlanDraft, index: number): PlanDraft {
 }
 
 /**
- * Turns one broadside on or off for a phase. It only goes on if there are
- * cannonballs free for every cannon on that side, and the side has a cannon.
+ * Sets how many cannons a side fires in a phase. It cannot be more than the
+ * side has, and it cannot be more than the cannonballs still free allow, so the
+ * result is the nearest legal number.
+ */
+export function setCannonShots(
+  draft: PlanDraft,
+  ammo: number,
+  phase: number,
+  side: CannonSide,
+  shots: number,
+  counts: CannonCounts = ONE_CANNON_A_SIDE,
+): PlanDraft {
+  const current = draft.cannons[phase];
+  if (!current) {
+    return draft;
+  }
+  const have = current[side];
+  // Cannonballs this side could use: those free, plus the ones it already holds.
+  const available = remainingAmmo(ammo, draft.cannons, counts) + Math.min(have, counts[side]);
+  const next = Math.max(0, Math.min(Math.floor(shots), counts[side], available));
+  if (next === have) {
+    return draft;
+  }
+  const cannons = draft.cannons.map((slot, index) =>
+    index === phase ? { ...slot, [side]: next } : slot,
+  );
+  return { ...draft, cannons };
+}
+
+/**
+ * Fires a whole side or none of it: if the side is set to fire, it stops;
+ * otherwise it fires every cannon the cannonballs allow.
  */
 export function toggleCannon(
   draft: PlanDraft,
@@ -125,11 +155,5 @@ export function toggleCannon(
   if (!current) {
     return draft;
   }
-  if (!current[side] && remainingAmmo(ammo, draft.cannons, counts) < Math.max(1, counts[side])) {
-    return draft;
-  }
-  const cannons = draft.cannons.map((slot, index) =>
-    index === phase ? { ...slot, [side]: !slot[side] } : slot,
-  );
-  return { ...draft, cannons };
+  return setCannonShots(draft, ammo, phase, side, current[side] > 0 ? 0 : counts[side], counts);
 }

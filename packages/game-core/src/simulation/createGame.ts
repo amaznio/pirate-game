@@ -14,7 +14,7 @@ import {
   emptyCannonQueue,
   emptyQueue,
 } from '../domain/Action';
-import { cannonLanesOf, getShipType } from '../config/shipTypes';
+import { cannonsPerSideOf, getShipType } from '../config/shipTypes';
 import { createDuelConfig, type MatchConfig } from '../config/matchConfig';
 
 const BROADSIDE_ORDER: readonly WeaponSide[] = ['left', 'right'];
@@ -37,13 +37,8 @@ export function createShip(
   for (const weaponSide of BROADSIDE_ORDER) {
     const weaponTypeId = type.broadsides[weaponSide];
     if (weaponTypeId) {
-      for (const lane of cannonLanesOf(type)) {
-        // A mount on the ship's own cell leaves `lane` out, as before.
-        weapons.push(
-          lane === 0
-            ? { weaponTypeId, side: weaponSide }
-            : { weaponTypeId, side: weaponSide, lane },
-        );
+      for (let i = 0; i < cannonsPerSideOf(type); i += 1) {
+        weapons.push({ weaponTypeId, side: weaponSide });
       }
     }
   }

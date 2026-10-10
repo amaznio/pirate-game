@@ -31,7 +31,7 @@ function gameOverSetup(): GameState {
   };
 }
 
-const NO_FIRE = Array.from({ length: 4 }, () => ({ left: false, right: false }));
+const NO_FIRE = Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
 
 function plan(
   movement: PlayerActions['movement'] = [null, null, null, null],
@@ -42,7 +42,7 @@ function plan(
 
 /** Fires the given broadsides in phase 0. */
 function firePlan(left: boolean, right: boolean): PlayerActions {
-  return plan(undefined, [{ left, right }, ...NO_FIRE.slice(1)]);
+  return plan(undefined, [{ left: Number(left), right: Number(right) }, ...NO_FIRE.slice(1)]);
 }
 
 /** A host for the classic duel with the human's client connected. */
@@ -233,7 +233,7 @@ describe('cannons', () => {
 
   it('rejects more shots than the cannonball pool', () => {
     const host = makeHost();
-    const all = NO_FIRE.map(() => ({ left: true, right: true }));
+    const all = NO_FIRE.map(() => ({ left: 1, right: 1 }));
 
     expect(host.submitDraft('player', plan(undefined, all))).toBe(
       'not_enough_ammo',

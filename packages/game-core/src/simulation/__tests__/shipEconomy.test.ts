@@ -11,7 +11,7 @@ import { createGame } from '../createGame';
 import { resolveTurn } from '../resolveTurn';
 import { beginNextTurn } from '../tokens';
 
-const noCannons = Array.from({ length: 4 }, () => ({ left: false, right: false }));
+const noCannons = Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
 const idlePlan = { movement: [null, null, null, null], cannons: noCannons };
 const movingPlan = { movement: ['FORWARD', null, null, null] as const, cannons: noCannons };
 

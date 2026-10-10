@@ -63,7 +63,7 @@ function plan(
   };
 }
 
-const fire = (left: boolean, right: boolean): CannonSlot => ({ left, right });
+const fire = (left: boolean, right: boolean): CannonSlot => ({ left: Number(left), right: Number(right) });
 
 describe('simultaneous movement', () => {
   it('stops both ships when they try to enter the same cell', () => {

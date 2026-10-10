@@ -1,6 +1,6 @@
 import { useGameUIStore } from '../store/useGameUIStore';
 import { TOKEN_META } from './tokenMeta';
-import { CannonToggle } from './CannonToggle';
+import { CannonGroup } from './CannonGroup';
 import { useAmmo } from './useAmmo';
 
 /**
@@ -18,7 +18,7 @@ export function PlannedMoves() {
   const activeSlot = useGameUIStore((state) => state.activeSlot);
   const setActiveSlot = useGameUIStore((state) => state.setActiveSlot);
   const removePlayerAction = useGameUIStore((state) => state.removePlayerAction);
-  const toggleCannon = useGameUIStore((state) => state.toggleCannon);
+  const setCannonShots = useGameUIStore((state) => state.setCannonShots);
 
   const available = useAmmo().remaining;
   const perSide = useGameUIStore((state) => state.cannonsPerSide);
@@ -27,24 +27,25 @@ export function PlannedMoves() {
     <ol className="flex flex-col gap-1">
       {queue.map((slot, index) => {
         const meta = slot ? TOKEN_META[slot] : null;
-        const cannon = cannonQueue[index] ?? { left: false, right: false };
+        const cannon = cannonQueue[index] ?? { left: 0, right: 0 };
         const armed = activeSlot === index;
-        const leftDisabled = !canPlan || (!cannon.left && available < Math.max(1, perSide.left));
-        const rightDisabled = !canPlan || (!cannon.right && available < Math.max(1, perSide.right));
 
         return (
-          <li key={index} className="flex items-center gap-2">
-            <CannonToggle
-              active={cannon.left}
-              count={perSide.left}
-              disabled={leftDisabled}
-              label={`Fire left in phase ${index + 1}`}
-              onClick={() => toggleCannon(index, 'left')}
+          <li key={index} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5">
+            <CannonGroup
+              side="left"
+              phase={index}
+              cannons={perSide.left}
+              shots={cannon.left}
+              available={available}
+              canPlan={canPlan}
+              onChange={(shots) => setCannonShots(index, 'left', shots)}
             />
 
             <button
               type="button"
               disabled={!canPlan}
+              aria-label={meta ? `Remove ${meta.label} from phase ${index + 1}` : `Choose a token for phase ${index + 1}`}
               onClick={() => {
                 if (slot) {
                   removePlayerAction(index);
@@ -52,7 +53,7 @@ export function PlannedMoves() {
                   setActiveSlot(armed ? null : index);
                 }
               }}
-              className={`flex flex-1 items-center gap-3 rounded-lg border px-3 py-1.5 text-left transition active:scale-[0.99] disabled:cursor-not-allowed ${
+              className={`flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition active:scale-[0.99] disabled:cursor-not-allowed ${
                 meta
                   ? `${meta.bgClass} border-white/20 text-white`
                   : armed
@@ -66,22 +67,28 @@ export function PlannedMoves() {
               <span className="text-lg leading-none" aria-hidden>
                 {meta ? meta.arrow : '＋'}
               </span>
-              <span className="text-sm font-semibold">
+              <span className="min-w-0 truncate text-sm font-semibold">
                 {meta ? meta.label : armed ? 'Tap a token' : 'Empty'}
               </span>
               {meta && (
-                <span className="ml-auto text-[10px] font-semibold uppercase opacity-80">
-                  tap to remove
+                <span
+                  className="ml-auto shrink-0 text-base leading-none opacity-70"
+                  title="Tap to remove"
+                  aria-hidden
+                >
+                  ×
                 </span>
               )}
             </button>
 
-            <CannonToggle
-              active={cannon.right}
-              count={perSide.right}
-              disabled={rightDisabled}
-              label={`Fire right in phase ${index + 1}`}
-              onClick={() => toggleCannon(index, 'right')}
+            <CannonGroup
+              side="right"
+              phase={index}
+              cannons={perSide.right}
+              shots={cannon.right}
+              available={available}
+              canPlan={canPlan}
+              onChange={(shots) => setCannonShots(index, 'right', shots)}
             />
           </li>
         );

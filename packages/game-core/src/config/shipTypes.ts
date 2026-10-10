@@ -26,11 +26,11 @@ export interface ShipTokenStats {
  */
 export interface ShipCannonStats {
   /**
-   * One cannon per entry on each broadside, as a lane (cells along the heading:
-   * 0 abeam, +1 fore, -1 aft). The order is the firing order, so if cannonballs
-   * run short the first lanes fire.
+   * Cannons on each broadside. They all fire from the ship's own cell along the
+   * same line, one after the other, each costing a cannonball and dealing the
+   * weapon's damage; if cannonballs run short the first ones fire.
    */
-  readonly lanes?: readonly number[];
+  readonly count?: number;
   /** Cannonballs held at the start of a match. */
   readonly ammo?: number;
   /** Cannonballs reloaded each turn. */
@@ -89,8 +89,7 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
       cap: 10,
       restBonus: 1,
     },
-    // Two cannons a side: one abeam and one forward.
-    cannons: { lanes: [0, 1], ammo: 5, reload: 2 },
+    cannons: { count: 2, ammo: 5, reload: 2 },
     supplyUse: 2,
     cargoCap: 12,
   },
@@ -108,8 +107,7 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
       restBonus: 1,
       rotation: ['FORWARD', 'FORWARD', 'TURN_LEFT', 'FORWARD', 'FORWARD', 'TURN_RIGHT'],
     },
-    // Three cannons a side: abeam, forward and aft.
-    cannons: { lanes: [0, 1, -1], ammo: 7, reload: 2 },
+    cannons: { count: 3, ammo: 7, reload: 2 },
     supplyUse: 3,
     cargoCap: 18,
   },
@@ -117,9 +115,9 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
 
 export const DEFAULT_SHIP_TYPE_ID = 'sloop';
 
-/** The lanes of a ship type's cannons on each side (one cannon abeam if unset). */
-export function cannonLanesOf(type: ShipType): readonly number[] {
-  return type.cannons?.lanes ?? [0];
+/** How many cannons a ship type has on each side (one if unset). */
+export function cannonsPerSideOf(type: ShipType): number {
+  return type.cannons?.count ?? 1;
 }
 
 export function getShipType(id: string): ShipType {

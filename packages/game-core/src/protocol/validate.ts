@@ -30,6 +30,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** A plan: exactly four movement slots and four cannon slots. */
+/** Most cannons a side can ever have; a bigger number is not a real plan. */
+const MAX_CANNONS_A_SIDE = 8;
+
+/** How many cannons a slot asks to fire from a side: a number, or (older clients) true or false. */
+function cannonCount(value: unknown): number | null {
+  if (typeof value === 'boolean') {
+    return value ? 1 : 0;
+  }
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= MAX_CANNONS_A_SIDE
+    ? value
+    : null;
+}
+
 export function parsePlayerActions(value: unknown): PlayerActions | null {
   if (!isRecord(value)) {
     return null;
@@ -58,16 +74,17 @@ export function parsePlayerActions(value: unknown): PlayerActions | null {
     }
   }
 
-  const parsedCannons: Array<{ left: boolean; right: boolean }> = [];
+  const parsedCannons: Array<{ left: number; right: number }> = [];
   for (const slot of cannons) {
-    if (
-      !isRecord(slot) ||
-      typeof slot.left !== 'boolean' ||
-      typeof slot.right !== 'boolean'
-    ) {
+    if (!isRecord(slot)) {
       return null;
     }
-    parsedCannons.push({ left: slot.left, right: slot.right });
+    const left = cannonCount(slot.left);
+    const right = cannonCount(slot.right);
+    if (left === null || right === null) {
+      return null;
+    }
+    parsedCannons.push({ left, right });
   }
 
   return { movement: parsedMovement, cannons: parsedCannons };

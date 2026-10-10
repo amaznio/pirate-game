@@ -18,10 +18,10 @@ function stateWithSecrets(): GameState {
         ...base.players.p2,
         queue: ['TURN_RIGHT', 'TURN_RIGHT', 'FORWARD', null],
         cannonQueue: [
-          { left: true, right: false },
-          { left: false, right: false },
-          { left: false, right: true },
-          { left: false, right: false },
+          { left: 1, right: 0 },
+          { left: 0, right: 0 },
+          { left: 0, right: 1 },
+          { left: 0, right: 0 },
         ],
         tokens: { FORWARD: 7, TURN_LEFT: 8, TURN_RIGHT: 9 },
         ammo: 42,
@@ -100,7 +100,7 @@ describe('planActivity', () => {
   it('is 0 for an empty plan and 1 for a full one', () => {
     const full = {
       movement: ['FORWARD', 'FORWARD', 'FORWARD', 'FORWARD'] as const,
-      cannons: Array.from({ length: 4 }, () => ({ left: true, right: false })),
+      cannons: Array.from({ length: 4 }, () => ({ left: 1, right: 0 })),
     };
     expect(planActivity({ movement: [null, null, null, null], cannons: [] })).toBe(0);
     expect(planActivity(full)).toBe(1);

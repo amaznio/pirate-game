@@ -2,17 +2,17 @@
 
 exports[`golden matches > plays the same way: duel, brigantine v sloop, seed 6 1`] = `
 {
-  "events": 124,
-  "hash": "1aef1bce90d2d4",
+  "events": 104,
+  "hash": "15d2411a72f379",
   "hull": {
-    "enemy-ship": 1,
-    "player-ship": 0,
+    "enemy-ship": 0,
+    "player-ship": 4,
   },
   "outcome": {
     "kind": "win",
-    "teamId": "enemy",
+    "teamId": "player",
   },
-  "turns": 5,
+  "turns": 4,
 }
 `;
 
@@ -33,8 +33,8 @@ exports[`golden matches > plays the same way: duel, calm sea, seed 5 1`] = `
 
 exports[`golden matches > plays the same way: duel, galleon v brigantine, stormy, seed 8 1`] = `
 {
-  "events": 110,
-  "hash": "0f369d4ba47dee",
+  "events": 218,
+  "hash": "123b913e6944be",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 2,
@@ -43,7 +43,7 @@ exports[`golden matches > plays the same way: duel, galleon v brigantine, stormy
     "kind": "win",
     "teamId": "player",
   },
-  "turns": 4,
+  "turns": 8,
 }
 `;
 
@@ -111,11 +111,11 @@ exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`]
 
 exports[`golden matches > plays the same way: free-for-all of 3 classes and a bot, seed 13 1`] = `
 {
-  "events": 354,
-  "hash": "0462f1cd6cc719",
+  "events": 273,
+  "hash": "1fc096c9fac303",
   "hull": {
     "p1-ship": 0,
-    "p2-ship": 1,
+    "p2-ship": 3,
     "p3-ship": 0,
     "p4-ship": 0,
   },
@@ -123,7 +123,7 @@ exports[`golden matches > plays the same way: free-for-all of 3 classes and a bo
     "kind": "win",
     "teamId": "p2",
   },
-  "turns": 14,
+  "turns": 9,
 }
 `;
 

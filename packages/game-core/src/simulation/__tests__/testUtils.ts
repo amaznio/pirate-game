@@ -54,8 +54,9 @@ export function withAmmo(
   };
 }
 
-export function cannon(left: boolean, right: boolean): CannonSlot {
-  return { left, right };
+/** A cannon move: how many cannons to fire from each side (true and false count as 1 and 0). */
+export function cannon(left: boolean | number, right: boolean | number): CannonSlot {
+  return { left: Number(left), right: Number(right) };
 }
 
 /** Builds a phase-aligned SubmittedActions for tests. */
