@@ -40,6 +40,19 @@ const SCENARIOS: Record<string, () => MatchConfig> = {
       width: 30,
       height: 30,
     }),
+  // Added with the ship classes (phase 1); the sloop scenarios above predate them.
+  'duel, brigantine v sloop, seed 6': () =>
+    createDuelConfig({ seed: 6, shipTypeIds: ['brigantine', 'sloop'] }),
+  'duel, galleon v brigantine, stormy, seed 8': () =>
+    createDuelConfig({ seed: 8, sea: 'stormy', shipTypeIds: ['galleon', 'brigantine'] }),
+  'free-for-all of 3 classes and a bot, seed 13': () =>
+    createSkirmishConfig({
+      humans: 0,
+      ais: 4,
+      teamMode: 'ffa',
+      seed: 13,
+      shipTypeIds: ['sloop', 'brigantine', 'galleon', 'sloop'],
+    }),
 };
 
 describe('golden matches', () => {

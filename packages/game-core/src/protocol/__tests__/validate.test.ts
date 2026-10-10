@@ -7,6 +7,7 @@ import {
   parsePublicRoomList,
   parseRoomId,
   parseRoomOptions,
+  parseShipTypeId,
   parseTokenPatch,
 } from '../validate';
 import { DEFAULT_ROOM_OPTIONS } from '../messages';
@@ -126,6 +127,7 @@ describe('parseRoomOptions', () => {
       turnDurationSeconds: 45,
       visibility: 'private',
       mapStyle: 'normal',
+      aiShipTypeId: 'sloop',
     });
     expect(
       parseRoomOptions(
@@ -137,6 +139,7 @@ describe('parseRoomOptions', () => {
           turnDurationSeconds: 20,
           visibility: 'public',
           mapStyle: 'calm',
+          aiShipTypeId: 'galleon',
         },
       ),
     ).toEqual({
@@ -146,6 +149,7 @@ describe('parseRoomOptions', () => {
       turnDurationSeconds: 20,
       visibility: 'public',
       mapStyle: 'calm',
+      aiShipTypeId: 'galleon',
     });
     expect(parseRoomOptions({ mapStyle: 'stormy' })?.mapStyle).toBe('stormy');
   });
@@ -274,5 +278,23 @@ describe('parsePublicRoomList', () => {
 
     expect(parsePublicRoomList({ rooms: many })).toHaveLength(50);
     expect(parsePublicRoomList({ rooms: many }, 10)).toHaveLength(10);
+  });
+});
+
+describe('ship classes on the wire', () => {
+  it('accepts a known class for the AIs and refuses anything else', () => {
+    expect(parseRoomOptions({ aiShipTypeId: 'brigantine' })?.aiShipTypeId).toBe('brigantine');
+    expect(parseRoomOptions({ aiShipTypeId: 'raft' })).toBeNull();
+    expect(parseRoomOptions({ aiShipTypeId: 7 })).toBeNull();
+    expect(parseRoomOptions({ aiShipTypeId: 'toString' })).toBeNull();
+    expect(parseRoomOptions({})?.aiShipTypeId).toBe('sloop');
+  });
+
+  it('parses a ship class sent by a player', () => {
+    expect(parseShipTypeId('galleon')).toBe('galleon');
+    expect(parseShipTypeId('raft')).toBeNull();
+    expect(parseShipTypeId('__proto__')).toBeNull();
+    expect(parseShipTypeId(undefined)).toBeNull();
+    expect(parseShipTypeId({ id: 'sloop' })).toBeNull();
   });
 });

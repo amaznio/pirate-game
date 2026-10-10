@@ -70,3 +70,28 @@ describe('AI difficulty from the URL', () => {
     expect(levels('?ais=3&w=4&h=4&difficulty=hard')).toEqual(['hard', 'hard']);
   });
 });
+
+describe('ship classes in the URL', () => {
+  const ships = (search: string) =>
+    matchConfigFromSearch(search).participants.map((p) => p.shipTypeId);
+
+  it('sails sloops unless asked', () => {
+    expect(ships('')).toEqual(['sloop', 'sloop']);
+    expect(ships('?ais=2')).toEqual(['sloop', 'sloop', 'sloop']);
+  });
+
+  it('gives you ?ship= and the others the same unless ?enemy= says otherwise', () => {
+    expect(ships('?ship=galleon')).toEqual(['galleon', 'galleon']);
+    expect(ships('?ship=galleon&enemy=sloop')).toEqual(['galleon', 'sloop']);
+    expect(ships('?ais=3&ship=brigantine&enemy=sloop')).toEqual([
+      'brigantine',
+      'sloop',
+      'sloop',
+      'sloop',
+    ]);
+  });
+
+  it('ignores a class that does not exist', () => {
+    expect(ships('?ship=raft&enemy=submarine')).toEqual(['sloop', 'sloop']);
+  });
+});

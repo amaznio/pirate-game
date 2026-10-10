@@ -5,13 +5,19 @@ import type {
 } from '../domain/GameState';
 import type { PlayerId } from '../domain/Entity';
 import type { ActionQueue, MovementAction, TokenInventory } from '../domain/Action';
-import { cloneInventory, emptyCannonQueue, emptyQueue } from '../domain/Action';
+import {
+  cloneInventory,
+  emptyCannonQueue,
+  emptyQueue,
+  totalTokens,
+} from '../domain/Action';
 import {
   AUTO_TOKEN_ROTATION,
   CANNON_RELOAD_AMOUNT,
   CANNON_RELOAD_INTERVAL_TURNS,
-  TOKENS_PER_TURN,
+  DEFAULT_TOKEN_ECONOMY,
 } from '../config/gameRules';
+import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 
 export interface TokenSelection {
   readonly token: MovementAction;
@@ -25,14 +31,15 @@ export interface TokenSelection {
  */
 export function selectNextToken(
   generation: TokenGenerationConfig,
+  rotation: readonly MovementAction[] = AUTO_TOKEN_ROTATION,
 ): TokenSelection {
   if (!generation.auto) {
     return { token: generation.requested, tokenGeneration: generation };
   }
 
-  const index = generation.rotationIndex % AUTO_TOKEN_ROTATION.length;
+  const index = generation.rotationIndex % rotation.length;
   return {
-    token: AUTO_TOKEN_ROTATION[index],
+    token: rotation[index],
     tokenGeneration: {
       ...generation,
       rotationIndex: generation.rotationIndex + 1,
@@ -73,25 +80,47 @@ export function reloadedAmmo(current: number, completedTurn: number): number {
 
 export interface NextTurnResult {
   readonly state: GameState;
-  /** The movement token each player produced for the new turn. */
+  /** The first movement token each player produced for the new turn. */
   readonly tokens: Readonly<Record<PlayerId, MovementAction>>;
+  /** Every token each player produced (empty if their hold was full). */
+  readonly produced: Readonly<Record<PlayerId, readonly MovementAction[]>>;
 }
 
 /**
  * Advances to the next turn: increments the turn counter, clears every player's
- * move and cannon queues, reloads cannonballs, and produces one movement token
- * for each player from their own token-generation settings.
+ * move and cannon queues, reloads cannonballs, and produces movement tokens
+ * for each player from their own token-generation settings and economy: their
+ * income, plus the rest bonus after a turn with no move, up to their cap.
  */
 export function beginNextTurn(state: GameState): NextTurnResult {
   const players: Record<PlayerId, PlayerState> = {};
-  const produced: Record<PlayerId, MovementAction> = {};
+  const first: Record<PlayerId, MovementAction> = {};
+  const produced: Record<PlayerId, MovementAction[]> = {};
 
   for (const id of Object.keys(state.players)) {
     const player = state.players[id];
-    const selection = selectNextToken(player.tokenGeneration);
+    const shipTypeId = state.ships[player.shipId]?.shipTypeId;
+    const economy = shipTypeId
+      ? tokenEconomyOf(getShipType(shipTypeId))
+      : DEFAULT_TOKEN_ECONOMY;
     const tokens = cloneInventory(player.tokens);
-    tokens[selection.token] += TOKENS_PER_TURN;
-    produced[id] = selection.token;
+    const made: MovementAction[] = [];
+    let generation = player.tokenGeneration;
+
+    const income = economy.perTurn + (player.restedLastTurn ? economy.restBonus : 0);
+    for (let i = 0; i < income; i += 1) {
+      if (economy.cap !== null && totalTokens(tokens) >= economy.cap) {
+        break;
+      }
+      const selection = selectNextToken(generation, economy.rotation);
+      generation = selection.tokenGeneration;
+      tokens[selection.token] += 1;
+      made.push(selection.token);
+    }
+    produced[id] = made;
+    if (made.length > 0) {
+      first[id] = made[0];
+    }
 
     players[id] = {
       ...player,
@@ -99,13 +128,15 @@ export function beginNextTurn(state: GameState): NextTurnResult {
       ammo: reloadedAmmo(player.ammo, state.turn),
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),
-      tokenGeneration: selection.tokenGeneration,
+      tokenGeneration: generation,
+      restedLastTurn: false,
       lockedIn: false,
     };
   }
 
   return {
-    tokens: produced,
+    tokens: first,
+    produced,
     state: {
       ...state,
       turn: state.turn + 1,

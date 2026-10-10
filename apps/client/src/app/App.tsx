@@ -7,6 +7,7 @@ import {
   offlineConfig,
   startOfflineMatch,
   type OfflineMatch,
+  type OfflineShips,
 } from './offlineMatch';
 import { onlineSession, useOnlineSession } from './onlineSession';
 import { LobbyScreen } from '../ui/menu/LobbyScreen';
@@ -45,8 +46,16 @@ export default function App() {
   useEffect(() => () => offlineRef.current?.dispose(), []);
 
   const playOffline = useCallback(
-    (opponents: number, name: string, difficulty: AiDifficulty, mapStyle: MapStyle) => {
-      setOffline(startOfflineMatch(offlineConfig(opponents, name, difficulty, mapStyle)));
+    (
+      opponents: number,
+      name: string,
+      difficulty: AiDifficulty,
+      mapStyle: MapStyle,
+      ships: OfflineShips,
+    ) => {
+      setOffline(
+        startOfflineMatch(offlineConfig(opponents, name, difficulty, mapStyle, undefined, ships)),
+      );
     },
     [],
   );

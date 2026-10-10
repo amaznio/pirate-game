@@ -14,6 +14,7 @@ import {
   generateBoard,
   type MapStyle,
 } from '../board/generateBoard';
+import { DEFAULT_SHIP_TYPE_ID } from './shipTypes';
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -70,7 +71,6 @@ export const DEFAULT_RULES: MatchRules = {
   endTurnWhenAllLocked: true,
 };
 
-const DEFAULT_SHIP_TYPE = 'sloop';
 
 /**
  * The same AI difficulty for every ship in the match. Humans get it too: it is
@@ -109,11 +109,18 @@ function seaFor(
   return generateBoard({ width, height, seed, spawns, style });
 }
 
+/** The ship type a participant sails: the one listed for their seat, else the sloop. */
+function shipTypeFor(shipTypeIds: readonly string[] | undefined, index: number): string {
+  return shipTypeIds?.[index] ?? DEFAULT_SHIP_TYPE_ID;
+}
+
 /** The standard 1v1: you (bottom) against one AI (top) on the default board. */
 export function createDuelConfig(
   overrides: Partial<Pick<MatchConfig, 'seed' | 'rules'>> & {
     aiDifficulty?: AiDifficulty;
     sea?: SeaChoice;
+    /** Ship types for [player, enemy]; sloops when left out. */
+    shipTypeIds?: readonly string[];
   } = {},
 ): MatchConfig {
   const seed = overrides.seed ?? 1;
@@ -130,7 +137,7 @@ export function createDuelConfig(
         playerId: 'player',
         name: 'Player',
         teamId: 'player',
-        shipTypeId: DEFAULT_SHIP_TYPE,
+        shipTypeId: shipTypeFor(overrides.shipTypeIds, 0),
         spawn: { position: { x: 9, y: 14 }, heading: 'NORTH' },
         controller: 'human',
       },
@@ -138,7 +145,7 @@ export function createDuelConfig(
         playerId: 'enemy',
         name: 'Enemy',
         teamId: 'enemy',
-        shipTypeId: DEFAULT_SHIP_TYPE,
+        shipTypeId: shipTypeFor(overrides.shipTypeIds, 1),
         spawn: { position: { x: 9, y: 5 }, heading: 'SOUTH' },
         controller: 'ai',
       },
@@ -163,6 +170,8 @@ export interface SkirmishOptions {
   readonly aiDifficulty?: AiDifficulty;
   /** The kind of sea to generate from the seed. Normal when left out. */
   readonly sea?: SeaChoice;
+  /** Ship types in seat order (humans first); sloops when left out. */
+  readonly shipTypeIds?: readonly string[];
 }
 
 /** Cells in from the board edge where generated spawns are placed. */
@@ -271,7 +280,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
             ? 'team-a'
             : 'team-b'
           : playerId,
-      shipTypeId: DEFAULT_SHIP_TYPE,
+      shipTypeId: shipTypeFor(options.shipTypeIds, index),
       spawn,
       controller,
     };

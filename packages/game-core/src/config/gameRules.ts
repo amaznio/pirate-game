@@ -55,3 +55,26 @@ export const CANNON_RELOAD_INTERVAL_TURNS = 1;
  */
 export const ACTIVITY_MOVE_WEIGHT = 1;
 export const ACTIVITY_CANNON_WEIGHT = 0.5;
+
+/** How a ship produces movement tokens (a ship type's `tokens`, with the gaps filled in). */
+export interface TokenEconomy {
+  /** Tokens produced at the start of every new turn. */
+  readonly perTurn: number;
+  /** Most tokens that can be held at once (all types together); null for no limit. */
+  readonly cap: number | null;
+  /** Extra tokens produced after a turn in which the ship made no move. */
+  readonly restBonus: number;
+  /** The order in which the auto-generated token types are produced. */
+  readonly rotation: readonly MovementAction[];
+}
+
+/**
+ * The token rules of the classic sloop, and what any ship type that does not
+ * set a value falls back to.
+ */
+export const DEFAULT_TOKEN_ECONOMY: TokenEconomy = {
+  perTurn: TOKENS_PER_TURN,
+  cap: null,
+  restBonus: 0,
+  rotation: AUTO_TOKEN_ROTATION,
+};

@@ -9,6 +9,8 @@ import { CannonballChip } from './CannonballChip';
  */
 export function ResourceChips() {
   const tokens = useGameUIStore((state) => state.tokens);
+  const tokenCap = useGameUIStore((state) => state.tokenCap);
+  const held = tokens.FORWARD + tokens.TURN_LEFT + tokens.TURN_RIGHT;
   const queuedMoves = useGameUIStore(
     (state) => state.queue.filter((slot) => slot !== null).length,
   );
@@ -28,6 +30,16 @@ export function ResourceChips() {
           </span>
         );
       })}
+      {tokenCap !== null && (
+        <span
+          title="Your hold is full at this many tokens; new ones are lost"
+          className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
+            held >= tokenCap ? 'bg-amber-600 text-white' : 'bg-black/25 text-parchment/80'
+          }`}
+        >
+          {held}/{tokenCap}
+        </span>
+      )}
       <CannonballChip />
       {queuedMoves > 0 && (
         <span className="text-xs font-semibold text-parchment/70">

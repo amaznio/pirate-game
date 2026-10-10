@@ -4,6 +4,8 @@
  *   pnpm harness                          # every pairing of the AI levels
  *   pnpm harness --seeds 100 --sea stormy
  *   pnpm harness --a hard --b easy
+ *   pnpm harness --ship-a galleon --ship-b sloop     # class against class
+ *   pnpm harness --classes                           # every ship class pairing
  *
  * Each pairing is played from both sides on every seed, so a side advantage
  * shows up as an uneven result for two identical opponents. "Starved" is the
@@ -12,6 +14,7 @@
  * roadmap aims for 15 to 25 per cent once ship classes exist.
  */
 import { createDuelConfig, type SeaChoice } from '../src/config/matchConfig';
+import { SHIP_TYPES, getShipType } from '../src/config/shipTypes';
 import {
   AI_DIFFICULTIES,
   type AiDifficulty,
@@ -23,12 +26,28 @@ interface Options {
   sea: SeaChoice;
   a: AiDifficulty | null;
   b: AiDifficulty | null;
+  shipA: string | null;
+  shipB: string | null;
+  classes: boolean;
 }
 
 function parseArgs(argv: string[]): Options {
-  const options: Options = { seeds: 40, sea: 'normal', a: null, b: null };
+  const options: Options = {
+    seeds: 40,
+    sea: 'normal',
+    a: null,
+    b: null,
+    shipA: null,
+    shipB: null,
+    classes: false,
+  };
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
+    if (flag === '--classes') {
+      options.classes = true;
+      i -= 1;
+      continue;
+    }
     const value = argv[i + 1];
     if (value === undefined) {
       throw new Error(`Missing value for ${flag}`);
@@ -46,12 +65,23 @@ function parseArgs(argv: string[]): Options {
       case '--b':
         options.b = value as AiDifficulty;
         break;
+      case '--ship-a':
+        options.shipA = value;
+        break;
+      case '--ship-b':
+        options.shipB = value;
+        break;
       default:
         throw new Error(`Unknown option ${flag}`);
     }
   }
   if (!Number.isInteger(options.seeds) || options.seeds < 1) {
     throw new Error('--seeds must be a positive whole number');
+  }
+  for (const ship of [options.shipA, options.shipB]) {
+    if (ship) {
+      getShipType(ship);
+    }
   }
   for (const level of [options.a, options.b]) {
     if (level && !AI_DIFFICULTIES.includes(level)) {
@@ -73,7 +103,13 @@ interface Tally {
 }
 
 /** `a` plays `player` on odd passes and `enemy` on even ones, so sides cancel out. */
-function play(a: AiDifficulty, b: AiDifficulty, options: Options): Tally {
+function play(
+  a: AiDifficulty,
+  b: AiDifficulty,
+  shipA: string,
+  shipB: string,
+  options: Options,
+): Tally {
   const tally: Tally = {
     aWins: 0,
     bWins: 0,
@@ -86,7 +122,11 @@ function play(a: AiDifficulty, b: AiDifficulty, options: Options): Tally {
   };
   for (let seed = 1; seed <= options.seeds; seed += 1) {
     for (const aIsPlayer of [true, false]) {
-      const base = createDuelConfig({ seed, sea: options.sea });
+      const base = createDuelConfig({
+        seed,
+        sea: options.sea,
+        shipTypeIds: aIsPlayer ? [shipA, shipB] : [shipB, shipA],
+      });
       const config = {
         ...base,
         participants: base.participants.map((participant) => ({
@@ -118,31 +158,47 @@ function play(a: AiDifficulty, b: AiDifficulty, options: Options): Tally {
 
 function main(): void {
   const options = parseArgs(process.argv.slice(2));
-  const pairs: Array<[AiDifficulty, AiDifficulty]> = [];
-  if (options.a && options.b) {
-    pairs.push([options.a, options.b]);
+  const rows: Array<{ label: string; a: AiDifficulty; b: AiDifficulty; shipA: string; shipB: string }> = [];
+
+  if (options.classes) {
+    const ids = Object.keys(SHIP_TYPES);
+    const level = options.a ?? 'normal';
+    for (const shipA of ids) {
+      for (const shipB of ids) {
+        if (ids.indexOf(shipA) <= ids.indexOf(shipB)) {
+          rows.push({ label: `${shipA} v ${shipB}`, a: level, b: options.b ?? level, shipA, shipB });
+        }
+      }
+    }
+  } else if (options.a && options.b) {
+    const shipA = options.shipA ?? 'sloop';
+    const shipB = options.shipB ?? 'sloop';
+    rows.push({ label: `${options.a} v ${options.b}`, a: options.a, b: options.b, shipA, shipB });
   } else {
+    const shipA = options.shipA ?? 'sloop';
+    const shipB = options.shipB ?? 'sloop';
     for (const a of AI_DIFFICULTIES) {
       for (const b of AI_DIFFICULTIES) {
         if (AI_DIFFICULTIES.indexOf(a) <= AI_DIFFICULTIES.indexOf(b)) {
-          pairs.push([a, b]);
+          rows.push({ label: `${a} v ${b}`, a, b, shipA, shipB });
         }
       }
     }
   }
 
   console.log(
-    `Duels on the ${options.sea} sea, ${options.seeds} seeds x 2 sides per pairing\n`,
+    `Duels on the ${options.sea} sea, ${options.seeds} seeds x 2 sides per pairing
+`,
   );
   console.log(
-    ['pairing'.padEnd(16), 'A wins', 'B wins', 'draws', 'avg turns', 'starved', 'ms/turn']
+    ['pairing'.padEnd(22), 'A wins', 'B wins', 'draws', 'avg turns', 'starved', 'ms/turn']
       .map((cell, index) => (index === 0 ? cell : cell.padStart(9)))
       .join(' '),
   );
-  for (const [a, b] of pairs) {
-    const t = play(a, b, options);
-    const row = [
-      `${a} v ${b}`.padEnd(16),
+  for (const row of rows) {
+    const t = play(row.a, row.b, row.shipA, row.shipB, options);
+    const cells = [
+      row.label.padEnd(22),
       String(t.aWins).padStart(9),
       String(t.bWins).padStart(9),
       String(t.mutual).padStart(9),
@@ -150,7 +206,7 @@ function main(): void {
       `${((100 * t.starved) / t.shipPhases).toFixed(1)}%`.padStart(9),
       (t.planningMs / t.turns).toFixed(1).padStart(9),
     ];
-    console.log(row.join(' '));
+    console.log(cells.join(' '));
   }
 }
 

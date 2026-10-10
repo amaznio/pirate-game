@@ -121,6 +121,16 @@ export class OnlineSession {
     }
   }
 
+  /** Picks the ship class you will sail (before the match starts). */
+  async chooseShip(shipTypeId: string): Promise<void> {
+    const result = await this.request<{ lobby: LobbyState }>('room:ship', shipTypeId);
+    if (result?.ok) {
+      this.set({ lobby: result.lobby, message: null });
+    } else if (result) {
+      this.set({ message: result.message });
+    }
+  }
+
   /** Host only: starts the match. The match arrives as the first view. */
   async start(): Promise<void> {
     const result = await this.request<Record<string, never>>('room:start');

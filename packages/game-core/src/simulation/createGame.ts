@@ -83,6 +83,7 @@ export function createGame(
       participant.spawn.heading,
       participant.shipTypeId,
     );
+    const stats = getShipType(participant.shipTypeId).tokens;
     players[participant.playerId] = {
       id: participant.playerId,
       name: participant.name ?? participant.playerId,
@@ -90,7 +91,7 @@ export function createGame(
       shipId: id,
       controller: participant.controller,
       aiDifficulty: participant.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
-      tokens: cloneInventory(config.startingTokens),
+      tokens: cloneInventory(stats?.start ?? config.startingTokens),
       ammo: config.startingAmmo,
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),

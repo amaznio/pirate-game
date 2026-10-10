@@ -1,5 +1,21 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`golden matches > plays the same way: duel, brigantine v sloop, seed 6 1`] = `
+{
+  "events": 123,
+  "hash": "183368b0eb8498",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 4,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "player",
+  },
+  "turns": 6,
+}
+`;
+
 exports[`golden matches > plays the same way: duel, calm sea, seed 5 1`] = `
 {
   "events": 156,
@@ -12,6 +28,22 @@ exports[`golden matches > plays the same way: duel, calm sea, seed 5 1`] = `
     "kind": "draw",
   },
   "turns": 8,
+}
+`;
+
+exports[`golden matches > plays the same way: duel, galleon v brigantine, stormy, seed 8 1`] = `
+{
+  "events": 212,
+  "hash": "19f6d809a3f988",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 3,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "player",
+  },
+  "turns": 10,
 }
 `;
 
@@ -74,6 +106,24 @@ exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`]
     "teamId": "player",
   },
   "turns": 36,
+}
+`;
+
+exports[`golden matches > plays the same way: free-for-all of 3 classes and a bot, seed 13 1`] = `
+{
+  "events": 241,
+  "hash": "12b2366ba1b929",
+  "hull": {
+    "p1-ship": 0,
+    "p2-ship": 0,
+    "p3-ship": 6,
+    "p4-ship": 0,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "p3",
+  },
+  "turns": 9,
 }
 `;
 

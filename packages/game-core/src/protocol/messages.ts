@@ -1,4 +1,5 @@
 import type { MapStyle } from '../board/generateBoard';
+import { DEFAULT_SHIP_TYPE_ID } from '../config/shipTypes';
 import type { PlayerId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
 import type { AiDifficulty, TokenGenerationConfig } from '../domain/GameState';
@@ -34,6 +35,8 @@ export interface RoomOptions {
   readonly visibility: RoomVisibility;
   /** How many rocks, winds and whirlpools the generated board has. */
   readonly mapStyle: MapStyle;
+  /** The ship class every AI sails. */
+  readonly aiShipTypeId: string;
 }
 
 export const ROOM_LIMITS = {
@@ -51,6 +54,7 @@ export const DEFAULT_ROOM_OPTIONS: RoomOptions = {
   turnDurationSeconds: 30,
   visibility: 'private',
   mapStyle: 'normal',
+  aiShipTypeId: DEFAULT_SHIP_TYPE_ID,
 };
 
 export type RoomStatus = 'lobby' | 'playing' | 'finished';
@@ -62,6 +66,8 @@ export interface SeatInfo {
   readonly connected: boolean;
   readonly isHost: boolean;
   readonly playerId: PlayerId | null;
+  /** The ship class this player will sail. */
+  readonly shipTypeId: string;
   /** An AI is sailing this player's ship (they are away, or left the match). */
   readonly aiControlled: boolean;
 }
@@ -161,6 +167,11 @@ export interface ClientToServerEvents {
   /** Host only, before the match starts. */
   'room:configure': (
     options: Partial<RoomOptions>,
+    ack: (result: Ack<{ lobby: LobbyState }>) => void,
+  ) => void;
+  /** Picks the ship class for your own seat, before the match starts. */
+  'room:ship': (
+    shipTypeId: string,
     ack: (result: Ack<{ lobby: LobbyState }>) => void,
   ) => void;
   /** Host only. */

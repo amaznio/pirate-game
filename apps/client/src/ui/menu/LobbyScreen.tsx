@@ -16,8 +16,10 @@ import {
 } from './MenuLayout';
 import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
 import { MAP_STYLE_CHOICES, mapStyleBlurb } from './mapStyles';
+import { SHIP_CHOICES, shipBlurb, shipLabel } from './shipClasses';
 import { VISIBILITY_CHOICES, shareCodeLabel, visibilityBlurb } from './visibility';
 import { onlineSession, useOnlineSession } from '../../app/onlineSession';
+import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 
 const TIMER_CHOICES: ReadonlyArray<{ label: string; seconds: number | null }> = [
   { label: 'Off', seconds: null },
@@ -109,6 +111,9 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
                   <span className="ml-1.5 font-semibold text-parchment/50">(you)</span>
                 )}
               </span>
+              <span className="text-xs font-semibold text-parchment/60">
+                {shipLabel(seat.shipTypeId)}
+              </span>
               {seat.isHost && (
                 <span className="rounded-full bg-parchment/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-parchment">
                   Host
@@ -120,6 +125,18 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
             </li>
           ))}
         </ul>
+      </Card>
+
+      <Card title="Your ship">
+        <Segmented
+          value={me?.shipTypeId ?? DEFAULT_SHIP_TYPE_ID}
+          disabled={false}
+          onChange={(shipTypeId) => void onlineSession?.chooseShip(shipTypeId)}
+          choices={SHIP_CHOICES.map((choice) => ({ label: choice.label, value: choice.value }))}
+        />
+        <p className="text-xs text-parchment/50">
+          {shipBlurb(me?.shipTypeId ?? DEFAULT_SHIP_TYPE_ID)}
+        </p>
       </Card>
 
       <Card title={isHost ? 'Match options' : 'Match options (set by the host)'}>
@@ -156,6 +173,18 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
             choices={AI_LEVELS.map((level) => ({ label: level.label, value: level.value }))}
           />
           <p className="text-xs text-parchment/50">{aiLevelBlurb(options.aiDifficulty)}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">AI ships</span>
+          <Segmented
+            value={options.aiShipTypeId}
+            disabled={!isHost}
+            onChange={(aiShipTypeId) => set({ aiShipTypeId })}
+            choices={SHIP_CHOICES.map((choice) => ({ label: choice.label, value: choice.value }))}
+          />
+          <p className="text-xs text-parchment/50">
+            A bigger ship is stronger, so match them for an even fight.
+          </p>
         </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-parchment">Seas</span>

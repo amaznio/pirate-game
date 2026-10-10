@@ -55,6 +55,15 @@ export function resolveTurn(
     }
   }
 
+  // A ship that planned no move this turn earns its rest bonus next turn.
+  for (const id of Object.keys(state.players)) {
+    const movement = submitted[id]?.movement ?? [];
+    state.players[id] = {
+      ...state.players[id],
+      restedLastTurn: movement.every((slot) => slot === null),
+    };
+  }
+
   events.push({ type: 'TURN_ENDED', turn: state.turn });
   return { nextState: freeze(state), phases, events };
 }

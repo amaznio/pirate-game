@@ -9,6 +9,7 @@ import {
 } from '@pirate/game-core/config/matchConfig';
 import { DEFAULT_MAP_STYLE, type MapStyle } from '@pirate/game-core/board/generateBoard';
 import { randomSeed } from '@pirate/game-core/config/seed';
+import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 import {
   DEFAULT_AI_DIFFICULTY,
   type AiDifficulty,
@@ -40,6 +41,12 @@ export function startOfflineMatch(config: MatchConfig): OfflineMatch {
   };
 }
 
+/** The ship classes for an offline match; opponents sail yours unless told otherwise. */
+export interface OfflineShips {
+  readonly yours?: string;
+  readonly theirs?: string;
+}
+
 /** The match for "play against N AI opponents": the classic duel for one. */
 export function offlineConfig(
   opponents: number,
@@ -47,10 +54,14 @@ export function offlineConfig(
   aiDifficulty: AiDifficulty = DEFAULT_AI_DIFFICULTY,
   mapStyle: MapStyle = DEFAULT_MAP_STYLE,
   seed: number = randomSeed(),
+  ships: OfflineShips = {},
 ): MatchConfig {
+  const yours = ships.yours ?? DEFAULT_SHIP_TYPE_ID;
+  const theirs = ships.theirs ?? yours;
+  const shipTypeIds = [yours, ...Array.from({ length: Math.max(1, opponents) }, () => theirs)];
   const base =
     opponents <= 1
-      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed })
+      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed, shipTypeIds })
       : createSkirmishConfig({
           humans: 1,
           ais: opponents,
@@ -58,6 +69,7 @@ export function offlineConfig(
           aiDifficulty,
           sea: mapStyle,
           seed,
+          shipTypeIds,
         });
   const trimmed = name.trim();
   if (!trimmed) {

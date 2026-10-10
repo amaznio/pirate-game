@@ -1,4 +1,5 @@
 import { MAP_STYLES, type MapStyle } from '../board/generateBoard';
+import { SHIP_TYPES } from '../config/shipTypes';
 import {
   ACTIONS_PER_TURN,
   MOVEMENT_ACTIONS,
@@ -152,7 +153,8 @@ export function parseRoomOptions(
     return null;
   }
 
-  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle } = base;
+  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle, aiShipTypeId } =
+    base;
 
   if ('ais' in value) {
     if (
@@ -174,6 +176,14 @@ export function parseRoomOptions(
       return null;
     }
     aiDifficulty = value.aiDifficulty as AiDifficulty;
+  }
+
+  if ('aiShipTypeId' in value) {
+    const shipTypeId = parseShipTypeId(value.aiShipTypeId);
+    if (shipTypeId === null) {
+      return null;
+    }
+    aiShipTypeId = shipTypeId;
   }
 
   if ('mapStyle' in value) {
@@ -216,7 +226,12 @@ export function parseRoomOptions(
     }
   }
 
-  return { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle };
+  return { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle, aiShipTypeId };
+}
+
+/** A ship class the game knows, or null. */
+export function parseShipTypeId(value: unknown): string | null {
+  return typeof value === 'string' && Object.hasOwn(SHIP_TYPES, value) ? value : null;
 }
 
 const TEAM_MODES = ['ffa', 'teams'] as const;

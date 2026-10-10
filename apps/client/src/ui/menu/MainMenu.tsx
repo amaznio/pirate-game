@@ -17,6 +17,9 @@ import { useStoredName } from './useStoredName';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { RoomVisibility } from '@pirate/game-core/protocol/messages';
 import { onlineSession, serverUrl, useOnlineSession } from '../../app/onlineSession';
+import { SHIP_CHOICES, shipBlurb } from './shipClasses';
+import type { OfflineShips } from '../../app/offlineMatch';
+import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 import { PublicRoomList } from './PublicRoomList';
 import {
   VISIBILITY_CHOICES,
@@ -33,6 +36,7 @@ interface MainMenuProps {
     name: string,
     difficulty: AiDifficulty,
     mapStyle: MapStyle,
+    ships: OfflineShips,
   ) => void;
 }
 
@@ -43,6 +47,8 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const [opponents, setOpponents] = useState(1);
   const [difficulty, setDifficulty] = useStoredDifficulty();
   const [mapStyle, setMapStyle] = useStoredMapStyle();
+  const [yourShip, setYourShip] = useState(DEFAULT_SHIP_TYPE_ID);
+  const [theirShip, setTheirShip] = useState(DEFAULT_SHIP_TYPE_ID);
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
   const [visibility, setVisibilityState] = useState<RoomVisibility>(loadVisibility);
   const setVisibility = (value: RoomVisibility) => {
@@ -111,8 +117,35 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
           />
           <p className="text-xs text-parchment/50">{mapStyleBlurb(mapStyle)}</p>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">Your ship</span>
+          <Segmented
+            value={yourShip}
+            disabled={false}
+            onChange={setYourShip}
+            choices={SHIP_CHOICES.map((choice) => ({ label: choice.label, value: choice.value }))}
+          />
+          <p className="text-xs text-parchment/50">{shipBlurb(yourShip)}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">Their ships</span>
+          <Segmented
+            value={theirShip}
+            disabled={false}
+            onChange={setTheirShip}
+            choices={SHIP_CHOICES.map((choice) => ({ label: choice.label, value: choice.value }))}
+          />
+          <p className="text-xs text-parchment/50">
+            A bigger ship is stronger, so match them for an even fight.
+          </p>
+        </div>
         <PrimaryButton
-          onClick={() => onPlayOffline(opponents, cleanName, difficulty, mapStyle)}
+          onClick={() =>
+            onPlayOffline(opponents, cleanName, difficulty, mapStyle, {
+              yours: yourShip,
+              theirs: theirShip,
+            })
+          }
         >
           Set sail
         </PrimaryButton>

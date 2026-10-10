@@ -69,3 +69,36 @@ describe('startOfflineMatch', () => {
     match.dispose();
   });
 });
+
+describe('ship classes of an offline match', () => {
+  const ships = (config: ReturnType<typeof offlineConfig>) =>
+    config.participants.map((p) => p.shipTypeId);
+
+  it('are sloops by default', () => {
+    expect(ships(offlineConfig(1, ''))).toEqual(['sloop', 'sloop']);
+  });
+
+  it('let the opponents sail your class unless told otherwise', () => {
+    const same = offlineConfig(2, '', 'normal', 'calm', 1, { yours: 'brigantine' });
+    const other = offlineConfig(2, '', 'normal', 'calm', 1, { yours: 'brigantine', theirs: 'sloop' });
+
+    expect(ships(same)).toEqual(['brigantine', 'brigantine', 'brigantine']);
+    expect(ships(other)).toEqual(['brigantine', 'sloop', 'sloop']);
+  });
+
+  it('start the match with that class hull and tokens', () => {
+    const state = createGame(offlineConfig(1, '', 'normal', 'calm', 1, { yours: 'galleon', theirs: 'sloop' }));
+
+    expect(state.ships['player-ship'].maxHp).toBe(6);
+    expect(state.ships['enemy-ship'].maxHp).toBe(4);
+    expect(state.players.player.tokens.FORWARD).toBe(6);
+  });
+
+  it('shows the player the cap of their ship', () => {
+    const match = startOfflineMatch(offlineConfig(1, '', 'normal', 'calm', 1, { yours: 'brigantine' }));
+    const view = match.client.getView();
+
+    expect(view.ships[view.self.shipId].shipTypeId).toBe('brigantine');
+    match.dispose();
+  });
+});

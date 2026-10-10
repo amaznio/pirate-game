@@ -5,6 +5,7 @@ import {
   parsePlayerActions,
   parseRoomId,
   parseRoomOptions,
+  parseShipTypeId,
   parseTokenPatch,
 } from '@pirate/game-core/protocol/validate';
 import type { Ack } from '@pirate/game-core/protocol/messages';
@@ -143,6 +144,15 @@ export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
       const parsed =
         parseRoomOptions(options, room.options) ?? bad('Those room options are not valid.');
       room.configure(seat.seatId, parsed);
+      return { lobby: room.lobbyState() };
+    });
+  });
+
+  socket.on('room:ship', (shipTypeId, ack) => {
+    answer(ack, () => {
+      const { room, seat } = requireBinding();
+      const parsed = parseShipTypeId(shipTypeId) ?? bad('That is not a ship.');
+      room.setShip(seat.seatId, parsed);
       return { lobby: room.lobbyState() };
     });
   });

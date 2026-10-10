@@ -45,6 +45,8 @@ export interface PlayerState {
   /** Cannon queue; each slot fires left, right, or both. */
   readonly cannonQueue: CannonQueue;
   readonly tokenGeneration: TokenGenerationConfig;
+  /** The last turn resolved with no movement planned (earns the rest bonus). */
+  readonly restedLastTurn?: boolean;
   /** The player has finalised their plan for this turn and can no longer edit it. */
   readonly lockedIn: boolean;
 }

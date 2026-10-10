@@ -6,6 +6,7 @@ import type { PlayerActions } from '@pirate/game-core/domain/TurnResult';
 import { GameController } from '@pirate/game-core/controller/GameController';
 import { EventBus } from '@pirate/game-core/events/EventBus';
 import { randomSeed } from '@pirate/game-core/config/seed';
+import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 import {
   DEFAULT_RULES,
   createSkirmishConfig,
@@ -43,6 +44,8 @@ export interface Seat {
   /** Secret that proves ownership of the seat when reconnecting. */
   readonly token: string;
   readonly name: string;
+  /** The ship class this player sails (chosen in the lobby). */
+  shipTypeId: string;
   /** The live connection, or null while the player is away. */
   socket: GameSocket | null;
   /** Set when the match starts. */
@@ -109,6 +112,7 @@ export class Room {
       seatId: newSeatId(),
       token: newSecret(),
       name,
+      shipTypeId: DEFAULT_SHIP_TYPE_ID,
       socket,
       playerId: null,
       abandoned: false,
@@ -293,6 +297,7 @@ export class Room {
       connected: seat.socket !== null,
       isHost: seat.seatId === this.hostSeatId,
       playerId: seat.playerId,
+      shipTypeId: seat.shipTypeId,
       aiControlled: seat.aiControlled,
     }));
     return {
@@ -336,6 +341,20 @@ export class Room {
       teamMode: this.options.teamMode,
       turnDurationSeconds: this.options.turnDurationSeconds,
     };
+  }
+
+  /** A player picks the ship class they will sail. */
+  setShip(seatId: string, shipTypeId: string): void {
+    this.touch();
+    const seat = this.seats.get(seatId);
+    if (!seat) {
+      throw new RoomError('not_in_room', 'You are not in this room.');
+    }
+    if (this.status !== 'lobby') {
+      throw new RoomError('already_started', 'The match has already started.');
+    }
+    seat.shipTypeId = shipTypeId;
+    this.broadcastLobby();
   }
 
   /** Host only: changes the options before the match starts. */
@@ -385,6 +404,10 @@ export class Room {
       aiDifficulty: this.options.aiDifficulty,
       teamMode: this.options.teamMode,
       sea: this.options.mapStyle,
+      shipTypeIds: [
+        ...players.map((seat) => seat.shipTypeId),
+        ...Array.from({ length: this.options.ais }, () => this.options.aiShipTypeId),
+      ],
       seed: randomSeed(),
       rules: {
         ...DEFAULT_RULES,

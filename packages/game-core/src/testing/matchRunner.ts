@@ -3,7 +3,7 @@ import type { GameEvent } from '../domain/GameEvent';
 import type { GameState, Outcome } from '../domain/GameState';
 import type { PlayerId } from '../domain/Entity';
 import type { PlayerActions } from '../domain/TurnResult';
-import { ACTIONS_PER_TURN } from '../domain/Action';
+import { ACTIONS_PER_TURN, totalTokens } from '../domain/Action';
 import { planAiActions } from '../ai/simpleAI';
 import { createGame } from '../simulation/createGame';
 import { resolveTurn } from '../simulation/resolveTurn';
@@ -49,11 +49,6 @@ export function hashText(text: string, seed = 0): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0');
 }
 
-function totalTokens(state: GameState, playerId: PlayerId): number {
-  const tokens = state.players[playerId].tokens;
-  return tokens.FORWARD + tokens.TURN_LEFT + tokens.TURN_RIGHT;
-}
-
 /**
  * Plays a whole match with the AI sailing every ship (humans included, at the
  * difficulty stored on them) through the same resolve / next-turn cycle the
@@ -83,7 +78,7 @@ export function runMatch(config: MatchConfig, options: RunOptions = {}): MatchRe
       if (alive) {
         const moves = plan.movement.filter((slot) => slot !== null).length;
         shipPhases += ACTIONS_PER_TURN;
-        if (moves === totalTokens(state, id)) {
+        if (moves === totalTokens(state.players[id].tokens)) {
           starvedPhases += ACTIONS_PER_TURN - moves;
         }
       }

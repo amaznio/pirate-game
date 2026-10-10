@@ -9,6 +9,7 @@ import type {
   TokenInventory,
 } from '@pirate/game-core/domain/Action';
 import type { PlayerId } from '@pirate/game-core/domain/Entity';
+import { getShipType, tokenEconomyOf } from '@pirate/game-core/config/shipTypes';
 import { assignTeamStyles } from '../presentation/teamStyle';
 import { NO_HAZARDS, seaHazards, type SeaHazards } from '../presentation/seaHazards';
 
@@ -37,6 +38,8 @@ export interface GameUISnapshot {
   status: GameStatus;
   hull: number;
   maxHull: number;
+  /** Most movement tokens the local ship can hold, or null if it has no limit. */
+  tokenCap: number | null;
   /** Team colour of the local player as CSS. */
   selfColor: string;
   /** The local player's ship has sunk but the match goes on: they watch. */
@@ -129,6 +132,7 @@ function snapshot({
     status: view.status,
     hull: ship?.hp ?? 0,
     maxHull: ship?.maxHp ?? 0,
+    tokenCap: ship ? tokenEconomyOf(getShipType(ship.shipTypeId)).cap : null,
     selfColor: styles.get(self.teamId)?.css ?? '#4f86c6',
     spectating: (ship?.hp ?? 0) <= 0 && view.outcome === null,
     others,
@@ -159,6 +163,7 @@ const EMPTY: GameUISnapshot = {
   status: 'planning',
   hull: 0,
   maxHull: 0,
+  tokenCap: null,
   selfColor: '#4f86c6',
   spectating: false,
   others: [],
