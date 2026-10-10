@@ -26,8 +26,25 @@ const distance = (state: GameState) => {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 };
 
+/**
+ * The six rocks of the old fixed board. The skill benchmarks below were tuned
+ * on them; generated boards are checked separately.
+ */
+const BENCHMARK_ROCKS = [
+  [7, 10],
+  [11, 10],
+  [8, 8],
+  [12, 8],
+  [6, 13],
+  [13, 13],
+].map(([x, y], index) => ({ id: `rock-${index + 1}`, kind: 'rock' as const, x, y }));
+
+function benchmarkConfig(overrides: Parameters<typeof createDuelConfig>[0] = {}) {
+  return { ...createDuelConfig({ ...overrides, sea: 'open' }), obstacles: BENCHMARK_ROCKS };
+}
+
 function duelState(level: AiDifficulty, seed = 1): GameState {
-  return createGame(createDuelConfig({ aiDifficulty: level, seed }));
+  return createGame(benchmarkConfig({ aiDifficulty: level, seed }));
 }
 
 /** The enemy AI plays against a player who never moves. */
@@ -58,7 +75,7 @@ function playAgainstIdle(level: AiDifficulty, turns: number, seed = 1) {
 
 /** Two AIs fight a whole duel; returns each side's hull when it ends. */
 function fight(playerLevel: AiDifficulty, enemyLevel: AiDifficulty, seed: number) {
-  const base = createGame(createDuelConfig({ seed }));
+  const base = createGame(benchmarkConfig({ seed }));
   let state: GameState = {
     ...base,
     players: {

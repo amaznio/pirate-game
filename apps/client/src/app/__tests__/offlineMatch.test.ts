@@ -29,6 +29,27 @@ describe('offlineConfig', () => {
   });
 });
 
+describe('the sea of an offline match', () => {
+  it('follows the chosen style and is new each time', () => {
+    const stormy = offlineConfig(1, '', 'normal', 'stormy', 9);
+    const calm = offlineConfig(1, '', 'normal', 'calm', 9);
+    expect(Object.keys(stormy.terrain ?? {}).length).toBeGreaterThan(
+      Object.keys(calm.terrain ?? {}).length,
+    );
+
+    const seeds = new Set([1, 2, 3, 4, 5].map(() => offlineConfig(1, '').seed));
+    expect(seeds.size).toBeGreaterThan(1);
+  });
+
+  it('is sent to the player as part of their view', () => {
+    const match = startOfflineMatch(offlineConfig(2, 'Anne', 'normal', 'stormy', 4));
+    const view = match.client.getView();
+    expect(Object.keys(view.obstacles).length).toBeGreaterThan(0);
+    expect(Object.keys(view.terrain).length).toBeGreaterThan(0);
+    match.dispose();
+  });
+});
+
 describe('startOfflineMatch', () => {
   it('shows the player which level the computer plays at', () => {
     const match = startOfflineMatch(offlineConfig(2, 'Anne', 'hard'));

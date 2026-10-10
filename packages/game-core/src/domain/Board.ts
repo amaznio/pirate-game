@@ -3,7 +3,7 @@ import type { Position } from './Position';
 
 /** Static terrain that occupies cells and blocks movement/shots. */
 export interface Obstacle extends Entity {
-  readonly kind: 'rock' | 'island';
+  readonly kind: 'rock';
 }
 
 export interface Board {

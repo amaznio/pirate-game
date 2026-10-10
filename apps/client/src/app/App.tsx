@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
+import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import { GameScreen } from './GameScreen';
 import { matchConfigFromSearch } from './matchFromUrl';
 import {
@@ -44,8 +45,8 @@ export default function App() {
   useEffect(() => () => offlineRef.current?.dispose(), []);
 
   const playOffline = useCallback(
-    (opponents: number, name: string, difficulty: AiDifficulty) => {
-      setOffline(startOfflineMatch(offlineConfig(opponents, name, difficulty)));
+    (opponents: number, name: string, difficulty: AiDifficulty, mapStyle: MapStyle) => {
+      setOffline(startOfflineMatch(offlineConfig(opponents, name, difficulty, mapStyle)));
     },
     [],
   );

@@ -3,7 +3,7 @@ import type { Position } from './Position';
 /** Stable identity for anything that lives on the board. */
 export type EntityId = string;
 
-export type EntityKind = 'ship' | 'rock' | 'island';
+export type EntityKind = 'ship' | 'rock';
 
 /** Anything occupying a grid cell with an identity. */
 export interface Entity {

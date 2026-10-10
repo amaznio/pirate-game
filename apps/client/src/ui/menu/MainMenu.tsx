@@ -9,7 +9,10 @@ import {
   Stepper,
 } from './MenuLayout';
 import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
+import type { MapStyle } from '@pirate/game-core/board/generateBoard';
+import { MAP_STYLE_CHOICES, mapStyleBlurb } from './mapStyles';
 import { useStoredDifficulty } from './useStoredDifficulty';
+import { useStoredMapStyle } from './useStoredMapStyle';
 import { useStoredName } from './useStoredName';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { RoomVisibility } from '@pirate/game-core/protocol/messages';
@@ -25,7 +28,12 @@ import {
 interface MainMenuProps {
   /** A room code from the page link (?room=ABCDE), to prefill the join box. */
   initialRoomCode?: string;
-  onPlayOffline: (opponents: number, name: string, difficulty: AiDifficulty) => void;
+  onPlayOffline: (
+    opponents: number,
+    name: string,
+    difficulty: AiDifficulty,
+    mapStyle: MapStyle,
+  ) => void;
 }
 
 /** The first screen: play against the computer, or play with friends online. */
@@ -34,6 +42,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const [name, setName] = useStoredName();
   const [opponents, setOpponents] = useState(1);
   const [difficulty, setDifficulty] = useStoredDifficulty();
+  const [mapStyle, setMapStyle] = useStoredMapStyle();
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
   const [visibility, setVisibilityState] = useState<RoomVisibility>(loadVisibility);
   const setVisibility = (value: RoomVisibility) => {
@@ -89,7 +98,22 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
           />
           <p className="text-xs text-parchment/50">{aiLevelBlurb(difficulty)}</p>
         </div>
-        <PrimaryButton onClick={() => onPlayOffline(opponents, cleanName, difficulty)}>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">Seas</span>
+          <Segmented
+            value={mapStyle}
+            disabled={false}
+            onChange={setMapStyle}
+            choices={MAP_STYLE_CHOICES.map((choice) => ({
+              label: choice.label,
+              value: choice.value,
+            }))}
+          />
+          <p className="text-xs text-parchment/50">{mapStyleBlurb(mapStyle)}</p>
+        </div>
+        <PrimaryButton
+          onClick={() => onPlayOffline(opponents, cleanName, difficulty, mapStyle)}
+        >
           Set sail
         </PrimaryButton>
       </Card>

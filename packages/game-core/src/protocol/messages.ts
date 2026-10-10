@@ -1,3 +1,4 @@
+import type { MapStyle } from '../board/generateBoard';
 import type { PlayerId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
 import type { AiDifficulty, TokenGenerationConfig } from '../domain/GameState';
@@ -31,6 +32,8 @@ export interface RoomOptions {
   /** Planning time per turn in seconds, or null for no timer. */
   readonly turnDurationSeconds: number | null;
   readonly visibility: RoomVisibility;
+  /** How many rocks, winds and whirlpools the generated board has. */
+  readonly mapStyle: MapStyle;
 }
 
 export const ROOM_LIMITS = {
@@ -47,6 +50,7 @@ export const DEFAULT_ROOM_OPTIONS: RoomOptions = {
   teamMode: 'ffa',
   turnDurationSeconds: 30,
   visibility: 'private',
+  mapStyle: 'normal',
 };
 
 export type RoomStatus = 'lobby' | 'playing' | 'finished';

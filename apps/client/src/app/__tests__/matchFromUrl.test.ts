@@ -7,6 +7,27 @@ describe('matchConfigFromSearch', () => {
     expect(config.participants.map((p) => p.playerId)).toEqual(['player', 'enemy']);
   });
 
+  it('rebuilds the same board from ?seed= and picks a new one otherwise', () => {
+    const a = matchConfigFromSearch('?seed=77&map=stormy');
+    expect(matchConfigFromSearch('?seed=77&map=stormy')).toEqual(a);
+    expect(a.seed).toBe(77);
+    expect(a.obstacles.length).toBeGreaterThan(0);
+
+    const seeds = new Set([1, 2, 3, 4, 5].map(() => matchConfigFromSearch('').seed));
+    expect(seeds.size).toBeGreaterThan(1);
+  });
+
+  it('understands ?map= (and open water)', () => {
+    const open = matchConfigFromSearch('?map=open&seed=1');
+    expect(open.obstacles).toEqual([]);
+    expect(open.terrain).toEqual({});
+    const calm = matchConfigFromSearch('?map=calm&seed=1&ais=2');
+    const stormy = matchConfigFromSearch('?map=stormy&seed=1&ais=2');
+    expect(Object.keys(calm.terrain ?? {}).length).toBeLessThan(
+      Object.keys(stormy.terrain ?? {}).length,
+    );
+  });
+
   it('builds a free-for-all with the requested number of AIs', () => {
     const config = matchConfigFromSearch('?ais=3');
     expect(config.participants).toHaveLength(4);

@@ -3,6 +3,8 @@ import {
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
+import { MAP_STYLES, type MapStyle } from '@pirate/game-core/board/generateBoard';
+import { randomSeed } from '@pirate/game-core/config/seed';
 import {
   AI_DIFFICULTIES,
   DEFAULT_AI_DIFFICULTY,
@@ -28,6 +30,8 @@ function intParam(params: URLSearchParams, name: string): number | null {
  *   ?ais=3&teams=teams     two teams (you and every second ship vs the rest)
  *   ?ais=5&w=30&h=30       bigger board
  *   ?ais=2&difficulty=hard how well the AIs play (easy, normal or hard)
+ *   ?map=stormy            the sea: calm, normal, stormy, or open (empty water)
+ *   ?seed=123              rebuild the same board again (otherwise a new one)
  *   ?humans=2&ais=2        extra humans are placeholders until multiplayer
  */
 export function matchConfigFromSearch(search: string): MatchConfig {
@@ -37,8 +41,14 @@ export function matchConfigFromSearch(search: string): MatchConfig {
   const aiDifficulty: AiDifficulty =
     AI_DIFFICULTIES.find((level) => level === params.get('difficulty')) ??
     DEFAULT_AI_DIFFICULTY;
+  const requestedSea = params.get('map');
+  const sea: MapStyle | 'open' | undefined =
+    requestedSea === 'open'
+      ? 'open'
+      : MAP_STYLES.find((style) => style === requestedSea);
+  const seed = intParam(params, 'seed') ?? randomSeed();
   if (ais === null && humans === null) {
-    return createDuelConfig({ aiDifficulty });
+    return createDuelConfig({ aiDifficulty, sea, seed });
   }
 
   const humanCount = Math.max(1, humans ?? 1);
@@ -57,9 +67,11 @@ export function matchConfigFromSearch(search: string): MatchConfig {
       width,
       height,
       aiDifficulty,
+      sea,
+      seed,
     });
   } catch {
     // e.g. a board too small for that many ships: fall back to the duel.
-    return createDuelConfig({ aiDifficulty });
+    return createDuelConfig({ aiDifficulty, sea, seed });
   }
 }

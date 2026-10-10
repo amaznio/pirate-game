@@ -125,6 +125,7 @@ describe('parseRoomOptions', () => {
       teamMode: 'teams',
       turnDurationSeconds: 45,
       visibility: 'private',
+      mapStyle: 'normal',
     });
     expect(
       parseRoomOptions(
@@ -135,6 +136,7 @@ describe('parseRoomOptions', () => {
           teamMode: 'teams',
           turnDurationSeconds: 20,
           visibility: 'public',
+          mapStyle: 'calm',
         },
       ),
     ).toEqual({
@@ -143,7 +145,9 @@ describe('parseRoomOptions', () => {
       teamMode: 'teams',
       turnDurationSeconds: 20,
       visibility: 'public',
+      mapStyle: 'calm',
     });
+    expect(parseRoomOptions({ mapStyle: 'stormy' })?.mapStyle).toBe('stormy');
   });
 
   it('allows turning the timer off', () => {
@@ -158,6 +162,8 @@ describe('parseRoomOptions', () => {
     { teamMode: 'chaos' },
     { aiDifficulty: 'impossible' },
     { visibility: 'secret' },
+    { mapStyle: 'tsunami' },
+    { mapStyle: 3 },
     { visibility: true },
     { aiDifficulty: 3 },
     { turnDurationSeconds: 2 },

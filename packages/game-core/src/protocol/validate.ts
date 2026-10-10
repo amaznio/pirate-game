@@ -1,3 +1,4 @@
+import { MAP_STYLES, type MapStyle } from '../board/generateBoard';
 import {
   ACTIONS_PER_TURN,
   MOVEMENT_ACTIONS,
@@ -151,7 +152,7 @@ export function parseRoomOptions(
     return null;
   }
 
-  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility } = base;
+  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle } = base;
 
   if ('ais' in value) {
     if (
@@ -173,6 +174,16 @@ export function parseRoomOptions(
       return null;
     }
     aiDifficulty = value.aiDifficulty as AiDifficulty;
+  }
+
+  if ('mapStyle' in value) {
+    if (
+      typeof value.mapStyle !== 'string' ||
+      !(MAP_STYLES as readonly string[]).includes(value.mapStyle)
+    ) {
+      return null;
+    }
+    mapStyle = value.mapStyle as MapStyle;
   }
 
   if ('visibility' in value) {
@@ -205,7 +216,7 @@ export function parseRoomOptions(
     }
   }
 
-  return { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility };
+  return { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle };
 }
 
 const TEAM_MODES = ['ffa', 'teams'] as const;

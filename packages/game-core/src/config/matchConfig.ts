@@ -10,11 +10,15 @@ import {
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import {
+  DEFAULT_MAP_STYLE,
+  generateBoard,
+  type MapStyle,
+} from '../board/generateBoard';
+import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
   CANNON_STARTING_AMMO,
   INITIAL_TOKEN_POOL,
-  OBSTACLE_LAYOUT,
   TURN_DURATION_SECONDS,
 } from './gameRules';
 
@@ -38,7 +42,7 @@ export interface ParticipantConfig {
 
 export interface ObstacleConfig {
   readonly id: string;
-  readonly kind: 'rock' | 'island';
+  readonly kind: 'rock';
   readonly x: number;
   readonly y: number;
 }
@@ -85,16 +89,42 @@ export function withAiDifficulty(
   };
 }
 
+/**
+ * What the sea is like: a style gives a generated board (rocks, wind,
+ * whirlpools) built from the match seed; `open` is empty water.
+ */
+export type SeaChoice = MapStyle | 'open';
+
+function seaFor(
+  width: number,
+  height: number,
+  seed: number,
+  spawns: readonly Position[],
+  sea: SeaChoice | undefined,
+): { obstacles: readonly ObstacleConfig[]; terrain: TerrainMap } {
+  const style = sea ?? DEFAULT_MAP_STYLE;
+  if (style === 'open') {
+    return { obstacles: [], terrain: {} };
+  }
+  return generateBoard({ width, height, seed, spawns, style });
+}
+
 /** The standard 1v1: you (bottom) against one AI (top) on the default board. */
 export function createDuelConfig(
   overrides: Partial<Pick<MatchConfig, 'seed' | 'rules'>> & {
     aiDifficulty?: AiDifficulty;
+    sea?: SeaChoice;
   } = {},
 ): MatchConfig {
+  const seed = overrides.seed ?? 1;
+  const duelSpawns = [
+    { x: 9, y: 14 },
+    { x: 9, y: 5 },
+  ];
   const config: MatchConfig = {
-    seed: overrides.seed ?? 1,
+    seed,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
-    obstacles: OBSTACLE_LAYOUT,
+    ...seaFor(BOARD_WIDTH, BOARD_HEIGHT, seed, duelSpawns, overrides.sea),
     participants: [
       {
         playerId: 'player',
@@ -131,6 +161,8 @@ export interface SkirmishOptions {
   readonly rules?: MatchRules;
   /** How well the AIs play (and what sails a human's ship while they are away). */
   readonly aiDifficulty?: AiDifficulty;
+  /** The kind of sea to generate from the seed. Normal when left out. */
+  readonly sea?: SeaChoice;
 }
 
 /** Cells in from the board edge where generated spawns are placed. */
@@ -245,21 +277,20 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
     };
   });
 
-  const spawnCells = new Set(
-    spawns.map((spawn) => `${spawn.position.x},${spawn.position.y}`),
-  );
-  const obstacles = OBSTACLE_LAYOUT.filter(
-    (obstacle) =>
-      obstacle.x < width &&
-      obstacle.y < height &&
-      !spawnCells.has(`${obstacle.x},${obstacle.y}`),
+  const seed = options.seed ?? 1;
+  const sea = seaFor(
+    width,
+    height,
+    seed,
+    spawns.map((spawn) => spawn.position),
+    options.sea,
   );
 
   return withAiDifficulty(
     {
-      seed: options.seed ?? 1,
+      seed,
       board: { width, height },
-      obstacles,
+      ...sea,
       participants,
       rules: options.rules ?? DEFAULT_RULES,
       startingTokens: INITIAL_TOKEN_POOL,

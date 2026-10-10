@@ -15,6 +15,7 @@ import {
   Stepper,
 } from './MenuLayout';
 import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
+import { MAP_STYLE_CHOICES, mapStyleBlurb } from './mapStyles';
 import { VISIBILITY_CHOICES, shareCodeLabel, visibilityBlurb } from './visibility';
 import { onlineSession, useOnlineSession } from '../../app/onlineSession';
 
@@ -155,6 +156,19 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
             choices={AI_LEVELS.map((level) => ({ label: level.label, value: level.value }))}
           />
           <p className="text-xs text-parchment/50">{aiLevelBlurb(options.aiDifficulty)}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">Seas</span>
+          <Segmented
+            value={options.mapStyle}
+            disabled={!isHost}
+            onChange={(mapStyle) => set({ mapStyle })}
+            choices={MAP_STYLE_CHOICES.map((choice) => ({
+              label: choice.label,
+              value: choice.value,
+            }))}
+          />
+          <p className="text-xs text-parchment/50">{mapStyleBlurb(options.mapStyle)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-parchment">Teams</span>

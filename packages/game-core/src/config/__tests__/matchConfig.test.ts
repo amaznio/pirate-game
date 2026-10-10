@@ -24,6 +24,49 @@ describe('createDuelConfig', () => {
   });
 });
 
+describe('seas', () => {
+  const spawnsOf = (config: ReturnType<typeof createDuelConfig>) =>
+    config.participants.map((participant) => participant.spawn.position);
+
+  it('builds the same sea from the same seed, and a new one from another', () => {
+    const a = createDuelConfig({ seed: 11 });
+    expect(createDuelConfig({ seed: 11 })).toEqual(a);
+    const others = [12, 13, 14, 15].map((seed) => createDuelConfig({ seed }));
+    expect(others.some((other) => JSON.stringify(other.obstacles) !== JSON.stringify(a.obstacles))).toBe(true);
+  });
+
+  it('puts the rocks and terrain into the starting state, away from the ships', () => {
+    const config = createDuelConfig({ seed: 5, sea: 'stormy' });
+    const state = createGame(config);
+    expect(Object.keys(state.obstacles)).toHaveLength(config.obstacles.length);
+    expect(state.terrain).toEqual(config.terrain);
+    expect(config.obstacles.length).toBeGreaterThan(0);
+    for (const spawn of spawnsOf(config)) {
+      expect(config.obstacles.some((o) => o.x === spawn.x && o.y === spawn.y)).toBe(false);
+    }
+  });
+
+  it('can be empty water', () => {
+    const config = createDuelConfig({ seed: 5, sea: 'open' });
+    expect(config.obstacles).toEqual([]);
+    expect(config.terrain).toEqual({});
+  });
+
+  it('is generated for many ships and for any board size', () => {
+    const config = createSkirmishConfig({
+      humans: 1,
+      ais: 5,
+      teamMode: 'ffa',
+      width: 28,
+      height: 24,
+      seed: 3,
+      sea: 'stormy',
+    });
+    expect(config.obstacles.every((o) => o.x < 28 && o.y < 24)).toBe(true);
+    expect(config.obstacles.length).toBeGreaterThan(0);
+  });
+});
+
 describe('generateSpawns', () => {
   it('puts the first ship bottom-centre and the second opposite, facing in', () => {
     const [first, second] = generateSpawns(21, 21, 2);

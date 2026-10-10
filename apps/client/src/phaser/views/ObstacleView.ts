@@ -8,7 +8,5 @@ export function createObstacleView(
   obstacle: Obstacle,
 ): Phaser.GameObjects.Image {
   const { x, y } = gridToWorld(obstacle.position);
-  const frame =
-    obstacle.kind === 'rock' ? TileFrames.rock : TileFrames.grass;
-  return scene.add.image(x, y, AssetKeys.tiles, frame).setDepth(10);
+  return scene.add.image(x, y, AssetKeys.tiles, TileFrames.rock).setDepth(10);
 }

@@ -4,25 +4,6 @@ import type { MovementAction, TokenInventory } from '../domain/Action';
 export const BOARD_WIDTH = 20;
 export const BOARD_HEIGHT = 20;
 
-/** Default obstacle layout for the standard 20x20 board. */
-export const OBSTACLE_LAYOUT: ReadonlyArray<{
-  id: string;
-  kind: 'rock' | 'island';
-  x: number;
-  y: number;
-}> = [
-  { id: 'rock-1', kind: 'rock', x: 7, y: 10 },
-  { id: 'rock-2', kind: 'rock', x: 11, y: 10 },
-  { id: 'rock-3', kind: 'rock', x: 8, y: 8 },
-  { id: 'rock-4', kind: 'rock', x: 12, y: 8 },
-  { id: 'rock-5', kind: 'rock', x: 6, y: 13 },
-  { id: 'rock-6', kind: 'rock', x: 13, y: 13 },
-  { id: 'island-1', kind: 'island', x: 2, y: 2 },
-  { id: 'island-2', kind: 'island', x: 17, y: 2 },
-  { id: 'island-3', kind: 'island', x: 2, y: 17 },
-  { id: 'island-4', kind: 'island', x: 17, y: 17 },
-];
-
 /** Each player starts with this many tokens of each type. */
 export const INITIAL_TOKEN_POOL: TokenInventory = {
   FORWARD: 3,

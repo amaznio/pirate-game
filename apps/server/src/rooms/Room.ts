@@ -5,6 +5,7 @@ import type { GameState, TokenGenerationConfig } from '@pirate/game-core/domain/
 import type { PlayerActions } from '@pirate/game-core/domain/TurnResult';
 import { GameController } from '@pirate/game-core/controller/GameController';
 import { EventBus } from '@pirate/game-core/events/EventBus';
+import { randomSeed } from '@pirate/game-core/config/seed';
 import {
   DEFAULT_RULES,
   createSkirmishConfig,
@@ -373,6 +374,8 @@ export class Room {
       ais: this.options.ais,
       aiDifficulty: this.options.aiDifficulty,
       teamMode: this.options.teamMode,
+      sea: this.options.mapStyle,
+      seed: randomSeed(),
       rules: {
         ...DEFAULT_RULES,
         turnDurationSeconds: this.options.turnDurationSeconds,

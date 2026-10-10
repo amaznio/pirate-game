@@ -7,6 +7,8 @@ import {
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
+import { DEFAULT_MAP_STYLE, type MapStyle } from '@pirate/game-core/board/generateBoard';
+import { randomSeed } from '@pirate/game-core/config/seed';
 import {
   DEFAULT_AI_DIFFICULTY,
   type AiDifficulty,
@@ -43,11 +45,20 @@ export function offlineConfig(
   opponents: number,
   name: string,
   aiDifficulty: AiDifficulty = DEFAULT_AI_DIFFICULTY,
+  mapStyle: MapStyle = DEFAULT_MAP_STYLE,
+  seed: number = randomSeed(),
 ): MatchConfig {
   const base =
     opponents <= 1
-      ? createDuelConfig({ aiDifficulty })
-      : createSkirmishConfig({ humans: 1, ais: opponents, teamMode: 'ffa', aiDifficulty });
+      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed })
+      : createSkirmishConfig({
+          humans: 1,
+          ais: opponents,
+          teamMode: 'ffa',
+          aiDifficulty,
+          sea: mapStyle,
+          seed,
+        });
   const trimmed = name.trim();
   if (!trimmed) {
     return base;
