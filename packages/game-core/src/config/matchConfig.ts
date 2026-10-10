@@ -8,6 +8,7 @@ import {
   type ControllerKind,
 } from '../domain/GameState';
 import type { MatchRules } from '../domain/Rules';
+import type { TerrainMap } from '../domain/Terrain';
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -51,6 +52,8 @@ export interface MatchConfig {
   readonly seed: number;
   readonly board: { readonly width: number; readonly height: number };
   readonly obstacles: readonly ObstacleConfig[];
+  /** Wind and whirlpool cells. Open water everywhere when left out. */
+  readonly terrain?: TerrainMap;
   readonly participants: readonly ParticipantConfig[];
   readonly rules: MatchRules;
   readonly startingTokens: TokenInventory;

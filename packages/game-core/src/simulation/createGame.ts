@@ -102,6 +102,7 @@ export function createGame(config: MatchConfig = createDuelConfig()): GameState 
     rules: config.rules,
     ships,
     obstacles,
+    terrain: config.terrain ?? {},
     players,
     outcome: null,
   };

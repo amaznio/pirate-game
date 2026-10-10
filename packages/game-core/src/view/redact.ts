@@ -80,6 +80,7 @@ export function redactState(
     rules: state.rules,
     ships: state.ships,
     obstacles: state.obstacles,
+    terrain: state.terrain,
     self,
     players,
     outcome: state.outcome,
@@ -128,6 +129,7 @@ export function viewToState(view: GameView, draft?: PlayerActions): GameState {
     rules: view.rules,
     ships: view.ships,
     obstacles: view.obstacles,
+    terrain: view.terrain,
     players,
     outcome: view.outcome,
   };

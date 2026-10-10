@@ -74,6 +74,13 @@ export function previewPlayerPlan(
         case 'SHIP_TURNED':
           heading = event.to;
           break;
+        case 'SHIP_PUSHED':
+          position = event.to;
+          break;
+        case 'SHIP_SPUN':
+          position = event.to;
+          heading = event.toHeading;
+          break;
         case 'SHIP_BLOCKED':
           blocked = true;
           break;

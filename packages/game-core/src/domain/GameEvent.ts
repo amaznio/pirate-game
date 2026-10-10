@@ -4,6 +4,7 @@ import type { EntityId, EntityKind } from './Entity';
 import type { MovementAction } from './Action';
 import type { WeaponSide } from './Ship';
 import type { Outcome } from './GameState';
+import type { Spin } from './Terrain';
 
 export type ProjectileSide = WeaponSide;
 
@@ -36,6 +37,29 @@ export type GameEvent =
       at: Position;
       heading: Direction;
       action: MovementAction;
+      phase: number;
+    }
+  | {
+      /** Wind carried the ship one cell (a row of wind gives several events). */
+      type: 'SHIP_PUSHED';
+      shipId: EntityId;
+      from: Position;
+      to: Position;
+      direction: Direction;
+      phase: number;
+    }
+  | {
+      /**
+       * A whirlpool carried the ship to the next cell of its ring and turned
+       * it. `from` equals `to` when another ship kept it from moving.
+       */
+      type: 'SHIP_SPUN';
+      shipId: EntityId;
+      from: Position;
+      to: Position;
+      fromHeading: Direction;
+      toHeading: Direction;
+      spin: Spin;
       phase: number;
     }
   | {

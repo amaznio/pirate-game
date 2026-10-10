@@ -8,6 +8,7 @@ import type {
   TokenInventory,
 } from './Action';
 import type { MatchRules } from './Rules';
+import type { TerrainMap } from './Terrain';
 
 export type ControllerKind = 'human' | 'ai';
 
@@ -66,6 +67,8 @@ export interface GameState {
   readonly rules: MatchRules;
   readonly ships: Readonly<Record<EntityId, Ship>>;
   readonly obstacles: Readonly<Record<EntityId, Obstacle>>;
+  /** Wind and whirlpool cells, which carry the ships that end a phase on them. */
+  readonly terrain: TerrainMap;
   readonly players: Readonly<Record<PlayerId, PlayerState>>;
   readonly outcome: Outcome | null;
 }

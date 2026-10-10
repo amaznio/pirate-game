@@ -3,6 +3,7 @@ import type { Board, Obstacle } from '../domain/Board';
 import type { Ship } from '../domain/Ship';
 import type { EntityId, PlayerId } from '../domain/Entity';
 import type { MatchRules } from '../domain/Rules';
+import type { TerrainMap } from '../domain/Terrain';
 import { cloneInventory } from '../domain/Action';
 
 /**
@@ -18,6 +19,7 @@ export interface MutableGameState {
   rules: MatchRules;
   ships: Record<EntityId, Ship>;
   obstacles: Record<EntityId, Obstacle>;
+  terrain: TerrainMap;
   players: Record<PlayerId, PlayerState>;
   outcome: GameState['outcome'];
 }
@@ -49,6 +51,7 @@ export function toMutable(state: GameState): MutableGameState {
     rules: state.rules,
     ships,
     obstacles,
+    terrain: state.terrain,
     players,
     outcome: state.outcome,
   };

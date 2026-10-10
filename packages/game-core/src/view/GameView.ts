@@ -9,6 +9,7 @@ import type {
 } from '../domain/GameState';
 import type { Ship } from '../domain/Ship';
 import type { MatchRules } from '../domain/Rules';
+import type { TerrainMap } from '../domain/Terrain';
 
 /** What every player may know about another player. */
 export interface PublicPlayerView {
@@ -40,6 +41,7 @@ export interface GameView {
   readonly rules: MatchRules;
   readonly ships: Readonly<Record<EntityId, Ship>>;
   readonly obstacles: Readonly<Record<EntityId, Obstacle>>;
+  readonly terrain: TerrainMap;
   /** The viewer's own player state, including their private plan and resources. */
   readonly self: PlayerState;
   /** Every player (the viewer included), public information only. */
