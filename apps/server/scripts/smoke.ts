@@ -173,16 +173,49 @@ export async function runSmoke(options: SmokeOptions): Promise<SmokeCheck[]> {
       (signal) =>
         new Promise<{ ok: boolean; roomId?: string; message?: string }>((resolve, reject) => {
           signal.addEventListener('abort', () => reject(new Error('no answer')));
-          socket.emit('room:create', { name: 'Smoke test', options: { ais: 1 } }, resolve);
+          socket.emit(
+            'room:create',
+            { name: 'Smoke test', options: { ais: 1, mapStyle: 'stormy', turnDurationSeconds: null } },
+            resolve,
+          );
         }),
       timeoutMs,
     );
     if (reply.ok && reply.roomId) {
+      add('A player can connect and create a room', true, `websocket connected in ${connectMs} ms, created room ${reply.roomId}`);
+
+      // 6. The room can start a match, and its sea is generated.
+      try {
+        const view = await timed(
+          (signal) =>
+            new Promise<{ obstacles?: object; terrain?: object }>((resolve, reject) => {
+              signal.addEventListener('abort', () => reject(new Error('no view arrived')));
+              socket.once('game:view', (value) => resolve(value as { obstacles?: object; terrain?: object }));
+              socket.emit('room:start', (result: { ok: boolean; message?: string }) => {
+                if (!result.ok) {
+                  reject(new Error(result.message ?? 'the server refused to start'));
+                }
+              });
+            }),
+          timeoutMs,
+        );
+        const rocks = Object.keys(view.obstacles ?? {}).length;
+        const hazards = Object.keys(view.terrain ?? {}).length;
+        add(
+          'A match starts on a generated sea',
+          rocks + hazards > 0,
+          rocks + hazards > 0
+            ? `the first view had ${rocks} rocks and ${hazards} wind or whirlpool cells`
+            : 'the match started but its board was empty. Is the server up to date?',
+        );
+      } catch (error) {
+        add('A match starts on a generated sea', false, `could not start a match (${describeError(error)}).`);
+      }
+
       await new Promise<void>((resolve) => {
         socket.emit('room:leave', () => resolve());
         setTimeout(resolve, 1000);
       });
-      add('A player can connect and create a room', true, `websocket connected in ${connectMs} ms, created and left room ${reply.roomId}`);
     } else {
       add('A player can connect and create a room', false, `the server refused: ${reply.message ?? 'unknown reason'}`);
     }

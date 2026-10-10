@@ -119,10 +119,13 @@ Open the client and pick a mode on the menu:
 - **Play against the computer** (1 to 7 AI opponents) runs the whole match in
   your browser; no server needed. Developer shortcuts still work: `?ais=3`,
   `?ais=3&teams=teams`, `?ais=5&w=30&h=30` start such a match straight away.
+  Pick the **Seas** (Calm, Normal or Stormy) on the menu. Every match gets a
+  freshly generated board; add `?seed=123` to rebuild the same one, and
+  `?map=calm|normal|stormy|open` to choose the sea (`open` is empty water).
 - **Play with friends** needs the game server. *Create a room* and share the
   5-letter code, or the **Copy link** button (the link `?room=CODE` fills in the
   code for whoever opens it). The host sets the AI count, free-for-all or teams
-  and the planning timer, then starts the match. Your seat is remembered, so a
+  the planning timer and the seas, then starts the match. Your seat is remembered, so a
   refresh (or a dropped connection) puts you back in the match.
 
 To try online play on one machine run `pnpm dev`, then open the client in two
@@ -159,7 +162,7 @@ The **simulation is the single source of truth**, and it runs on the host. A
 player never gets the host's state, only a **view** of it:
 
 - `packages/game-core/src/view/redact.ts` builds a `GameView` per player. The board is public
-  (ships, hulls, obstacles) but other players' plans, tokens, cannonballs and
+  (ships, hulls, rocks, wind and whirlpools) but other players' plans, tokens, cannonballs and
   settings are dropped. All a player learns about someone else's plan is an
   `activity` number (0 to 1) saying how busy it looks, weighted in
   `config/gameRules.ts`. The turn timer is sent as seconds remaining, not a
@@ -203,6 +206,7 @@ player never gets the host's state, only a **view** of it:
 | Simulation | `packages/game-core/src/simulation/` | `createGame`, `resolveTurn` (4 phases), movement, collision, combat, damage, tokens |
 | Controller | `packages/game-core/src/controller/GameController.ts` | Flow orchestration only (no rules) |
 | AI | `packages/game-core/src/ai/` | `AIController` interface, the planner (`simpleAI`) and the difficulty profiles |
+| Board | `packages/game-core/src/board/` | `generateBoard`: the seeded rocks, wind and whirlpools |
 | Config | `packages/game-core/src/config/` | `matchConfig` (who plays, where, rules), `gameRules`, `shipTypes`, `weaponTypes` |
 | Events | `packages/game-core/src/events/EventBus.ts` | Typed pub/sub |
 | Phaser | `apps/client/src/phaser/` | Scenes, views, animations, camera |
@@ -212,7 +216,7 @@ player never gets the host's state, only a **view** of it:
 
 A match is data: a `MatchConfig` (`packages/game-core/src/config/matchConfig.ts`) lists the
 participants (player id, team, ship type, spawn, `human` or `ai`), the board
-size, obstacles, starting resources and the `rules` (turn timer, friendly
+size, its rocks and terrain, starting resources and the `rules` (turn timer, friendly
 fire). `createGame(config)` turns it into a `GameState`. There is no special
 "player" or "enemy": each participant has a `PlayerState` (tokens, cannonballs,
 queues, token-generation settings) in `state.players`, commands exactly one
@@ -221,8 +225,10 @@ if the last ships sink together the match is a draw. Free-for-all is every
 player on their own team.
 
 - `createDuelConfig()` is the classic 1v1 (and the default).
-- `createSkirmishConfig({ humans, ais, teamMode, width, height })` builds any
-  number of ships (spawns are spread around a ring facing the centre).
+- `createSkirmishConfig({ humans, ais, teamMode, width, height, seed, sea })`
+  builds any number of ships (spawns are spread around a ring facing the
+  centre). `seed` and `sea` (`calm`, `normal`, `stormy` or `open`) decide the
+  board, see "The sea" below.
 - Try one from the URL: `?ais=3`, `?ais=3&teams=teams`, `?ais=5&w=30&h=30`
   (see `apps/client/src/app/matchFromUrl.ts`).
 
@@ -257,7 +263,7 @@ player, humans included: it is what sails a human's ship while they are away.
 ### Core rules
 
 - The default board is `20 x 20` (configurable per match); each entity
-  occupies one cell. Obstacles block movement.
+  occupies one cell. Rocks block movement and shots.
 - Movement tokens: `FORWARD`, `TURN_LEFT`, `TURN_RIGHT`. A turn is a
   diagonal step: the ship advances one cell forward **and** one cell toward the
   turn side, ending with its heading rotated 90° that way (not rotation in
@@ -275,8 +281,9 @@ player, humans included: it is what sails a human's ship while they are away.
     entering a cell where another ship stays are all stopped (a ship may follow
     one that is leaving its cell; a stopped ship can stop the one behind it).
     The result never depends on the order players are listed in.
-  - Fire is cast against the positions after the phase's movement and before any
-    of its damage, so ships can sink each other in the same phase (a draw if it
+  - Then the sea acts on every ship (wind, then whirlpools, see "The sea").
+  - Fire is cast against the positions after the phase's movement and the sea
+    and before any of its damage, so ships can sink each other in the same phase (a draw if it
     leaves no one).
   - `friendlyFire` (default off): a shot that reaches a teammate is stopped
     without damage.
@@ -313,8 +320,38 @@ player, humans included: it is what sails a human's ship while they are away.
   same movement economy. Tapping an empty movement slot selects it,
   so you can leave earlier phases empty (e.g. move, empty, move, move).
 
+### The sea
+
+Every match has its own generated board (`packages/game-core/src/board/generateBoard.ts`),
+built from the match **seed** by a pure function, so the server, every client
+and a replay agree on it. Rocks gather in reefs (smooth noise), wind comes in
+straight lanes and whirlpools are 2x2 vortices. Starting positions are kept
+clear, all open water stays connected and there are no dead-end nooks. The
+**sea** (`calm`, `normal`, `stormy`) sets how many of each there are
+(`MAP_PROFILES`); the server picks a random seed when a room starts.
+
+At the end of each phase's movement the board acts on every ship, whether it
+sailed or not, using the same conflict rules as sailing (`simulation/movement.ts`):
+
+- **Wind** pushes a ship that ends on a wind cell one cell the way it blows,
+  and again for each wind cell it lands on, so a row of wind is a conveyor. A
+  rock, the board's edge or another ship stops the push. Sailing across wind
+  mid-turn does nothing; only the cell a ship ends on counts.
+- **Whirlpools** carry a ship on any of their four cells to the next cell
+  round the ring and turn it a quarter the same way (clockwise or
+  counter-clockwise, per whirlpool). A ship that stays in one keeps spinning,
+  a phase at a time. A ship that is kept from moving still turns.
+
+Both are events (`SHIP_PUSHED`, `SHIP_SPUN`), part of every player's view, and
+part of the plan preview and the AI's predictions, which all use the same
+movement code. The AI also knows that holding still on wind or a whirlpool
+moves it.
+
 ## Extending
 
+- **Tune the sea**: `MAP_PROFILES` in `board/generateBoard.ts` holds rock
+  density and how many wind lanes and whirlpools each sea gets. Wind and
+  whirlpool art is drawn in code (`apps/client/src/phaser/assets/terrainTextures.ts`).
 - **Add an event**: add a variant to `GameEvent` in `packages/game-core/src/domain/GameEvent.ts`,
   emit it from a simulation step, and handle it in
   `apps/client/src/phaser/animation/EventAnimator.ts`.
@@ -354,6 +391,8 @@ minimum zoom always keeps the view filled with water (no empty space).
 ## Tests
 
 `packages/game-core/src/**/__tests__` cover forward/turn movement, edge and obstacle blocking,
+wind and whirlpools (chains, conflicts, spin geometry), the board generator
+(over hundreds of seeds: clearance, connected water, no wind circles),
 token consumption and refund, cannon queueing and the shared cannonball pool
 (spend, out-of-ammo block, reload cadence), four-phase ordering, cannon range,
 first-blocking entity, misses, damage, destruction, and determinism. Phaser

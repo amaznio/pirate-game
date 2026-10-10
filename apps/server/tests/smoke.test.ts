@@ -73,6 +73,7 @@ describe('runSmoke', () => {
       'Client was built for this server',
       'Server accepts the client origin',
       'A player can connect and create a room',
+      'A match starts on a generated sea',
     ]);
     expect(checks.filter((check) => !check.ok)).toEqual([]);
     expect(byName(checks, 'Server accepts the client origin').detail).toMatch(
@@ -88,6 +89,7 @@ describe('runSmoke', () => {
     expect(checks.map((check) => check.name)).toEqual([
       'Server is healthy',
       'A player can connect and create a room',
+      'A match starts on a generated sea',
     ]);
     expect(checks.every((check) => check.ok)).toBe(true);
   });

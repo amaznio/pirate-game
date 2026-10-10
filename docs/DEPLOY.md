@@ -128,6 +128,7 @@ It checks, from the outside and the way a browser would:
 | Client was built for this server | `VITE_SERVER_URL` was missing or different when the client was built. Fix it and redeploy the **client**. |
 | Server accepts the client origin | `CLIENT_ORIGIN` on the server does not match the client's address exactly. Fix it and redeploy the **server**. |
 | A player can connect and create a room | Sockets are not getting through. Check the server is running and the domain is public. |
+| A match starts on a generated sea | The room could not start a match, or its board came back empty. Check the server logs, and that the server is the current version. |
 
 It leaves no room behind and exits non-zero on any failure, so it also works as
 a step in CI.

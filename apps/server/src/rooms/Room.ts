@@ -264,6 +264,16 @@ export class Room {
     return this.seats.size;
   }
 
+  /** Every human has left for good, so nobody can ever take a seat back. */
+  isAbandoned(): boolean {
+    for (const seat of this.seats.values()) {
+      if (!seat.abandoned) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   connectedCount(): number {
     let count = 0;
     for (const seat of this.seats.values()) {

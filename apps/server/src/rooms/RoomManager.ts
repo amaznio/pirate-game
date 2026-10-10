@@ -78,8 +78,9 @@ export class RoomManager {
   }
 
   /**
-   * Drops rooms nobody is in any more: right away once a match is over, and
-   * after `idleRoomMs` otherwise (so a dropped connection can still come back).
+   * Drops rooms nobody is in any more: right away once a match is over or
+   * every player has left for good, and after `idleRoomMs` otherwise (so a
+   * dropped connection can still come back).
    */
   sweep(now: number = Date.now()): number {
     let removed = 0;
@@ -88,7 +89,12 @@ export class RoomManager {
         continue;
       }
       const abandoned = now - room.lastActivity > this.options.idleRoomMs;
-      if (room.status === 'finished' || room.seatCount() === 0 || abandoned) {
+      if (
+        room.status === 'finished' ||
+        room.seatCount() === 0 ||
+        room.isAbandoned() ||
+        abandoned
+      ) {
         room.close('The room was closed.');
         this.rooms.delete(id);
         this.keys.delete(room.key);
