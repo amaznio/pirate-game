@@ -529,7 +529,7 @@ describe('spectating after being sunk', () => {
     expect(host.getState().status).toBe('animating');
   });
 
-  it('plays on by itself when every human is sunk', () => {
+  it('ends the match when the last human is sunk, instead of playing it out', () => {
     const config = createSkirmishConfig({ humans: 1, ais: 2, teamMode: 'ffa' });
     const base = createGame(config);
     const host = new GameController(new EventBus(), {
@@ -551,9 +551,66 @@ describe('spectating after being sunk', () => {
 
     host.acknowledgeTurn('p1');
 
-    // The next turn has already been resolved without waiting for the timer.
+    expect(host.getState().status).toBe('game_over');
+    expect(host.getState().outcome).toEqual({ kind: 'eliminated' });
+    expect(host.getState().turn).toBe(1);
+  });
+
+  it('keeps going while another human is still afloat', () => {
+    const host = sunkHuman();
+
+    host.submitPlayerPlan('p2', plan());
+    host.acknowledgeTurn('p1');
+    host.acknowledgeTurn('p2');
+
+    expect(host.getState().status).toBe('planning');
+    expect(host.getState().outcome).toBeNull();
     expect(host.getState().turn).toBe(2);
-    expect(host.getState().status).toBe('animating');
+  });
+
+  it('ends once both of two humans are sunk', () => {
+    const config = createSkirmishConfig({ humans: 2, ais: 2, teamMode: 'ffa' });
+    const base = createGame(config);
+    const host = new GameController(new EventBus(), {
+      turnDurationMs: null,
+      initialState: {
+        ...base,
+        ships: {
+          ...base.ships,
+          'p1-ship': { ...base.ships['p1-ship'], hp: 0 },
+          'p2-ship': { ...base.ships['p2-ship'], hp: 0 },
+        },
+      },
+      config,
+    });
+    host.registerClient('p1');
+    host.registerClient('p2');
+
+    host.lockInPlayer('p1');
+    host.acknowledgeTurn('p1');
+    host.acknowledgeTurn('p2');
+
+    expect(host.getState().outcome).toEqual({ kind: 'eliminated' });
+  });
+
+  it('does not end a match that never had a human in it', () => {
+    const config = createSkirmishConfig({ humans: 0, ais: 3, teamMode: 'ffa' });
+    const host = new GameController(new EventBus(), { turnDurationMs: null, config });
+    host.registerClient('p1');
+    host.acknowledgeTurn('p1');
+
+    expect(host.getState().outcome).toBeNull();
+  });
+
+  it('does not count a human whose ship an AI is sailing as sunk', () => {
+    const config = createSkirmishConfig({ humans: 1, ais: 1, teamMode: 'ffa' });
+    const host = new GameController(new EventBus(), { turnDurationMs: null, config });
+    host.registerClient('p1');
+    host.setController('p1', 'ai');
+    host.lockInPlayer('p1');
+    host.acknowledgeTurn('p1');
+
+    expect(host.getState().outcome?.kind).not.toBe('eliminated');
   });
 
   it('does not spin when no client is connected', () => {

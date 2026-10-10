@@ -51,10 +51,15 @@ export interface PlayerState {
   readonly lockedIn: boolean;
 }
 
-/** How a finished match ended. */
+/**
+ * How a finished match ended. `eliminated` is set by the host rather than the
+ * simulation: every human was sunk before the AIs had settled it, so the match
+ * is called off instead of being played out with nobody watching.
+ */
 export type Outcome =
   | { readonly kind: 'win'; readonly teamId: TeamId }
-  | { readonly kind: 'draw' };
+  | { readonly kind: 'draw' }
+  | { readonly kind: 'eliminated' };
 
 /**
  * The authoritative game state. Everything both React and Phaser render is

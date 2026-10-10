@@ -49,6 +49,14 @@ export function GameScreen({
   const handleRef = useRef<PhaserHandle | null>(null);
   const status = useGameUIStore((state) => state.status);
   const result = useGameUIStore((state) => state.result);
+  const spectating = useGameUIStore((state) => state.spectating);
+  // Told once per sinking; it comes back only if the player is afloat again.
+  const [sunkDismissed, setSunkDismissed] = useState(false);
+  useEffect(() => {
+    if (!spectating) {
+      setSunkDismissed(false);
+    }
+  }, [spectating]);
   const restart = useGameUIStore((state) => state.restart);
 
   useEffect(() => {
@@ -136,6 +144,33 @@ export function GameScreen({
       </div>
 
       {desktop && <DesktopSidebar />}
+
+      {/* Sunk while others are still fighting: say so, and let them stay or leave.
+          It waits for the turn that sank them to finish animating. */}
+      {spectating && status === 'planning' && !sunkDismissed && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
+          <div className="w-full max-w-sm rounded-2xl border border-parchment/25 bg-ocean p-6 text-center shadow-2xl">
+            <h2 className="text-2xl font-black text-parchment">Your ship has sunk</h2>
+            <p className="mt-2 text-sm text-parchment/70">
+              The battle goes on without you. Keep watching, or head back to the menu.
+            </p>
+            <button
+              type="button"
+              onClick={() => setSunkDismissed(true)}
+              className="mt-5 w-full rounded-xl bg-parchment px-4 py-3 text-base font-black uppercase tracking-wide text-ink shadow-lg active:scale-95"
+            >
+              Keep watching
+            </button>
+            <button
+              type="button"
+              onClick={onExit}
+              className="mt-2 w-full rounded-xl bg-parchment/15 px-4 py-3 text-base font-black uppercase tracking-wide text-parchment shadow-lg active:scale-95"
+            >
+              Leave
+            </button>
+          </div>
+        </div>
+      )}
 
       {status === 'game_over' && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">

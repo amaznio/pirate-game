@@ -161,6 +161,7 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 
 ## Log
 
+- 2026-10-10: a match now ends (outcome `eliminated`, shown as a loss) once the last human is sunk, and a player sunk while other humans fight on gets a "Keep watching / Leave" popup. 576 tests.
 - 2026-10-10: phase 1 done, 571 tests (game-core 313, client 84, server 174).
 - 2026-10-10: phase 0 done: 295 game-core tests (11 new), baseline above.
 - 2026-10-10: plan agreed. Baseline at `e65366d`: 529 tests green (game-core

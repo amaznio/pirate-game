@@ -58,6 +58,8 @@ export class GameController {
   /** Humans whose client is connected (they must finish animating each turn). */
   private readonly clients = new Set<PlayerId>();
   private readonly acknowledged = new Set<PlayerId>();
+  /** Everyone who started as a human, even if an AI is sailing for them now. */
+  private readonly humanIds: readonly PlayerId[];
 
   constructor(
     private readonly eventBus: EventBus,
@@ -67,6 +69,9 @@ export class GameController {
     this.aiByPlayer = options.aiByPlayer ?? {};
     this.config = options.config ?? createDuelConfig({ sea: 'open' });
     this.state = options.initialState ?? createGame(this.config);
+    this.humanIds = Object.values(this.state.players)
+      .filter((player) => player.controller === 'human')
+      .map((player) => player.id);
 
     const rulesSeconds = this.state.rules.turnDurationSeconds;
     this.turnDurationMs =
@@ -377,16 +382,38 @@ export class GameController {
       return;
     }
 
+    // Every human has been sunk: end the match rather than letting the AIs play
+    // it out unwatched (and keep the room busy for nothing).
+    if (this.allHumansSunk()) {
+      this.setState({
+        ...this.state,
+        status: 'game_over',
+        outcome: { kind: 'eliminated' },
+      });
+      return;
+    }
+
     const { state } = beginNextTurn(this.state);
     this.armPlanningTimer();
     this.setState(state);
 
     // Every human is out of the fight: do not make the spectators wait for the
-    // timer, let the remaining ships carry on. (Needs a connected client, who
+    // timer. (Normally the match has already ended above; this only matters if
+    // a human is sunk while an AI sails for them. Needs a connected client, who
     // acknowledges each turn; without one this would spin.)
     if (this.clients.size > 0 && this.livingHumans().length === 0) {
       this.resolveIfReady();
     }
+  }
+
+  /** Humans were in the match and none of their ships is afloat. */
+  private allHumansSunk(): boolean {
+    return (
+      this.humanIds.length > 0 &&
+      this.humanIds.every(
+        (id) => (this.state.ships[this.state.players[id]?.shipId]?.hp ?? 0) <= 0,
+      )
+    );
   }
 
   isPlanning(): boolean {

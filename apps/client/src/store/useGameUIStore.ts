@@ -122,9 +122,11 @@ function snapshot({
     result =
       view.outcome.kind === 'draw'
         ? 'draw'
-        : view.outcome.teamId === self.teamId
-          ? 'win'
-          : 'loss';
+        : view.outcome.kind === 'eliminated'
+          ? 'loss'
+          : view.outcome.teamId === self.teamId
+            ? 'win'
+            : 'loss';
   }
 
   return {
