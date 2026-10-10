@@ -6,7 +6,7 @@ import { assignTeamStyles, avatarGlyph } from '../../presentation/teamStyle';
 import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
-import { createShipView, headingToAngle } from '../views/ShipView';
+import { createShipView, headingToAngle, hudLift, setShipHull } from '../views/ShipView';
 import { createObstacleView } from '../views/ObstacleView';
 import { createTerrainViews } from '../views/TerrainView';
 import { ShipHudView } from '../views/ShipHudView';
@@ -65,7 +65,10 @@ export class BattleScene extends Phaser.Scene {
 
     this.views = new EntityViewRegistry();
     this.animator = new EventAnimator(this, this.views, {
-      onDamage: (shipId, hp) => this.huds.get(shipId)?.setInfo({ hull: hp }),
+      onDamage: (shipId, hp) => {
+        this.huds.get(shipId)?.setInfo({ hull: hp });
+        this.showDamage(shipId, hp);
+      },
       onDestroyed: (shipId) => this.removeHud(shipId),
     });
     this.cameraController = new BattleCameraController(
@@ -142,7 +145,8 @@ export class BattleScene extends Phaser.Scene {
 
       // Avatar floats just above the ship's bow, at a constant screen size.
       hud?.setVisible(true);
-      hud?.place(ship.x, ship.y - TILE_SIZE * 0.5 - 20 / zoom, zoom);
+      const lift = view.ships[player.shipId] ? hudLift(view.ships[player.shipId]) : TILE_SIZE * 0.5;
+      hud?.place(ship.x, ship.y - lift - 20 / zoom, zoom);
 
       targets.push({
         id: player.shipId,
@@ -259,9 +263,13 @@ export class BattleScene extends Phaser.Scene {
         existing.setRotation(headingToAngle(ship.heading));
         existing.setAlpha(1);
         existing.setScale(1);
+        setShipHull(existing, ship.hp, ship.maxHp);
       } else {
         const style = styles.get(ship.teamId) ?? [...styles.values()][0];
-        this.views.register(ship.id, createShipView(this, ship, style));
+        this.views.register(
+          ship.id,
+          createShipView(this, ship, style, { isViewer: ship.ownerId === state.viewerId }),
+        );
       }
     }
 
@@ -321,6 +329,15 @@ export class BattleScene extends Phaser.Scene {
     }
 
     this.indicators.retain(new Set(this.huds.keys()));
+  }
+
+  /** Shows a ship's damage step as its damage event plays. */
+  private showDamage(shipId: string, hp: number): void {
+    const view = this.views.get(shipId) as Phaser.GameObjects.Container | undefined;
+    const ship = this.client.getView().ships[shipId];
+    if (view && ship && hp > 0) {
+      setShipHull(view, hp, ship.maxHp);
+    }
   }
 
   private removeHud(shipId: string): void {

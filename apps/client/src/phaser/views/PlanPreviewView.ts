@@ -2,9 +2,8 @@ import Phaser from 'phaser';
 import type { GameState } from '@pirate/game-core/domain/GameState';
 import type { PreviewShotOutcome } from '@pirate/game-core/simulation/preview';
 import { previewPlayerPlan } from '@pirate/game-core/simulation/preview';
-import { AssetKeys, ShipFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, gridToWorld } from '../Grid';
-import { headingToAngle } from './ShipView';
+import { createShipGhost, headingToAngle } from './ShipView';
 
 const SHOT_COLORS: Record<PreviewShotOutcome, number> = {
   ship: 0xff5a4f,
@@ -35,6 +34,7 @@ export class PlanPreviewView {
       return;
     }
 
+    const mine = state.ships[state.players[this.playerId]?.shipId ?? ''];
     const container = this.scene.add.container(0, 0).setDepth(15);
     const g = this.scene.add.graphics();
     container.add(g);
@@ -53,9 +53,7 @@ export class PlanPreviewView {
         g.lineStyle(3, step.blocked ? 0xff5a4f : 0xffffff, step.hasMove ? 0.45 : 0.25);
         g.lineBetween(previous.x, previous.y, at.x, at.y);
 
-        const ghost = this.scene.add
-          .image(at.x, at.y, AssetKeys.ships, ShipFrames.player)
-          .setScale(0.5)
+        const ghost = createShipGhost(this.scene, mine, at.x, at.y)
           .setAlpha(step.blocked ? 0.2 : step.hasMove ? 0.35 : 0.2)
           .setRotation(headingToAngle(step.heading));
         const label = this.scene.add

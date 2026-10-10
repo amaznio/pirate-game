@@ -266,6 +266,11 @@ export class EventAnimator {
     if (!view) {
       return;
     }
+    const flash = view.getData('flash') as (() => void) | undefined;
+    if (flash) {
+      flash();
+      return;
+    }
     const sprite = view.getData('sprite') as
       | Phaser.GameObjects.Image
       | undefined;

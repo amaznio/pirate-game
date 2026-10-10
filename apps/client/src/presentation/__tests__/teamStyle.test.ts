@@ -95,3 +95,23 @@ describe('displayName', () => {
     expect(displayName(view, 'p2')).toBe('Bot 2');
   });
 });
+
+describe('Scallywag colours of a team', () => {
+  it('gives the first six teams a distinct sail, the viewer a blue one, on the plain hull', () => {
+    const sails = [0, 1, 2, 3, 4, 5].map((i) => teamStyleAt(i).sail);
+
+    expect(sails[0]).toBe(4);
+    expect(new Set(sails).size).toBe(6);
+    expect([0, 1, 2, 3, 4, 5].every((i) => teamStyleAt(i).hull === 0)).toBe(true);
+  });
+
+  it('gives later teams a different hull so ten ships can still be told apart', () => {
+    const looks = Array.from({ length: 16 }, (_, i) => `${teamStyleAt(i).hull}/${teamStyleAt(i).sail}`);
+
+    expect(new Set(looks).size).toBe(16);
+    for (let i = 6; i < 16; i += 1) {
+      expect(teamStyleAt(i).hull).toBeGreaterThanOrEqual(1);
+      expect(teamStyleAt(i).hull).toBeLessThanOrEqual(4);
+    }
+  });
+});

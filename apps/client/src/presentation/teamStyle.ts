@@ -12,16 +12,20 @@ export interface TeamStyle {
   readonly frame: string;
   /** Extra tint for teams beyond the six coloured ship skins, else null. */
   readonly tint: number | null;
+  /** Scallywag sail colour (an index into its six sail colours). */
+  readonly sail: number;
+  /** Scallywag hull colour (0 to 4); teams beyond the sixth get a different hull. */
+  readonly hull: number;
 }
 
 /** Ship skins in the Kenney atlas, each with a matching UI colour. */
-const SKINS: ReadonlyArray<{ frame: string; color: number }> = [
-  { frame: 'ship (5).png', color: 0x4f86c6 }, // blue
-  { frame: 'ship (3).png', color: 0xc94f4f }, // red
-  { frame: 'ship (4).png', color: 0x4f9d69 }, // green
-  { frame: 'ship (6).png', color: 0xd9b23a }, // yellow
-  { frame: 'ship (7).png', color: 0xe8e0c8 }, // cream
-  { frame: 'ship (8).png', color: 0x56606a }, // black
+const SKINS: ReadonlyArray<{ frame: string; color: number; sail: number }> = [
+  { frame: 'ship (5).png', color: 0x4f86c6, sail: 4 }, // blue
+  { frame: 'ship (3).png', color: 0xc94f4f, sail: 5 }, // red
+  { frame: 'ship (4).png', color: 0x4f9d69, sail: 2 }, // green
+  { frame: 'ship (6).png', color: 0xd9b23a, sail: 3 }, // yellow
+  { frame: 'ship (7).png', color: 0xe8e0c8, sail: 1 }, // cream
+  { frame: 'ship (8).png', color: 0x56606a, sail: 0 }, // black (grey sail)
 ];
 
 /** Colours for further teams; they reuse a skin and tint it. */
@@ -43,6 +47,8 @@ export function teamStyleAt(index: number): TeamStyle {
       css: toCss(skin.color),
       frame: skin.frame,
       tint: null,
+      sail: skin.sail,
+      hull: 0,
     };
   }
   const extra = index - SKINS.length;
@@ -53,6 +59,8 @@ export function teamStyleAt(index: number): TeamStyle {
     css: toCss(color),
     frame: SKINS[index % SKINS.length].frame,
     tint: color,
+    sail: SKINS[index % SKINS.length].sail,
+    hull: 1 + (extra % 4),
   };
 }
 

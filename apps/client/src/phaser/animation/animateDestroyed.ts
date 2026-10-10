@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
 
-/** Simple sinking/fade placeholder for a destroyed ship. */
+/**
+ * A destroyed ship breaks apart (if its art has a broken hull) and then sinks
+ * and fades.
+ */
 export function animateDestroyed(
   scene: Phaser.Scene,
   view: Phaser.GameObjects.Container,
 ): Promise<void> {
+  (view.getData('onDestroyed') as (() => void) | undefined)?.();
   return new Promise((resolve) => {
     scene.tweens.add({
       targets: view,

@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { generateTerrainTextures } from '../assets/terrainTextures';
+import { ScallywagKeys, registerShipFrames } from '../assets/scallywag';
+import { useCrispFiltering } from '../assets/crispTextures';
+import { currentArtStyle } from '../../presentation/artStyle';
 import { TILE_SIZE } from '../Grid';
 
 /**
@@ -22,11 +25,19 @@ export class BootScene extends Phaser.Scene {
       'assets/kenney/shipsMiscellaneous_sheet.png',
       'assets/kenney/shipsMiscellaneous_sheet.xml',
     );
+    if (currentArtStyle() === 'scallywag') {
+      this.load.image(ScallywagKeys.ships, 'assets/scallywag/ships.png');
+      this.load.image(ScallywagKeys.water, 'assets/scallywag/water-islands.png');
+    }
   }
 
   create(): void {
     generateTerrainTextures(this);
     this.makeRockTexture();
+    if (currentArtStyle() === 'scallywag') {
+      registerShipFrames(this.textures);
+      useCrispFiltering(this.textures);
+    }
     this.scene.start('BattleScene');
   }
 

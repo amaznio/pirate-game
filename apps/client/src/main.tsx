@@ -7,4 +7,10 @@ if (!container) {
   throw new Error('Root container #root was not found');
 }
 
-createRoot(container).render(<App />);
+// `?lab=art` shows the art test scene instead of the game (developer tool).
+if (new URLSearchParams(window.location.search).get('lab') === 'art') {
+  container.style.height = '100vh';
+  void import('./phaser/lab/mountArtLab').then((lab) => lab.mountArtLab(container));
+} else {
+  createRoot(container).render(<App />);
+}
