@@ -1,0 +1,155 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden matches > plays the same way: duel, calm sea, seed 5 1`] = `
+{
+  "events": 156,
+  "hash": "1413c19dbff3c4",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 0,
+  },
+  "outcome": {
+    "kind": "draw",
+  },
+  "turns": 8,
+}
+`;
+
+exports[`golden matches > plays the same way: duel, normal sea, seed 1 1`] = `
+{
+  "events": 182,
+  "hash": "0220b72961adc8",
+  "hull": {
+    "enemy-ship": 4,
+    "player-ship": 0,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "enemy",
+  },
+  "turns": 10,
+}
+`;
+
+exports[`golden matches > plays the same way: duel, normal sea, seed 7, hard 1`] = `
+{
+  "events": 237,
+  "hash": "0d33595db6face",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 0,
+  },
+  "outcome": {
+    "kind": "draw",
+  },
+  "turns": 13,
+}
+`;
+
+exports[`golden matches > plays the same way: duel, open water, seed 2, hard 1`] = `
+{
+  "events": 175,
+  "hash": "1e5577c5a740b6",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 0,
+  },
+  "outcome": {
+    "kind": "draw",
+  },
+  "turns": 9,
+}
+`;
+
+exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`] = `
+{
+  "events": 523,
+  "hash": "1e9bb8667c07df",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 2,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "player",
+  },
+  "turns": 36,
+}
+`;
+
+exports[`golden matches > plays the same way: free-for-all of 4, seed 11 1`] = `
+{
+  "events": 134,
+  "hash": "1799df411f3d44",
+  "hull": {
+    "p1-ship": 0,
+    "p2-ship": 0,
+    "p3-ship": 0,
+    "p4-ship": 4,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "p4",
+  },
+  "turns": 5,
+}
+`;
+
+exports[`golden matches > plays the same way: free-for-all of 6, stormy, seed 4 1`] = `
+{
+  "events": 420,
+  "hash": "172f4311216700",
+  "hull": {
+    "p1-ship": 0,
+    "p2-ship": 0,
+    "p3-ship": 0,
+    "p4-ship": 0,
+    "p5-ship": 0,
+    "p6-ship": 2,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "p6",
+  },
+  "turns": 19,
+}
+`;
+
+exports[`golden matches > plays the same way: large board, 5 ships, seed 21 1`] = `
+{
+  "events": 408,
+  "hash": "1065a6f9f360ba",
+  "hull": {
+    "p1-ship": 3,
+    "p2-ship": 0,
+    "p3-ship": 0,
+    "p4-ship": 0,
+    "p5-ship": 0,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "p1",
+  },
+  "turns": 20,
+}
+`;
+
+exports[`golden matches > plays the same way: two teams of 3, seed 9 1`] = `
+{
+  "events": 442,
+  "hash": "08f2657c067d09",
+  "hull": {
+    "p1-ship": 0,
+    "p2-ship": 0,
+    "p3-ship": 0,
+    "p4-ship": 0,
+    "p5-ship": 0,
+    "p6-ship": 3,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "team-b",
+  },
+  "turns": 20,
+}
+`;
