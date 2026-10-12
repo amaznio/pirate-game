@@ -12,3 +12,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Local scratch files (design bundles, notes), never committed
+.scratch/
