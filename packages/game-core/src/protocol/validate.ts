@@ -170,7 +170,7 @@ export function parseRoomOptions(
     return null;
   }
 
-  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle, aiShipTypeId } =
+  let { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle, aiShipTypeId, loot } =
     base;
 
   if ('ais' in value) {
@@ -201,6 +201,13 @@ export function parseRoomOptions(
       return null;
     }
     aiShipTypeId = shipTypeId;
+  }
+
+  if ('loot' in value) {
+    if (typeof value.loot !== 'boolean') {
+      return null;
+    }
+    loot = value.loot;
   }
 
   if ('mapStyle' in value) {
@@ -243,7 +250,16 @@ export function parseRoomOptions(
     }
   }
 
-  return { ais, aiDifficulty, teamMode, turnDurationSeconds, visibility, mapStyle, aiShipTypeId };
+  return {
+    ais,
+    aiDifficulty,
+    teamMode,
+    turnDurationSeconds,
+    visibility,
+    mapStyle,
+    aiShipTypeId,
+    ...(loot ? { loot: true } : {}),
+  };
 }
 
 /** A ship class the game knows, or null. */

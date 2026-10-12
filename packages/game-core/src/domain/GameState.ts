@@ -9,6 +9,7 @@ import type {
 } from './Action';
 import type { MatchRules } from './Rules';
 import type { TerrainMap } from './Terrain';
+import type { PickupMap } from './Pickup';
 import type { SeaChoice } from '../board/generateBoard';
 
 export type ControllerKind = 'human' | 'ai';
@@ -77,6 +78,8 @@ export interface GameState {
   readonly obstacles: Readonly<Record<EntityId, Obstacle>>;
   /** Wind and whirlpool cells, which carry the ships that end a phase on them. */
   readonly terrain: TerrainMap;
+  /** Barrels, crates and planks afloat, taken by the ship that ends a phase on one. None when left out. */
+  readonly pickups?: PickupMap;
   /** The kind of sea chosen for the match, when one was; the water is drawn to suit. */
   readonly sea?: SeaChoice;
   readonly players: Readonly<Record<PlayerId, PlayerState>>;

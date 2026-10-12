@@ -4,6 +4,7 @@ import type { Ship } from '../domain/Ship';
 import type { EntityId, PlayerId } from '../domain/Entity';
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
+import type { PickupMap } from '../domain/Pickup';
 import { cloneInventory } from '../domain/Action';
 
 /**
@@ -20,6 +21,7 @@ export interface MutableGameState {
   ships: Record<EntityId, Ship>;
   obstacles: Record<EntityId, Obstacle>;
   terrain: TerrainMap;
+  pickups?: PickupMap;
   players: Record<PlayerId, PlayerState>;
   outcome: GameState['outcome'];
 }
@@ -52,6 +54,7 @@ export function toMutable(state: GameState): MutableGameState {
     ships,
     obstacles,
     terrain: state.terrain,
+    ...(state.pickups === undefined ? {} : { pickups: state.pickups }),
     players,
     outcome: state.outcome,
   };

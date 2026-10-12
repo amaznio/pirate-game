@@ -71,3 +71,13 @@ describe('generated seas', () => {
     expect(host.seat.lobby.options.mapStyle).toBe('normal');
   });
 });
+
+describe('loot', () => {
+  it('floats pickups for everyone when the host turns Loot on, and not otherwise', async () => {
+    const withLoot = await viewOfNewMatch({ loot: true });
+    expect(Object.keys(withLoot.pickups ?? {}).length).toBeGreaterThan(0);
+
+    const without = await viewOfNewMatch({});
+    expect(without.pickups).toBeUndefined();
+  });
+});

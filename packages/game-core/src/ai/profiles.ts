@@ -32,6 +32,11 @@ export interface AiProfile {
   readonly dangerWeight: number;
   /** Score lost for ending close to the edge of the board (a corner is a trap). */
   readonly edgeWeight: number;
+  /**
+   * Score for collecting a pickup that the ship badly needs (less for one it
+   * needs less). 0 ignores loot altogether.
+   */
+  readonly lootWeight: number;
 
   // How well it plays.
   /** Most movement tokens it will spend in a turn. */
@@ -55,6 +60,7 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     tokenCost: 0,
     dangerWeight: 0,
     edgeWeight: 0,
+    lootWeight: 10,
     maxMoves: 2,
     mistakeRate: 0.5,
     mistakePool: 6,
@@ -70,6 +76,7 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     tokenCost: 3,
     dangerWeight: 0,
     edgeWeight: 0,
+    lootWeight: 20,
     maxMoves: 4,
     mistakeRate: 0.1,
     mistakePool: 3,
@@ -85,6 +92,7 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     tokenCost: 4,
     dangerWeight: 25,
     edgeWeight: 5,
+    lootWeight: 25,
     maxMoves: 4,
     mistakeRate: 0,
     mistakePool: 1,

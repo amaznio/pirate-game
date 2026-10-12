@@ -405,6 +405,7 @@ export class Room {
       aiDifficulty: this.options.aiDifficulty,
       teamMode: this.options.teamMode,
       sea: this.options.mapStyle,
+      loot: this.options.loot,
       shipTypeIds: [
         ...players.map((seat) => seat.shipTypeId),
         ...Array.from({ length: this.options.ais }, () => this.options.aiShipTypeId),

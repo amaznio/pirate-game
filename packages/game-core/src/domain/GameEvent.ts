@@ -5,6 +5,7 @@ import type { MovementAction } from './Action';
 import type { WeaponSide } from './Ship';
 import type { Outcome } from './GameState';
 import type { Spin } from './Terrain';
+import type { PickupKind } from './Pickup';
 
 export type ProjectileSide = WeaponSide;
 
@@ -114,6 +115,22 @@ export type GameEvent =
       phase: number;
     }
   | { type: 'SHIP_DESTROYED'; shipId: EntityId; phase: number }
+  | {
+      /** A ship ended the phase on a pickup and took it. `gained` is how much of it fitted. */
+      type: 'PICKUP_COLLECTED';
+      shipId: EntityId;
+      kind: PickupKind;
+      at: Position;
+      gained: number;
+      phase: number;
+    }
+  | {
+      /** Two ships ended the phase on one pickup; nobody got it. */
+      type: 'PICKUP_LOST';
+      kind: PickupKind;
+      at: Position;
+      phase: number;
+    }
   | { type: 'PHASE_ENDED'; phase: number }
   | { type: 'TURN_ENDED'; turn: number }
   | { type: 'GAME_ENDED'; outcome: Outcome };

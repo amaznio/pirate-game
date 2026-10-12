@@ -16,6 +16,9 @@ import { inBounds } from '../domain/Board';
 import { DIRECTIONS, leftBroadside, rightBroadside, vectorFor } from '../domain/Direction';
 import { positionsEqual, translate } from '../domain/Position';
 import { isShip, mountsOnSide } from '../domain/Ship';
+import { cellKey } from '../domain/Terrain';
+import { totalTokens } from '../domain/Action';
+import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import { blockingEntityAt, getHostiles, getShipByOwner } from '../simulation/selectors';
 import {
   resolveHoldOutcome,
@@ -50,6 +53,12 @@ interface Shot {
   readonly damage: number;
 }
 
+/** A pickup afloat, and what it is worth to this ship right now. */
+interface Loot {
+  readonly position: Position;
+  readonly value: number;
+}
+
 /** Everything one planning run needs, with caches for the repeated lookups. */
 interface Planning {
   readonly state: GameState;
@@ -60,6 +69,9 @@ interface Planning {
   readonly outcomes: Map<string, MovementOutcome>;
   readonly volleys: Map<string, readonly Shot[]>;
   readonly threats: Map<string, number>;
+  /** The pickups worth having, and the index of the one on each cell (by `"x,y"`). */
+  readonly loot: readonly Loot[];
+  readonly lootAt: ReadonlyMap<string, number>;
   /** Moves still needed from each (cell, heading) to fire at the target; built on first use. */
   goalSteps: Map<string, number> | null;
 }
@@ -259,6 +271,56 @@ function goalStepsOf(plan: Planning): Map<string, number> {
 }
 
 /**
+ * What a pickup is worth to this ship now: the profile's loot weight, scaled
+ * by how much the ship needs what is in it. A full hull wants no plank, and a
+ * full hold no crate.
+ */
+function lootValue(state: GameState, me: Ship, playerId: PlayerId, kind: string, weight: number): number {
+  const player = state.players[playerId];
+  if (!player || weight <= 0) {
+    return 0;
+  }
+  switch (kind) {
+    case 'barrel':
+      return weight * (player.ammo <= 1 ? 2 : player.ammo <= 3 ? 1.2 : player.ammo <= 6 ? 0.6 : 0.3);
+    case 'plank': {
+      const missing = me.maxHp - me.hp;
+      return missing <= 0 ? 0 : weight * (missing >= 2 ? 1.6 : 1);
+    }
+    case 'crate': {
+      const economy = tokenEconomyOf(getShipType(me.shipTypeId));
+      const held = totalTokens(player.tokens);
+      if (economy.cap !== null && held >= economy.cap) {
+        return 0;
+      }
+      return weight * (held <= 2 ? 1.6 : held <= 5 ? 1 : 0.5);
+    }
+    default:
+      return 0;
+  }
+}
+
+/** How far away a pickup still draws the ship, in cells. */
+const LOOT_PULL_RANGE = 10;
+
+/**
+ * Landing on a pickup collects it (the best score a plan can have from loot).
+ * Further off, the nearest one still pulls a little, so the ship heads for
+ * loot it cannot yet reach, but never as hard as it heads for its target.
+ */
+function lootPull(plan: Planning, position: Position, taken: number): number {
+  let best = 0;
+  plan.loot.forEach((loot, index) => {
+    if (taken & (1 << index)) {
+      return;
+    }
+    const reach = Math.max(0, 1 - manhattan(position, loot.position) / LOOT_PULL_RANGE);
+    best = Math.max(best, 0.5 * loot.value * reach);
+  });
+  return best;
+}
+
+/**
  * How good a final position is: mainly how few moves it is from a firing
  * position, then plain distance as a tie-breaker, then (hard) how exposed it is.
  */
@@ -298,6 +360,7 @@ function search(
   cannons: CannonSlot[],
   shotScore: number,
   tokensUsed: number,
+  taken: number,
   out: Candidate[],
 ): void {
   if (phase === ACTIONS_PER_TURN) {
@@ -307,7 +370,8 @@ function search(
       score:
         shotScore -
         plan.profile.tokenCost * tokensUsed +
-        placement(plan, position, heading),
+        placement(plan, position, heading) +
+        lootPull(plan, position, taken),
       tokensUsed,
       order: out.length,
     });
@@ -365,6 +429,14 @@ function search(
       }
     }
 
+    // Ending the phase on a pickup that is still afloat collects it.
+    let nextTaken = taken;
+    const found = plan.lootAt.get(cellKey(nextPosition));
+    if (found !== undefined && !(taken & (1 << found))) {
+      nextTaken |= 1 << found;
+      value += plan.loot[found].value;
+    }
+
     movement.push(option);
     cannons.push(fires);
     search(
@@ -378,6 +450,7 @@ function search(
       cannons,
       shotScore + value,
       tokensUsed + (option === null ? 0 : 1),
+      nextTaken,
       out,
     );
     movement.pop();
@@ -386,6 +459,26 @@ function search(
       pool[option] += 1;
     }
   }
+}
+
+/** The pickups this ship cares about, in a fixed order, with where each is. */
+function lootFor(
+  state: GameState,
+  me: Ship,
+  playerId: PlayerId,
+  weight: number,
+): { loot: Loot[]; lootAt: Map<string, number> } {
+  const loot: Loot[] = [];
+  const lootAt = new Map<string, number>();
+  for (const key of Object.keys(state.pickups ?? {}).sort()) {
+    const value = lootValue(state, me, playerId, state.pickups![key].kind, weight);
+    if (value > 0 && loot.length < 30) {
+      const [x, y] = key.split(',').map(Number);
+      lootAt.set(key, loot.length);
+      loot.push({ position: { x, y }, value });
+    }
+  }
+  return { loot, lootAt };
 }
 
 /** The nearest living hostile ship (ties broken by id for determinism). */
@@ -428,6 +521,7 @@ export function planAiActions(
     outcomes: new Map(),
     volleys: new Map(),
     threats: new Map(),
+    ...lootFor(state, me, playerId, profile.lootWeight),
     goalSteps: null,
   };
 
@@ -441,6 +535,7 @@ export function planAiActions(
     player.ammo,
     [],
     [],
+    0,
     0,
     0,
     candidates,

@@ -78,3 +78,18 @@ export const DEFAULT_TOKEN_ECONOMY: TokenEconomy = {
   restBonus: 0,
   rotation: AUTO_TOKEN_ROTATION,
 };
+
+/**
+ * What each pickup gives the ship that collects it. A barrel adds cannonballs
+ * to the pool, a crate adds movement tokens (made the same way as a turn's
+ * income, and never past the ship's cap) and a plank mends hull (never past
+ * its maximum). Whatever does not fit is lost; the pickup is used up anyway.
+ */
+export const PICKUP_EFFECTS = {
+  barrel: { ammo: 3 },
+  crate: { tokens: 2 },
+  plank: { hull: 1 },
+} as const;
+
+/** How many pickups a generated board holds when Loot is on. */
+export const PICKUP_COUNT: readonly [number, number] = [4, 8];

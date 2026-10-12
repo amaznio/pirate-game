@@ -3,6 +3,7 @@ import type { SubmittedActions, PhaseResult } from '../domain/TurnResult';
 import type { MutableGameState } from './internal';
 import { applyMovementPhase, type MovementIntent } from './movement';
 import { resolveFirePhase, type FirePlan } from './combat';
+import { collectPickups } from './pickups';
 
 /**
  * Resolves a single phase for every ship at once: all movement first, then all
@@ -34,6 +35,7 @@ export function resolvePhase(
       }
     }
     events.push(...applyMovementPhase(state, intents, phase));
+    events.push(...collectPickups(state, phase));
 
     const firePlans: FirePlan[] = [];
     for (const { ship, plan } of participants) {

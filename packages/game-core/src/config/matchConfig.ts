@@ -9,11 +9,13 @@ import {
 } from '../domain/GameState';
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
+import type { PickupMap } from '../domain/Pickup';
 import {
   DEFAULT_MAP_STYLE,
   generateBoard,
   type SeaChoice,
 } from '../board/generateBoard';
+import { generatePickups } from '../board/generatePickups';
 import { DEFAULT_SHIP_TYPE_ID } from './shipTypes';
 import {
   BOARD_HEIGHT,
@@ -59,6 +61,8 @@ export interface MatchConfig {
   readonly obstacles: readonly ObstacleConfig[];
   /** Wind and whirlpool cells. Open water everywhere when left out. */
   readonly terrain?: TerrainMap;
+  /** Barrels, crates and planks afloat at the start. None when left out. */
+  readonly pickups?: PickupMap;
   /** The kind of sea the board was made for; shown in how the water looks. */
   readonly sea?: SeaChoice;
   readonly participants: readonly ParticipantConfig[];
@@ -104,13 +108,24 @@ function seaFor(
   seed: number,
   spawns: readonly Position[],
   sea: SeaChoice | undefined,
-): { obstacles: readonly ObstacleConfig[]; terrain: TerrainMap; sea?: SeaChoice } {
+  loot = false,
+): {
+  obstacles: readonly ObstacleConfig[];
+  terrain: TerrainMap;
+  sea?: SeaChoice;
+  pickups?: PickupMap;
+} {
   const style = sea ?? DEFAULT_MAP_STYLE;
   const chosen = sea === undefined ? {} : { sea };
-  if (style === 'open') {
-    return { obstacles: [], terrain: {}, ...chosen };
+  const water =
+    style === 'open'
+      ? { obstacles: [] as ObstacleConfig[], terrain: {} as TerrainMap }
+      : generateBoard({ width, height, seed, spawns, style });
+  if (!loot) {
+    return { ...water, ...chosen };
   }
-  return { ...generateBoard({ width, height, seed, spawns, style }), ...chosen };
+  const pickups = generatePickups({ width, height, seed, spawns, ...water });
+  return { ...water, ...chosen, pickups };
 }
 
 /** The ship type a participant sails: the one listed for their seat, else the sloop. */
@@ -123,6 +138,8 @@ export function createDuelConfig(
   overrides: Partial<Pick<MatchConfig, 'seed' | 'rules'>> & {
     aiDifficulty?: AiDifficulty;
     sea?: SeaChoice;
+    /** Float barrels, crates and planks on the water. */
+    loot?: boolean;
     /** Ship types for [player, enemy]; sloops when left out. */
     shipTypeIds?: readonly string[];
   } = {},
@@ -135,7 +152,7 @@ export function createDuelConfig(
   const config: MatchConfig = {
     seed,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
-    ...seaFor(BOARD_WIDTH, BOARD_HEIGHT, seed, duelSpawns, overrides.sea),
+    ...seaFor(BOARD_WIDTH, BOARD_HEIGHT, seed, duelSpawns, overrides.sea, overrides.loot),
     participants: [
       {
         playerId: 'player',
@@ -174,6 +191,8 @@ export interface SkirmishOptions {
   readonly aiDifficulty?: AiDifficulty;
   /** The kind of sea to generate from the seed. Normal when left out. */
   readonly sea?: SeaChoice;
+  /** Float barrels, crates and planks on the water (off when left out). */
+  readonly loot?: boolean;
   /** Ship types in seat order (humans first); sloops when left out. */
   readonly shipTypeIds?: readonly string[];
 }
@@ -297,6 +316,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
     seed,
     spawns.map((spawn) => spawn.position),
     options.sea,
+    options.loot,
   );
 
   return withAiDifficulty(

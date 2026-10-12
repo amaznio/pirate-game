@@ -175,6 +175,13 @@ describe('parseRoomOptions', () => {
     expect(parseRoomOptions({ mapStyle: 'stormy' })?.mapStyle).toBe('stormy');
   });
 
+  it('takes Loot as an optional on/off and leaves it out when off', () => {
+    expect(parseRoomOptions({ loot: true })?.loot).toBe(true);
+    expect(parseRoomOptions({ loot: false })).not.toHaveProperty('loot');
+    expect(parseRoomOptions({})).not.toHaveProperty('loot');
+    expect(parseRoomOptions({ loot: 'yes' })).toBeNull();
+  });
+
   it('allows turning the timer off', () => {
     expect(parseRoomOptions({ turnDurationSeconds: null })?.turnDurationSeconds).toBeNull();
   });

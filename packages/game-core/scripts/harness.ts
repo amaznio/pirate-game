@@ -6,6 +6,7 @@
  *   pnpm harness --a hard --b easy
  *   pnpm harness --ship-a galleon --ship-b sloop     # class against class
  *   pnpm harness --classes                           # every ship class pairing
+ *   pnpm harness --loot                              # with barrels, crates and planks afloat
  *
  * Each pairing is played from both sides on every seed, so a side advantage
  * shows up as an uneven result for two identical opponents. "Starved" is the
@@ -29,6 +30,7 @@ interface Options {
   shipA: string | null;
   shipB: string | null;
   classes: boolean;
+  loot: boolean;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -40,11 +42,12 @@ function parseArgs(argv: string[]): Options {
     shipA: null,
     shipB: null,
     classes: false,
+    loot: false,
   };
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
-    if (flag === '--classes') {
-      options.classes = true;
+    if (flag === '--classes' || flag === '--loot') {
+      options[flag === '--loot' ? 'loot' : 'classes'] = true;
       i -= 1;
       continue;
     }
@@ -125,6 +128,7 @@ function play(
       const base = createDuelConfig({
         seed,
         sea: options.sea,
+        loot: options.loot,
         shipTypeIds: aIsPlayer ? [shipA, shipB] : [shipB, shipA],
       });
       const config = {
@@ -187,7 +191,7 @@ function main(): void {
   }
 
   console.log(
-    `Duels on the ${options.sea} sea, ${options.seeds} seeds x 2 sides per pairing
+    `Duels on the ${options.sea} sea${options.loot ? " with loot" : ""}, ${options.seeds} seeds x 2 sides per pairing
 `,
   );
   console.log(

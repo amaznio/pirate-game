@@ -35,6 +35,8 @@ export interface RoomOptions {
   readonly visibility: RoomVisibility;
   /** How many rocks, winds and whirlpools the generated board has. */
   readonly mapStyle: MapStyle;
+  /** Float barrels, crates and planks on the water. Off when absent. */
+  readonly loot?: boolean;
   /** The ship class every AI sails. */
   readonly aiShipTypeId: string;
 }
