@@ -4,6 +4,36 @@ import type { PreviewShotOutcome } from '@pirate/game-core/simulation/preview';
 import { previewPlayerPlan } from '@pirate/game-core/simulation/preview';
 import { TILE_SIZE, gridToWorld } from '../Grid';
 import { createShipGhost, headingToAngle } from './ShipView';
+import { usesPixelEffects } from '../animation/animateEffects';
+
+/** Pixel art draws paths as dots this far apart, each a square this wide. */
+const DOT_GAP = 12;
+const DOT_SIZE = 4;
+
+function drawLine(
+  g: Phaser.GameObjects.Graphics,
+  pixel: boolean,
+  width: number,
+  color: number,
+  alpha: number,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+): void {
+  if (!pixel) {
+    g.lineStyle(width, color, alpha);
+    g.lineBetween(from.x, from.y, to.x, to.y);
+    return;
+  }
+  const length = Math.hypot(to.x - from.x, to.y - from.y);
+  const dots = Math.max(1, Math.floor(length / DOT_GAP));
+  g.fillStyle(color, alpha);
+  for (let i = 0; i <= dots; i += 1) {
+    const t = i / dots;
+    const x = Math.round((from.x + (to.x - from.x) * t) / DOT_SIZE) * DOT_SIZE;
+    const y = Math.round((from.y + (to.y - from.y) * t) / DOT_SIZE) * DOT_SIZE;
+    g.fillRect(x - DOT_SIZE / 2, y - DOT_SIZE / 2, DOT_SIZE, DOT_SIZE);
+  }
+}
 
 const SHOT_COLORS: Record<PreviewShotOutcome, number> = {
   ship: 0xff5a4f,
@@ -36,6 +66,7 @@ export class PlanPreviewView {
 
     const mine = state.ships[state.players[this.playerId]?.shipId ?? ''];
     const container = this.scene.add.container(0, 0).setDepth(15);
+    const pixel = usesPixelEffects();
     const g = this.scene.add.graphics();
     container.add(g);
 
@@ -50,16 +81,26 @@ export class PlanPreviewView {
       previousHeading = step.heading;
 
       if (step.hasMove || carried) {
-        g.lineStyle(3, step.blocked ? 0xff5a4f : 0xffffff, step.hasMove ? 0.45 : 0.25);
-        g.lineBetween(previous.x, previous.y, at.x, at.y);
+        drawLine(
+          g,
+          pixel,
+          3,
+          step.blocked ? 0xff5a4f : 0xffffff,
+          step.hasMove ? 0.45 : 0.25,
+          previous,
+          at,
+        );
 
         const ghost = createShipGhost(this.scene, mine, at.x, at.y)
           .setAlpha(step.blocked ? 0.2 : step.hasMove ? 0.35 : 0.2)
           .setRotation(headingToAngle(step.heading));
+        if (pixel) {
+          ghost.setTint(step.blocked ? 0xff9a90 : 0xbfe3ff);
+        }
         const label = this.scene.add
           .text(at.x, at.y, String(step.phase + 1), {
-            fontFamily: 'Trebuchet MS, sans-serif',
-            fontSize: '20px',
+            fontFamily: pixel ? '"Courier New", monospace' : 'Trebuchet MS, sans-serif',
+            fontSize: pixel ? '24px' : '20px',
             fontStyle: 'bold',
             color: step.blocked ? '#ff8a80' : '#ffffff',
             stroke: '#0b1f2a',
@@ -74,10 +115,14 @@ export class PlanPreviewView {
         const from = gridToWorld(step.position);
         const to = gridToWorld(shot.to);
         const color = SHOT_COLORS[shot.outcome];
-        g.lineStyle(3, color, 0.8);
-        g.lineBetween(from.x, from.y, to.x, to.y);
+        drawLine(g, pixel, 3, color, 0.8, from, to);
         g.fillStyle(color, 0.9);
-        g.fillCircle(to.x, to.y, shot.outcome === 'miss' ? 5 : TILE_SIZE * 0.14);
+        if (pixel) {
+          const size = shot.outcome === 'miss' ? 8 : 16;
+          g.fillRect(to.x - size / 2, to.y - size / 2, size, size);
+        } else {
+          g.fillCircle(to.x, to.y, shot.outcome === 'miss' ? 5 : TILE_SIZE * 0.14);
+        }
       }
     }
 
