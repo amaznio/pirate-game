@@ -1,5 +1,9 @@
 # Roadmap
 
+> **Picking this up fresh? Read `docs/HANDOFF.md` first.** It records what was
+> built and why, the user's way of working, tool gotchas on this machine, the
+> git state (11 commits unpushed) and the ordered next steps.
+
 Where Battle Navigation is going: from the current tactical skirmish to a solo
 roguelite voyage. This file is the source of truth for the plan; update the
 checkboxes and the status line as work lands.
@@ -312,8 +316,17 @@ approved. Needs the cell-size decision under "Art".
       sharper screen the browser still scales it; a separate job.
       Side effect: on a small screen the board may no longer fit, because the
       smallest step that fills the screen can be bigger than the old smooth fit.
-- [ ] Explosions, splashes and the plan preview ghosts in the new style
+- [x] Cannon explosions and splashes in the new style (see above)
+- [ ] **The sinking explosion** (a destroyed ship still sinks with the old
+      tween) and the **plan preview ghosts** in the new style
 - [ ] Yards, flag symbols and the grey wreck set (optional extras)
+- [ ] **Make `scallywag` the default art** (`presentation/artStyle.ts`), once
+      the two items above are done; keep `?art=kenney`
+- [ ] Water plan, remaining: a Calm/Normal/Stormy look (palette, ripple
+      density and speed, whitecaps; needs the sea style added to `GameView`,
+      an additive protocol change), spray when a swell crashes on a rock, a
+      slow tide that makes the halo and foam breathe, a sea section in the
+      art lab
 
 Findings from the lab: hull states are three (whole, cracked, broken into 2 to 3
 pieces), not four, so hull points map to them by fraction (more than half = whole,
@@ -362,6 +375,12 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: phase 3: the sea's depth is worked out from the board (shelves round
+  rocks, deeper by whirlpools, open sea past the edge, four levels, about 10 ms), ripples
+  and rock surf are the default sea; swell bands are off (`?bands=on`); committed as
+  `49c9fa4`. Tests: game-core 354, client 181, server 174. 11 commits not yet pushed.
+  `docs/HANDOFF.md` written for a fresh session.
 
 - 2026-10-12: phase 3: the sea as drifting noise layers instead of a tile, and surf on the rocks; tests: client 152.
 
