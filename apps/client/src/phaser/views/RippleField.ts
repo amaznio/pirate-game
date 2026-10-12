@@ -9,27 +9,25 @@ import {
   type RippleAxis,
   type RippleGlyph,
 } from '../assets/ripplePixels';
-import { seededRandom, type SeaPalette } from '../assets/seaPixels';
+import { paletteTag, seededRandom, type SeaPalette } from '../assets/seaPixels';
 
 /** Screen pixels per art pixel, as everywhere in the sea. */
 const SCALE = 2;
 
-/** How many ripples there can be at once, over the area they are spread across. */
-const RIPPLES = 420;
 
 /** A ripple waits this long (milliseconds) between lives, at least and at most. */
 const WAIT_MIN = 800;
 const WAIT_MAX = 6500;
 
-const rippleKey = (glyph: RippleGlyph, axis: RippleAxis, frame: number): string =>
-  `ripple-${glyph}-${axis}-${frame}`;
+const rippleKey = (tag: string, glyph: RippleGlyph, axis: RippleAxis, frame: number): string =>
+  `ripple-${tag}-${glyph}-${axis}-${frame}`;
 
 /** Paints every frame of every glyph for one axis onto small canvas textures. */
 function ensureRippleTextures(scene: Phaser.Scene, axis: RippleAxis, palette: SeaPalette): void {
   for (const glyph of RIPPLE_GLYPHS) {
     const { width, height } = pictureSize(glyph, axis);
     for (let frame = 0; frame < RIPPLE_FRAMES; frame += 1) {
-      const key = rippleKey(glyph, axis, frame);
+      const key = rippleKey(paletteTag(palette), glyph, axis, frame);
       if (scene.textures.exists(key)) {
         continue;
       }
@@ -77,6 +75,7 @@ interface Ripple {
 export class RippleField {
   private readonly ripples: Ripple[] = [];
   private readonly random: () => number;
+  private readonly tag: string;
 
   constructor(
     scene: Phaser.Scene,
@@ -84,13 +83,17 @@ export class RippleField {
     private readonly axis: RippleAxis,
     seed: number,
     palette: SeaPalette,
+    /** How many ripples there can be at once, and how long they wait (1 is the usual wait). */
+    count = 420,
+    private readonly waitScale = 1,
   ) {
     ensureRippleTextures(scene, axis, palette);
+    this.tag = paletteTag(palette);
     this.random = seededRandom(seed ^ 0x1f83d9ab);
-    for (let i = 0; i < RIPPLES; i += 1) {
+    for (let i = 0; i < count; i += 1) {
       const [x, y] = this.place();
       const sprite = scene.add
-        .image(x, y, rippleKey('dash', axis, 0))
+        .image(x, y, rippleKey(this.tag, 'dash', axis, 0))
         .setDepth(0.05)
         .setScale(SCALE)
         .setVisible(false);
@@ -98,7 +101,7 @@ export class RippleField {
       this.ripples.push({
         sprite,
         glyph: 'dash',
-        age: -this.random() * WAIT_MAX,
+        age: -this.random() * WAIT_MAX * waitScale,
       });
     }
   }
@@ -122,13 +125,13 @@ export class RippleField {
       if (frame < 0) {
         // Over: hide it and wait to turn up somewhere else.
         ripple.sprite.setVisible(false);
-        ripple.age = -(WAIT_MIN + this.random() * (WAIT_MAX - WAIT_MIN));
+        ripple.age = -(WAIT_MIN + this.random() * (WAIT_MAX - WAIT_MIN)) * this.waitScale;
         ripple.glyph = chooseGlyph(this.random());
         // A new place for its next life, chosen now while it is out of sight.
         ripple.sprite.setPosition(...this.place());
         continue;
       }
-      ripple.sprite.setTexture(rippleKey(ripple.glyph, this.axis, frame)).setVisible(true);
+      ripple.sprite.setTexture(rippleKey(this.tag, ripple.glyph, this.axis, frame)).setVisible(true);
     }
   }
 }

@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import {
-  CALM_SEA,
   SEA_LAYER_SIZE,
   bandLayer,
   chopLayer,
@@ -8,11 +7,14 @@ import {
   seededRandom,
   swellFor,
   swellLayer,
+  paletteTag,
   type SeaPalette,
 } from '../assets/seaPixels';
 import { TILE_SIZE } from '../Grid';
 import { currentSwellBands, type SeaMode } from '../../presentation/artStyle';
 import { RippleField } from './RippleField';
+import { WhitecapField } from './WhitecapField';
+import { seaLookFor, type SeaLook } from '../assets/seaLook';
 import { generateDepthLevels, levelsToRgba, type Point } from '../assets/seaDepth';
 
 /** Screen pixels per art pixel in the sea. */
@@ -78,7 +80,7 @@ function ensureLayer(
 
 /** A tiny plus-shaped glint, one bright pixel in the middle. */
 function ensureGlint(scene: Phaser.Scene, palette: SeaPalette): void {
-  const key = 'sea-glint';
+  const key = `sea-glint-${paletteTag(palette)}`;
   if (scene.textures.exists(key)) {
     return;
   }
@@ -115,6 +117,7 @@ export class SeaView {
   readonly direction: readonly [number, number];
   private readonly layers: Drifting[];
   private ripples: RippleField | null = null;
+  private whitecaps: WhitecapField | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -122,21 +125,23 @@ export class SeaView {
     seed: number,
     mode: SeaMode = 'ripples',
     features?: SeaFeatures,
-    palette: SeaPalette = CALM_SEA,
+    look: SeaLook = seaLookFor(undefined),
   ) {
+    const palette: SeaPalette = look.palette;
     const { direction, axis } = swellFor(seed);
     this.direction = direction;
 
-    const depthKey = `sea-depth-${seed}`;
-    const swellKey = `sea-swell-${seed}`;
-    const chopKey = `sea-chop-${seed}`;
+    const tag = paletteTag(palette);
+    const depthKey = `sea-depth-${tag}-${seed}`;
+    const swellKey = `sea-swell-${tag}-${seed}`;
+    const chopKey = `sea-chop-${tag}-${seed}`;
     // With the board to go on, the depth is worked out from it; otherwise (and in
     // the older `lines` sea) it is a tiled noise layer.
     const procedural = mode === 'ripples' && features !== undefined;
     if (!procedural) {
       ensureLayer(scene, depthKey, () => depthLayer(seed, palette));
     }
-    const bandKey = `sea-band-${seed}`;
+    const bandKey = `sea-band-${tag}-${seed}`;
     const bands = mode === 'ripples' && currentSwellBands();
     if (mode === 'lines') {
       ensureLayer(scene, swellKey, () => swellLayer(seed, palette, axis));
@@ -178,20 +183,18 @@ export class SeaView {
       // Spread over the board and a few cells round it, where the player looks.
       const spread = 3 * TILE_SIZE;
       const span = 20 * TILE_SIZE + spread * 2;
-      this.ripples = new RippleField(
-        scene,
-        {
-          left: bounds.x + bounds.width / 2 - 10 * TILE_SIZE - spread,
-          top: bounds.y + bounds.height / 2 - 10 * TILE_SIZE - spread,
-          width: span,
-          height: span,
-        },
-        axis,
-        seed,
-        palette,
-      );
+      const area = {
+        left: bounds.x + bounds.width / 2 - 10 * TILE_SIZE - spread,
+        top: bounds.y + bounds.height / 2 - 10 * TILE_SIZE - spread,
+        width: span,
+        height: span,
+      };
+      this.ripples = new RippleField(scene, area, axis, seed, palette, look.ripples, look.rippleWait);
+      if (look.whitecaps > 0) {
+        this.whitecaps = new WhitecapField(scene, area, axis, seed, palette, look.whitecaps);
+      }
     }
-    this.addTwinkles(scene, bounds, seed, mode === 'ripples' ? 30 : TWINKLES);
+    this.addTwinkles(scene, bounds, seed, mode === 'ripples' ? 30 : TWINKLES, palette);
   }
 
   /**
@@ -214,7 +217,7 @@ export class SeaView {
     const height = Math.round((features.board.height + reach * 2) / SEA_SCALE);
     const toPicture = (p: Point): Point => ({ x: (p.x - left) / SEA_SCALE, y: (p.y - top) / SEA_SCALE });
 
-    const key = `sea-depth-map-${seed}`;
+    const key = `sea-depth-map-${paletteTag(palette)}-${seed}`;
     if (!scene.textures.exists(key)) {
       const levels = generateDepthLevels({
         width,
@@ -253,7 +256,13 @@ export class SeaView {
   }
 
   /** Glints that fade in and out at their own times, near the board. */
-  private addTwinkles(scene: Phaser.Scene, bounds: SeaBounds, seed: number, count: number): void {
+  private addTwinkles(
+    scene: Phaser.Scene,
+    bounds: SeaBounds,
+    seed: number,
+    count: number,
+    palette: SeaPalette,
+  ): void {
     const random = seededRandom(seed ^ 0xc0ffee);
     // Spread over the board and a few cells round it, where the player looks.
     const spread = 8 * TILE_SIZE;
@@ -265,7 +274,7 @@ export class SeaView {
       const x = Math.round((left + random() * span) / SEA_SCALE) * SEA_SCALE;
       const y = Math.round((top + random() * span) / SEA_SCALE) * SEA_SCALE;
       const glint = scene.add
-        .image(x, y, 'sea-glint')
+        .image(x, y, `sea-glint-${paletteTag(palette)}`)
         .setDepth(0.06)
         .setScale(SEA_SCALE)
         .setAlpha(0);
@@ -284,6 +293,7 @@ export class SeaView {
   /** Moves the layers on by `deltaMs`, a whole art pixel at a time. */
   update(deltaMs: number): void {
     this.ripples?.update(deltaMs);
+    this.whitecaps?.update(deltaMs);
     for (const layer of this.layers) {
       const step = (layer.speed * deltaMs) / 1000;
       // The texture slides the way the swell goes when its position decreases.

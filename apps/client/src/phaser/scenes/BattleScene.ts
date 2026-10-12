@@ -12,6 +12,7 @@ import { currentArtStyle, currentSeaMode, currentWaterStyle } from '../../presen
 import { hashText } from '../assets/seaPixels';
 import { SeaView } from '../views/SeaView';
 import { SurfView } from '../views/SurfView';
+import { seaLookFor } from '../assets/seaLook';
 import { createObstacleView } from '../views/ObstacleView';
 import { createTerrainViews } from '../views/TerrainView';
 import { ShipHudView } from '../views/ShipHudView';
@@ -77,7 +78,12 @@ export class BattleScene extends Phaser.Scene {
     }
     this.drawGrid(state, worldWidth, worldHeight, margin);
     if (pixelArt) {
-      this.surf = new SurfView(this, Object.values(state.obstacles), this.sea?.direction ?? [1, 0]);
+      this.surf = new SurfView(
+        this,
+        Object.values(state.obstacles),
+        this.sea?.direction ?? [1, 0],
+        seaLookFor(state.sea),
+      );
     }
     createTerrainViews(this, state.terrain);
 
@@ -162,7 +168,7 @@ export class BattleScene extends Phaser.Scene {
             const corner = gridToWorld({ x: cx, y: cy });
             return { x: corner.x + TILE_SIZE / 2, y: corner.y + TILE_SIZE / 2 };
           }),
-      });
+      }, seaLookFor(state.sea));
       return;
     }
     const water = this.add
@@ -190,7 +196,7 @@ export class BattleScene extends Phaser.Scene {
   /** Keeps avatars on their ships and edge indicators on off-screen ones. */
   update(time: number, delta: number): void {
     this.sea?.update(delta);
-    this.surf?.update(time);
+    this.surf?.update(time, delta);
     if (!this.client || !this.cameraController) {
       return;
     }

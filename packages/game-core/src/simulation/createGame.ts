@@ -112,6 +112,7 @@ export function createGame(
     ships,
     obstacles,
     terrain: config.terrain ?? {},
+    ...(config.sea === undefined ? {} : { sea: config.sea }),
     players,
     outcome: null,
   };

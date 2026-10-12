@@ -14,6 +14,9 @@ import type { ObstacleConfig } from '../config/matchConfig';
 /** How rough the water is: how many rocks, winds and whirlpools a board has. */
 export type MapStyle = 'calm' | 'normal' | 'stormy';
 
+/** What the sea is like: a style gives a generated board; `open` is empty water. */
+export type SeaChoice = MapStyle | 'open';
+
 export const MAP_STYLES: readonly MapStyle[] = ['calm', 'normal', 'stormy'];
 
 export const DEFAULT_MAP_STYLE: MapStyle = 'normal';

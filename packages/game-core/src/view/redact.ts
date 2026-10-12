@@ -81,6 +81,7 @@ export function redactState(
     ships: state.ships,
     obstacles: state.obstacles,
     terrain: state.terrain,
+    ...(state.sea === undefined ? {} : { sea: state.sea }),
     self,
     players,
     outcome: state.outcome,
@@ -130,6 +131,7 @@ export function viewToState(view: GameView, draft?: PlayerActions): GameState {
     ships: view.ships,
     obstacles: view.obstacles,
     terrain: view.terrain,
+    ...(view.sea === undefined ? {} : { sea: view.sea }),
     players,
     outcome: view.outcome,
   };

@@ -12,7 +12,7 @@ import type { TerrainMap } from '../domain/Terrain';
 import {
   DEFAULT_MAP_STYLE,
   generateBoard,
-  type MapStyle,
+  type SeaChoice,
 } from '../board/generateBoard';
 import { DEFAULT_SHIP_TYPE_ID } from './shipTypes';
 import {
@@ -59,6 +59,8 @@ export interface MatchConfig {
   readonly obstacles: readonly ObstacleConfig[];
   /** Wind and whirlpool cells. Open water everywhere when left out. */
   readonly terrain?: TerrainMap;
+  /** The kind of sea the board was made for; shown in how the water looks. */
+  readonly sea?: SeaChoice;
   readonly participants: readonly ParticipantConfig[];
   readonly rules: MatchRules;
   readonly startingTokens: TokenInventory;
@@ -89,24 +91,26 @@ export function withAiDifficulty(
   };
 }
 
+export type { SeaChoice };
+
 /**
  * What the sea is like: a style gives a generated board (rocks, wind,
- * whirlpools) built from the match seed; `open` is empty water.
+ * whirlpools) built from the match seed; `open` is empty water. The choice is
+ * handed on (when one was made) so the picture of the sea can match it.
  */
-export type SeaChoice = MapStyle | 'open';
-
 function seaFor(
   width: number,
   height: number,
   seed: number,
   spawns: readonly Position[],
   sea: SeaChoice | undefined,
-): { obstacles: readonly ObstacleConfig[]; terrain: TerrainMap } {
+): { obstacles: readonly ObstacleConfig[]; terrain: TerrainMap; sea?: SeaChoice } {
   const style = sea ?? DEFAULT_MAP_STYLE;
+  const chosen = sea === undefined ? {} : { sea };
   if (style === 'open') {
-    return { obstacles: [], terrain: {} };
+    return { obstacles: [], terrain: {}, ...chosen };
   }
-  return generateBoard({ width, height, seed, spawns, style });
+  return { ...generateBoard({ width, height, seed, spawns, style }), ...chosen };
 }
 
 /** The ship type a participant sails: the one listed for their seat, else the sloop. */

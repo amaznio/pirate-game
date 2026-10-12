@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGame } from '../../simulation/createGame';
-import { createSkirmishConfig } from '../../config/matchConfig';
+import { createDuelConfig, createSkirmishConfig } from '../../config/matchConfig';
 import { resolveTurn } from '../../simulation/resolveTurn';
 import type { GameState } from '../../domain/GameState';
 import { planActivity, redactState, viewToState } from '../redact';
@@ -181,5 +181,21 @@ describe('AI difficulty in the view', () => {
     };
 
     expect(redactState(away, 'p1', null).players.p2.aiDifficulty).toBe('hard');
+  });
+});
+
+describe('the chosen sea', () => {
+  it('goes from the match setting into the state and through a view and back', () => {
+    const state = createGame(createDuelConfig({ sea: 'stormy', seed: 4 }));
+    expect(state.sea).toBe('stormy');
+    const view = redactState(state, 'player', null);
+    expect(view.sea).toBe('stormy');
+    expect(viewToState(view).sea).toBe('stormy');
+  });
+
+  it('is left out when no sea was chosen, so the state is as it always was', () => {
+    const state = createGame(createDuelConfig({ seed: 4 }));
+    expect('sea' in state).toBe(false);
+    expect('sea' in redactState(state, 'player', null)).toBe(false);
   });
 });

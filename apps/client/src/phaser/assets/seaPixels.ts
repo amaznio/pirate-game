@@ -115,6 +115,9 @@ export const CALM_SEA: SeaPalette = {
   rippleShade: '#5d9ccb',
 };
 
+/** A short tag for a palette, so textures painted in different palettes get different keys. */
+export const paletteTag = (palette: SeaPalette): string => palette.depthMap[3].slice(1);
+
 /** How much of the water shows through a band (0 to 255). */
 const BAND_ALPHA_LIGHT = 26;
 const BAND_ALPHA_DARK = 22;

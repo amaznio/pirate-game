@@ -133,3 +133,49 @@ export function waveArrival(
 ): number {
   return (x * direction[0] + y * direction[1]) / pixelsPerSecond;
 }
+
+/** The tide rises and falls once in this many seconds. */
+export const TIDE_SECONDS = 48;
+
+/** The tide at a moment: 1 is high, -1 is low, moving slowly. */
+export function tideAt(seconds: number): number {
+  return Math.sin((seconds / TIDE_SECONDS) * Math.PI * 2);
+}
+
+/** How strong the shallows round a stone show at a tide: faint at low water, full at high. */
+export function haloAlphaAt(tide: number): number {
+  return 0.7 + 0.3 * ((tide + 1) / 2);
+}
+
+/** Whether a step of the foam wash shows at a tide: the last, broken ring is lost at low water. */
+export function foamStepShows(step: number, tide: number): boolean {
+  return step >= 1 && step <= (tide < -0.35 ? 3 : 4);
+}
+
+/** One speck of spray: how far it flies from the stone, in pixels. */
+export interface SprayVelocity {
+  readonly dx: number;
+  readonly dy: number;
+}
+
+/**
+ * The paths of the specks thrown up when a wave breaks on a stone. The wave
+ * comes in along `direction`, so spray is thrown back against it and out to both
+ * sides. `rolls` are numbers from 0 to 1, two for each speck.
+ */
+export function sprayVelocities(
+  direction: readonly [number, number],
+  rolls: readonly number[],
+): SprayVelocity[] {
+  const out: SprayVelocity[] = [];
+  for (let i = 0; i + 1 < rolls.length; i += 2) {
+    // Short hops: the spray stays close to the rock it came off.
+    const back = 6 + rolls[i] * 10;
+    const side = (rolls[i + 1] - 0.5) * 2 * 14;
+    out.push({
+      dx: -direction[0] * back + -direction[1] * side,
+      dy: -direction[1] * back + direction[0] * side,
+    });
+  }
+  return out;
+}

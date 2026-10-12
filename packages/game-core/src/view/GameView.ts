@@ -10,6 +10,7 @@ import type {
 import type { Ship } from '../domain/Ship';
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
+import type { SeaChoice } from '../board/generateBoard';
 
 /** What every player may know about another player. */
 export interface PublicPlayerView {
@@ -42,6 +43,8 @@ export interface GameView {
   readonly ships: Readonly<Record<EntityId, Ship>>;
   readonly obstacles: Readonly<Record<EntityId, Obstacle>>;
   readonly terrain: TerrainMap;
+  /** The kind of sea chosen for the match, when one was; the water is drawn to suit. */
+  readonly sea?: SeaChoice;
   /** The viewer's own player state, including their private plan and resources. */
   readonly self: PlayerState;
   /** Every player (the viewer included), public information only. */
