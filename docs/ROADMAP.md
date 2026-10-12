@@ -392,11 +392,35 @@ untouched, no game-core field changed and the golden snapshots are green.
 Rules honoured: English stays the default, so nothing changes without a choice;
 `room:closed` only gained an optional field.
 
-### 4. Pickups: `todo`
-Cannonball barrels, token crates, repair planks. "Loot" sea option, default off.
-Art: Fort barrels, coins, gems and potions; Water and Islands chests (10-frame
-open animation) and floating planks. They are 8 to 16 px, so they bob with a
-shadow.
+### 4. Pickups: `done` (not yet watched on a real WebGL board)
+Barrels, crates and planks behind a default-off "Loot" option.
+
+- [x] Rules (`simulation/pickups.ts`): a pickup goes to the one ship that **ends a
+      phase** on its cell, after movement and the sea's push or spin, before fire.
+      Barrel +3 cannonballs, crate +2 tokens (made like turn income, never past
+      the cap), plank +1 hull (never past max); a full ship still uses it up.
+      Two ships on one cell: lost, nobody gets it. No respawn. Numbers in
+      `PICKUP_EFFECTS` (`config/gameRules.ts`). Events `PICKUP_COLLECTED` and
+      `PICKUP_LOST`.
+- [x] Optional `pickups` on the match config, state and view (public to every
+      player); absent changes nothing. The 9 golden snapshots did not move.
+- [x] Generator (`board/generatePickups.ts`): 4 to 8 on a 20x20 board (scaled with
+      the area, not with the Seas setting), one of each kind first, on open
+      water, clear of spawns, spaced out, likelier towards the middle. Own random
+      stream, so Loot never changes a seed's rocks, wind or whirlpools.
+- [x] Wiring: `loot` on the duel and skirmish configs, an optional `loot` in
+      `RoomOptions` (additive), a menu and lobby toggle, `?loot=on`, i18n in
+      en/es/pl, `pnpm harness --loot`.
+- [x] AI: landing on a pickup scores its value (`lootWeight` per profile: 10, 20,
+      25), scaled by need (a full hull wants no plank), and the nearest one pulls
+      a little from up to 10 cells. With no pickups the plans are identical.
+      Harness: sides stay even and a match lasts about a turn longer.
+- [x] Art: barrel from the Fort sheet (`fort.png` copied in), chest and plank from
+      the Water and Islands sheet, drawn 3x, bobbing one art pixel over a shadow
+      (`views/PickupField.ts`); a pop and a floating "+n" when taken; a legend line.
+- [ ] Only seen once in a browser (Canvas, one barrel). The pop, the "+n" and the
+      bob were not watched, and the sprite choices came from a contact sheet. The
+      chest's open animation and the extra planks are not used.
 
 ### 5. Match result and carry-over: `todo`
 `MatchResult`, optional starting hull, ammo and modifiers. Tokens reset each

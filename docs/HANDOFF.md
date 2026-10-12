@@ -105,6 +105,14 @@ with the server's English text as the fallback; the socket protocol gained only
 that optional field. To add a language: copy `en.json`, translate it, and add the
 code and label to `LANGUAGES` in `i18n/languages.ts`.
 
+### Roadmap phase 4, pickups (a later session)
+Barrels, crates and planks behind a default-off Loot option (menu and lobby
+toggle, `?loot=on`). Rules, generator, AI, wiring, art and docs are in; see
+ROADMAP.md phase 4 for the detail. In short: a ship collects a pickup by
+**ending a phase** on its cell; barrel +3 ammo, crate +2 tokens, plank +1 hull;
+no respawn; the opponent sees them. It was only glanced at in a browser
+(Canvas), so the pop, the "+n" and the bob want an eye.
+
 ## 3. The sea, and why it ended up this way
 
 Three versions were rejected by the user, which is why the final design is what
@@ -197,9 +205,10 @@ CRLF/timestamp artefact, `git add` clears it.
 
 1. **Optional leftovers:** the grey wreck set (wait until wrecks are real board
    objects), a sea section in the art lab (left out on purpose), spray (off).
-2. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
-   planks as a default-off "Loot" sea option; then match results and carry-over,
-   objectives, a client-only solo run (`run-core`), Postgres, monsters.
+2. **Phase 5** and onward, per `docs/ROADMAP.md`: match results and carry-over,
+   objectives, a client-only solo run (`run-core`), Postgres, monsters. First
+   have the user look at Loot in play and tune `PICKUP_EFFECTS`, `PICKUP_COUNT`
+   and the sprites.
 3. Known loose ends: the menu's ship choice does not carry into an online lobby
    (it starts on Sloop); the token tray's held/cap figure was not seen; the
    canvas is not sized to the device pixel ratio (blur on sharp screens); the

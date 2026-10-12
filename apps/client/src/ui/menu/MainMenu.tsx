@@ -40,6 +40,7 @@ interface MainMenuProps {
     name: string,
     difficulty: AiDifficulty,
     mapStyle: MapStyle,
+    loot: boolean,
     ships: OfflineShips,
   ) => void;
 }
@@ -52,6 +53,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const [opponents, setOpponents] = useState(1);
   const [difficulty, setDifficulty] = useStoredDifficulty();
   const [mapStyle, setMapStyle] = useStoredMapStyle();
+  const [loot, setLoot] = useState(false);
   const [yourShip, setYourShip] = useState(DEFAULT_SHIP_TYPE_ID);
   const [theirShip, setTheirShip] = useState(DEFAULT_SHIP_TYPE_ID);
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
@@ -126,6 +128,19 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
           <p className="text-xs text-parchment/50">{mapStyleBlurb(t, mapStyle)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">{t('common.loot')}</span>
+          <Segmented
+            value={loot ? 'on' : 'off'}
+            disabled={false}
+            onChange={(value) => setLoot(value === 'on')}
+            choices={[
+              { label: t('common.lootOff'), value: 'off' as const },
+              { label: t('common.lootOn'), value: 'on' as const },
+            ]}
+          />
+          <p className="text-xs text-parchment/50">{t('common.lootBlurb')}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-parchment">{t('menu.yourShip')}</span>
           <Segmented
             value={yourShip}
@@ -147,7 +162,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
         </div>
         <PrimaryButton
           onClick={() =>
-            onPlayOffline(opponents, cleanName, difficulty, mapStyle, {
+            onPlayOffline(opponents, cleanName, difficulty, mapStyle, loot, {
               yours: yourShip,
               theirs: theirShip,
             })

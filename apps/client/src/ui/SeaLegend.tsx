@@ -2,13 +2,14 @@ import { useTranslation } from 'react-i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
 
 /**
- * What the wind and whirlpools on this board do. Only the kinds the board
+ * What the wind, whirlpools and loot on this board do. Only the kinds the board
  * actually has are listed, and nothing is shown on open water.
  */
 export function SeaLegend({ className = '' }: { className?: string }) {
   const { t } = useTranslation();
   const hazards = useGameUIStore((state) => state.hazards);
-  if (!hazards.wind && !hazards.whirlpool) {
+  const loot = useGameUIStore((state) => state.loot);
+  if (!hazards.wind && !hazards.whirlpool && !loot) {
     return null;
   }
 
@@ -29,6 +30,15 @@ export function SeaLegend({ className = '' }: { className?: string }) {
           <dd>
             <b className="text-parchment/90">{t('legend.whirlpoolTitle')}</b>{' '}
             {t('legend.whirlpoolText')}
+          </dd>
+        </div>
+      )}
+      {loot && (
+        <div className="flex gap-2">
+          <dt className="w-4 shrink-0 text-center font-black text-parchment">▣</dt>
+          <dd>
+            <b className="text-parchment/90">{t('legend.lootTitle')}</b>{' '}
+            {t('legend.lootText')}
           </dd>
         </div>
       )}

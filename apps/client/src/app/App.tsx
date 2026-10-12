@@ -51,10 +51,11 @@ export default function App() {
       name: string,
       difficulty: AiDifficulty,
       mapStyle: MapStyle,
+      loot: boolean,
       ships: OfflineShips,
     ) => {
       setOffline(
-        startOfflineMatch(offlineConfig(opponents, name, difficulty, mapStyle, undefined, ships)),
+        startOfflineMatch(offlineConfig(opponents, name, difficulty, mapStyle, undefined, ships, loot)),
       );
     },
     [],

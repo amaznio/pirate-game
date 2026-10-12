@@ -1,3 +1,4 @@
+import { PICKUP_KINDS, type PickupKind } from '@pirate/game-core/domain/Pickup';
 import type Phaser from 'phaser';
 
 /**
@@ -17,6 +18,8 @@ export const ScallywagKeys = {
   /** The ships sheet exactly as it was loaded, frames touching. */
   shipsRaw: 'scallywagShipsRaw',
   water: 'scallywagWater',
+  /** The Fort sheet: the barrel. */
+  fort: 'scallywagFort',
 } as const;
 
 export type HullSize = 'small' | 'medium' | 'large';
@@ -398,6 +401,34 @@ export function registerShipFrames(textures: Phaser.Textures.TextureManager): vo
   for (const rect of shipFrameRects()) {
     if (!texture.has(rect.name)) {
       texture.add(rect.name, 0, rect.x, rect.y, rect.w, rect.h);
+    }
+  }
+}
+
+/**
+ * The three pickups, cut from the Scallywag sheets: a barrel from the Fort
+ * sheet, a chest and a plank from the Water and Islands sheet. Each is 6 to 16
+ * art pixels across; they are drawn at 3x so they stay a good deal smaller
+ * than a ship.
+ */
+export const PICKUP_SPRITES: Readonly<
+  Record<PickupKind, { readonly texture: string; readonly rect: Omit<FrameRect, 'name'> }>
+> = {
+  barrel: { texture: ScallywagKeys.fort, rect: { x: 307, y: 83, w: 9, h: 11 } },
+  crate: { texture: ScallywagKeys.water, rect: { x: 210, y: 51, w: 12, h: 10 } },
+  plank: { texture: ScallywagKeys.water, rect: { x: 96, y: 133, w: 16, h: 6 } },
+};
+
+export const pickupFrameName = (kind: PickupKind): string => `pickup/${kind}`;
+
+/** Registers the pickup frames on the loaded sheets. Safe to call more than once. */
+export function registerPickupFrames(textures: Phaser.Textures.TextureManager): void {
+  for (const kind of PICKUP_KINDS) {
+    const { texture, rect } = PICKUP_SPRITES[kind];
+    const sheet = textures.get(texture);
+    const name = pickupFrameName(kind);
+    if (!sheet.has(name)) {
+      sheet.add(name, 0, rect.x, rect.y, rect.w, rect.h);
     }
   }
 }

@@ -55,19 +55,21 @@ export function offlineConfig(
   mapStyle: MapStyle = DEFAULT_MAP_STYLE,
   seed: number = randomSeed(),
   ships: OfflineShips = {},
+  loot = false,
 ): MatchConfig {
   const yours = ships.yours ?? DEFAULT_SHIP_TYPE_ID;
   const theirs = ships.theirs ?? yours;
   const shipTypeIds = [yours, ...Array.from({ length: Math.max(1, opponents) }, () => theirs)];
   const base =
     opponents <= 1
-      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed, shipTypeIds })
+      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed, shipTypeIds, loot })
       : createSkirmishConfig({
           humans: 1,
           ais: opponents,
           teamMode: 'ffa',
           aiDifficulty,
           sea: mapStyle,
+          loot,
           seed,
           shipTypeIds,
         });

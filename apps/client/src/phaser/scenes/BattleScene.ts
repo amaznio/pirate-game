@@ -23,6 +23,7 @@ import {
 import { EventAnimator } from '../animation/EventAnimator';
 import { BattleCameraController } from '../camera/BattleCameraController';
 import { PlanPreviewView } from '../views/PlanPreviewView';
+import { PickupField } from '../views/PickupField';
 import { usePreviewSettings } from '../../store/previewSettings';
 import { getPhaserContext } from '../PhaserGame';
 
@@ -31,6 +32,7 @@ export class BattleScene extends Phaser.Scene {
   private animator!: EventAnimator;
   private cameraController!: BattleCameraController;
   private preview!: PlanPreviewView;
+  private pickups!: PickupField;
   /** The pixel-art sea, when it is drawn (it drifts a little every frame). */
   private sea: SeaView | null = null;
   /** Foam round the rocks, with the pixel art. */
@@ -86,6 +88,7 @@ export class BattleScene extends Phaser.Scene {
       );
     }
     createTerrainViews(this, state.terrain);
+    this.pickups = new PickupField(this);
 
     this.views = new EntityViewRegistry();
     this.animator = new EventAnimator(this, this.views, {
@@ -94,6 +97,7 @@ export class BattleScene extends Phaser.Scene {
         this.showDamage(shipId, hp);
       },
       onDestroyed: (shipId) => this.removeHud(shipId),
+      onPickup: (event) => this.pickups.collect(event),
     });
     this.cameraController = new BattleCameraController(this, worldWidth, worldHeight, {
       pixelSteps: currentArtStyle() === 'scallywag',
@@ -131,6 +135,7 @@ export class BattleScene extends Phaser.Scene {
       this.unsubscribeEvents?.();
       this.unsubscribePreviewSetting?.();
       this.preview.clear();
+      this.pickups.destroy();
       this.indicators.destroy();
       this.huds.forEach((hud) => hud.destroy());
       this.huds.clear();
@@ -320,6 +325,7 @@ export class BattleScene extends Phaser.Scene {
    * teleport mid-animation.
    */
   private syncViews(state: GameView): void {
+    this.pickups.sync(state.pickups);
     const styles = assignTeamStyles(state);
     for (const ship of Object.values(state.ships)) {
       if (ship.hp <= 0) {

@@ -197,6 +197,19 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
           <p className="text-xs text-parchment/50">{mapStyleBlurb(t, options.mapStyle)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">{t('common.loot')}</span>
+          <Segmented
+            value={options.loot ? 'on' : 'off'}
+            disabled={!isHost}
+            onChange={(value) => set({ loot: value === 'on' })}
+            choices={[
+              { label: t('common.lootOff'), value: 'off' as const },
+              { label: t('common.lootOn'), value: 'on' as const },
+            ]}
+          />
+          <p className="text-xs text-parchment/50">{t('common.lootBlurb')}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-parchment">{t('lobby.teams')}</span>
           <Segmented
             value={options.teamMode}

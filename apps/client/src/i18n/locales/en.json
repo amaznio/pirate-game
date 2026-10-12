@@ -14,7 +14,11 @@
     "you": "You",
     "biggerShipStronger": "A bigger ship is stronger, so match them for an even fight.",
     "teamFfa": "Free for all",
-    "teamTwoTeams": "Two teams"
+    "teamTwoTeams": "Two teams",
+    "loot": "Loot",
+    "lootOff": "Off",
+    "lootOn": "On",
+    "lootBlurb": "Barrels, crates and planks float on the water. End a move on one to take it: cannonballs, tokens or a mended hull."
   },
   "menu": {
     "yourName": "Your name",
@@ -206,7 +210,9 @@
     "windTitle": "Wind",
     "windText": "pushes a ship one cell, each phase it ends on a wind cell.",
     "whirlpoolTitle": "Whirlpool",
-    "whirlpoolText": "carries a ship round its four cells and turns it a quarter, every phase it ends in one."
+    "whirlpoolText": "carries a ship round its four cells and turns it a quarter, every phase it ends in one.",
+    "lootTitle": "Loot",
+    "lootText": "is taken by the ship that ends a phase on it: barrels give cannonballs, chests give tokens, planks mend the hull."
   },
   "preview": {
     "toggle": "Toggle plan preview",

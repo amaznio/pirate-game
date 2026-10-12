@@ -14,7 +14,11 @@
     "you": "Tú",
     "biggerShipStronger": "Un barco más grande es más fuerte, así que iguala los tamaños para una lucha justa.",
     "teamFfa": "Todos contra todos",
-    "teamTwoTeams": "Dos equipos"
+    "teamTwoTeams": "Dos equipos",
+    "loot": "Botín",
+    "lootOff": "No",
+    "lootOn": "Sí",
+    "lootBlurb": "Barriles, cajas y tablones flotan en el agua. Termina un movimiento sobre uno para cogerlo: balas de cañón, fichas o un casco reparado."
   },
   "menu": {
     "yourName": "Tu nombre",
@@ -206,7 +210,9 @@
     "windTitle": "Viento",
     "windText": "empuja un barco una casilla por cada fase en la que termina sobre una casilla de viento.",
     "whirlpoolTitle": "Remolino",
-    "whirlpoolText": "arrastra un barco alrededor de sus cuatro casillas y lo gira un cuarto en cada fase en la que termina en una."
+    "whirlpoolText": "arrastra un barco alrededor de sus cuatro casillas y lo gira un cuarto en cada fase en la que termina en una.",
+    "lootTitle": "Botín",
+    "lootText": "lo coge el barco que termina una fase sobre él: los barriles dan balas, los cofres fichas y los tablones reparan el casco."
   },
   "preview": {
     "toggle": "Alternar la vista previa del plan",

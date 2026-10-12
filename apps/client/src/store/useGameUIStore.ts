@@ -49,6 +49,8 @@ export interface GameUISnapshot {
   others: ShipSummary[];
   /** Which kinds of wind and whirlpool the board has. */
   hazards: SeaHazards;
+  /** Whether any barrel, crate or plank is still afloat (so the legend explains them). */
+  loot: boolean;
   tokens: TokenInventory;
   queue: ActionSlot[];
   cannonQueue: CannonQueue;
@@ -144,6 +146,7 @@ function snapshot({
     spectating: (ship?.hp ?? 0) <= 0 && view.outcome === null,
     others,
     hazards: seaHazards(view.terrain),
+    loot: Object.keys(view.pickups ?? {}).length > 0,
     tokens: tokensLeft,
     queue: [...draft.movement],
     cannonQueue: draft.cannons,
@@ -176,6 +179,7 @@ const EMPTY: GameUISnapshot = {
   spectating: false,
   others: [],
   hazards: NO_HAZARDS,
+  loot: false,
   tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 },
   queue: [null, null, null, null],
   cannonQueue: [],

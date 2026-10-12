@@ -4,6 +4,7 @@ import { generatePixelTerrainTextures, generateTerrainTextures } from '../assets
 import {
   ScallywagKeys,
   buildPaddedShipSheet,
+  registerPickupFrames,
   registerWaterFrames,
 } from '../assets/scallywag';
 import { buildSurfTextures } from '../assets/surfTextures';
@@ -30,15 +31,21 @@ export class BootScene extends Phaser.Scene {
       'assets/kenney/shipsMiscellaneous_sheet.png',
       'assets/kenney/shipsMiscellaneous_sheet.xml',
     );
+    // The pickups come from these two sheets whatever the art, so they always load.
+    this.load.image(ScallywagKeys.water, 'assets/scallywag/water-islands.png');
+    this.load.image(ScallywagKeys.fort, 'assets/scallywag/fort.png');
     if (currentArtStyle() === 'scallywag') {
       this.load.image(ScallywagKeys.shipsRaw, 'assets/scallywag/ships.png');
-      this.load.image(ScallywagKeys.water, 'assets/scallywag/water-islands.png');
     }
   }
 
   create(): void {
     generateTerrainTextures(this);
     this.makeRockTexture();
+    registerPickupFrames(this.textures);
+    for (const key of [ScallywagKeys.water, ScallywagKeys.fort]) {
+      this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
     if (currentArtStyle() === 'scallywag') {
       buildPaddedShipSheet(this.textures);
       registerWaterFrames(this.textures);

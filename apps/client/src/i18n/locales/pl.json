@@ -14,7 +14,11 @@
     "you": "Ty",
     "biggerShipStronger": "Większy statek jest silniejszy, więc dobierz podobne, by walka była wyrównana.",
     "teamFfa": "Każdy na własną rękę",
-    "teamTwoTeams": "Dwie drużyny"
+    "teamTwoTeams": "Dwie drużyny",
+    "loot": "Łupy",
+    "lootOff": "Wył.",
+    "lootOn": "Wł.",
+    "lootBlurb": "Beczki, skrzynie i deski pływają po wodzie. Zakończ ruch na jednej, aby ją zabrać: kule armatnie, żetony lub naprawiony kadłub."
   },
   "menu": {
     "yourName": "Twoje imię",
@@ -214,7 +218,9 @@
     "windTitle": "Wiatr",
     "windText": "spycha statek o jedno pole w każdej fazie, w której kończy on na polu wiatru.",
     "whirlpoolTitle": "Wir",
-    "whirlpoolText": "przenosi statek po jego czterech polach i obraca go o ćwierć w każdej fazie, w której kończy on w wirze."
+    "whirlpoolText": "przenosi statek po jego czterech polach i obraca go o ćwierć w każdej fazie, w której kończy on w wirze.",
+    "lootTitle": "Łupy",
+    "lootText": "zabiera statek, który kończy fazę na jego polu: beczki dają kule, skrzynie żetony, a deski naprawiają kadłub."
   },
   "preview": {
     "toggle": "Przełącz podgląd planu",

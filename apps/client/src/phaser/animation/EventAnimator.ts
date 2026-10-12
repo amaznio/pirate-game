@@ -21,6 +21,8 @@ type PhaseGroup = GameEvent[];
 export interface AnimatorHooks {
   onDamage?(shipId: string, hp: number): void;
   onDestroyed?(shipId: string): void;
+  /** A ship took a pickup (or two ships met on one and it was lost). */
+  onPickup?(event: Extract<GameEvent, { type: 'PICKUP_COLLECTED' | 'PICKUP_LOST' }>): void;
 }
 
 /** Milliseconds between one cannon of a side and the next. */
@@ -130,6 +132,13 @@ export class EventAnimator {
         }
       }),
     );
+
+    // Pickups are taken where the ships have ended up, before anyone fires.
+    for (const event of events) {
+      if (event.type === 'PICKUP_COLLECTED' || event.type === 'PICKUP_LOST') {
+        this.hooks.onPickup?.(event);
+      }
+    }
 
     for (const event of events) {
       if (event.type === 'CANNON_BLOCKED') {

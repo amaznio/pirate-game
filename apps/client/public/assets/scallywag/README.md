@@ -12,3 +12,5 @@ original download.
   `src/phaser/assets/scallywag.ts` from measured boxes.
 - `water-islands.png` (384x144): 16x16 tiles for islands, shallows, water,
   stones, palms, planks and chests.
+- `fort.png` (432x256): the Fort sheet (same author and licence). Only the barrel is
+  used so far, for the Loot pickups (`PICKUP_SPRITES` in `scallywag.ts`).

@@ -7,6 +7,11 @@ describe('matchConfigFromSearch', () => {
     expect(config.participants.map((p) => p.playerId)).toEqual(['player', 'enemy']);
   });
 
+  it('floats pickups only with ?loot=on', () => {
+    expect(matchConfigFromSearch('?seed=4').pickups).toBeUndefined();
+    expect(Object.keys(matchConfigFromSearch('?seed=4&loot=on').pickups ?? {}).length).toBeGreaterThan(0);
+  });
+
   it('rebuilds the same board from ?seed= and picks a new one otherwise', () => {
     const a = matchConfigFromSearch('?seed=77&map=stormy');
     expect(matchConfigFromSearch('?seed=77&map=stormy')).toEqual(a);
