@@ -1,8 +1,15 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../Grid';
+import { panPadding } from './panPadding';
 import { allowedSteps, snapToStep, stepFrom, zoomSteps } from './zoomSteps';
 
 const MAX_ZOOM = 2.5;
+
+/** The pixel art zooms in as far as 3 screen pixels per art pixel. */
+const MAX_PIXEL_ZOOM = 3;
+
+/** Zoomed right out, the padded board still takes this share of the screen's longer side. */
+const MIN_BOARD_SHARE = 0.4;
 
 /** Wheel movement that counts as one step when zooming in whole steps. */
 const WHEEL_PER_STEP = 60;
@@ -13,6 +20,8 @@ export interface CameraOptions {
    * whole pixels, so pixel art stays crisp. Off for the smooth Kenney art.
    */
   readonly pixelSteps?: boolean;
+  /** How far past the board the sea is drawn, in world pixels (the most the camera may scroll out). */
+  readonly reach?: number;
 }
 
 /** How far past the board edge the camera may pan (world pixels). */
@@ -35,6 +44,7 @@ export class BattleCameraController {
   private rawZoom = 1;
   private wheelTravel = 0;
   private readonly pixelSteps: boolean;
+  private readonly reach: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -43,6 +53,7 @@ export class BattleCameraController {
     options: CameraOptions = {},
   ) {
     this.pixelSteps = options.pixelSteps ?? false;
+    this.reach = Math.max(CAMERA_PAD, options.reach ?? CAMERA_PAD);
     this.camera = scene.cameras.main;
     this.camera.roundPixels = this.pixelSteps;
     this.applyBounds();
@@ -105,10 +116,16 @@ export class BattleCameraController {
     if (this.pixelSteps) {
       // A wheel notch (or a burst of trackpad movement) is a step, not a slide.
       this.wheelTravel += deltaY;
-      if (Math.abs(this.wheelTravel) >= WHEEL_PER_STEP) {
+      const notches = Math.trunc(Math.abs(this.wheelTravel) / WHEEL_PER_STEP);
+      if (notches > 0) {
         const direction = this.wheelTravel > 0 ? -1 : 1;
         this.wheelTravel = 0;
-        this.setZoom(stepFrom(this.camera.zoom, this.steps(), direction));
+        let zoom = this.camera.zoom;
+        // A fast spin of the wheel is several steps, not one.
+        for (let i = 0; i < Math.min(notches, 4); i += 1) {
+          zoom = stepFrom(zoom, this.steps(), direction);
+        }
+        this.setZoom(zoom);
       }
       return;
     }
@@ -123,14 +140,24 @@ export class BattleCameraController {
     );
   }
 
-  /** The zoom steps the board still fills the screen at (pixel-art mode). */
+  /**
+   * The zoom steps the pixel art may use. It does not have to fill the screen
+   * with the board (the sea runs on past it), but the board may not shrink to
+   * less than a share of the screen, so a big window always has a few steps to
+   * choose from rather than the one that happens to fill it.
+   */
   private steps(): number[] {
-    return allowedSteps(zoomSteps(), this.fitZoom(), MAX_ZOOM);
+    return allowedSteps(zoomSteps(), this.fitZoom() * MIN_BOARD_SHARE, MAX_PIXEL_ZOOM);
   }
 
-  /** The smallest zoom allowed: the board must fill the viewport. */
+  /** The smallest zoom allowed. */
   private minZoom(): number {
     return this.pixelSteps ? this.steps()[0] : Math.min(this.fitZoom(), MAX_ZOOM);
+  }
+
+  /** The biggest zoom allowed. */
+  private maxZoom(): number {
+    return this.pixelSteps ? this.steps()[this.steps().length - 1] : MAX_ZOOM;
   }
 
   /** Re-applies the zoom floor after the viewport changes size. */
@@ -139,7 +166,7 @@ export class BattleCameraController {
   }
 
   setZoom(zoom: number): void {
-    const clamped = Phaser.Math.Clamp(zoom, this.minZoom(), MAX_ZOOM);
+    const clamped = Phaser.Math.Clamp(zoom, this.minZoom(), this.maxZoom());
     this.rawZoom = clamped;
     this.camera.setZoom(this.pixelSteps ? snapToStep(clamped, this.steps()) : clamped);
     this.applyBounds();
@@ -155,11 +182,15 @@ export class BattleCameraController {
     const zoom = this.camera ? this.camera.zoom : 1;
     const top = this.insets.top / zoom;
     const bottom = this.insets.bottom / zoom;
+    // Far enough that a window bigger than the board can still be dragged every
+    // way, not only along the axis it happens to be shorter on.
+    const padX = panPadding(this.camera.width / zoom, CAMERA_PAD, this.reach);
+    const padY = panPadding(this.camera.height / zoom, CAMERA_PAD, this.reach);
     this.camera.setBounds(
-      -CAMERA_PAD,
-      -CAMERA_PAD - top,
-      this.worldWidth + CAMERA_PAD * 2,
-      this.worldHeight + CAMERA_PAD * 2 + top + bottom,
+      -padX,
+      -padY - top,
+      this.worldWidth + padX * 2,
+      this.worldHeight + padY * 2 + top + bottom,
     );
   }
 

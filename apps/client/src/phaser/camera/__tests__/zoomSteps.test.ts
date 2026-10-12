@@ -27,6 +27,14 @@ describe('allowedSteps', () => {
     expect(allowedSteps(steps, 0.9, 3)[0]).toBe(1);
   });
 
+  it('leaves a big window several steps to choose from, not just the one that fills it', () => {
+    // A window of 2000 px needs a zoom of 1.3 to fill a 1536 px padded board, which
+    // would leave only the step at 2. Allowing the board to shrink to 40% leaves 1, 2 and 3.
+    expect(allowedSteps(steps, 1.3 * 0.4, 3)).toEqual([1, 2, 3]);
+    // A phone, far smaller than the board, can zoom right out.
+    expect(allowedSteps(steps, 0.25 * 0.4, 3)).toEqual([1 / 4, 1 / 3, 1 / 2, 1, 2, 3]);
+  });
+
   it('stops at the biggest zoom allowed', () => {
     const allowed = allowedSteps(steps, 0.25, 2.5);
     expect(allowed[allowed.length - 1]).toBe(2);

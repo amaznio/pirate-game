@@ -47,8 +47,9 @@ export class BattleScene extends Phaser.Scene {
     const worldWidth = state.board.width * TILE_SIZE;
     const worldHeight = state.board.height * TILE_SIZE;
 
-    // The water extends past the board as a purely decorative margin; the
-    // playable area is still board.width x board.height.
+    // The water extends past the board as a purely decorative margin (the
+    // playable area is still board.width x board.height). It runs on far enough
+    // that the camera can be dragged any way on a window bigger than the board.
     const margin = WORLD_MARGIN_TILES * TILE_SIZE;
     this.add
       .tileSprite(
@@ -74,6 +75,7 @@ export class BattleScene extends Phaser.Scene {
     });
     this.cameraController = new BattleCameraController(this, worldWidth, worldHeight, {
       pixelSteps: currentArtStyle() === 'scallywag',
+      reach: margin,
     });
     this.indicators = new OffscreenIndicators(this, (shipId) =>
       this.panToShip(shipId),

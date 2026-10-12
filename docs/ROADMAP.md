@@ -254,6 +254,15 @@ approved. Needs the cell-size decision under "Art".
       and 5x, which was too big), nudged by whole art pixels. Not sand islets: the sea has no islands,
       only stones, singles, clumps and ridges. Frames measured from the pixels
       (`STONE_BOXES`) and tested.
+- [x] Zoom fix and free dragging (pixel art). The first whole-step zoom had to
+      keep the board filling the screen, which on a big window left one step and
+      froze the zoom; the board may now shrink to 40% of the screen, and a fast
+      wheel spin is up to four steps. The camera's scroll limits were the board
+      plus two tiles, so a window wider than the board could only be dragged up
+      and down; they now reach half the visible size past the board
+      (`camera/panPadding.ts`, never more than the sea drawn, which is 40 tiles
+      each side for both arts), so any point of the board can reach the middle
+      of the screen.
 - [ ] Animated deep water and shallow ring
 - [x] Wind lanes and whirlpools redrawn at the same pixel density
       (`phaser/assets/pixelTerrain.ts`, tested): the whirlpool is 32x32 art pixels
@@ -319,6 +328,8 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: phase 3: pixel-art camera fixed (zoom steps on a big window, dragging every way).
 
 - 2026-10-12: phase 3: whole-step zoom for the pixel art; tests: client 117.
 

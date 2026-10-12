@@ -18,4 +18,4 @@ export function worldToGrid(x: number, y: number): Position {
 }
 
 /** Decorative ocean drawn around the playable board (in tiles). */
-export const WORLD_MARGIN_TILES = 6;
+export const WORLD_MARGIN_TILES = 40;
