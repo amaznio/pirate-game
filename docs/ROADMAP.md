@@ -238,7 +238,16 @@ approved. Needs the cell-size decision under "Art".
       preview, and the avatar lifted clear of long hulls. Checked in headless
       Chrome (desktop and phone widths); the sinking tween itself has only been
       exercised in the lab.
-- [ ] Cannon fire animation (3 frames per type) and the wake (64x64, 6 frames)
+- [x] Cannon fire and the wake (`?art=scallywag`): a puff of smoke and a brief
+      flash at the muzzle on the firing side, a small iron ball in flight, an
+      explosion where a shot hits and a pale splash where it misses, all from
+      the sheet's frames (four 16x16 puffs and explosions, 16 px apart). The
+      wake is six 32x64 frames (measured, not 64x64), flipped so the flare trails
+      behind the stern, mirrored to both sides of
+      the hull and played under a ship while it moves, is pushed or spins. The
+      art lab (`?lab=art`) shows the frames and a permanent wake on each class.
+      Not yet seen in a normal browser: only the lab and a played turn in the
+      Canvas renderer, where the pale water hides the thin wake.
 - [x] Rocks from the sheet's twelve stones (`?art=scallywag`): one per cell
       chosen by position, never rotated, 3x (2x for the smallest) so a stone is
       about a ship's beam wide (ships are drawn at native size; first tried 4x
@@ -301,6 +310,10 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: stray horizontal lines under a ship's bow: the hull frames touch on the sheet, so a sprite on a fractional pixel shows a sliver of the frame below. The game now copies every ship frame onto its own sheet with a 2 px margin (`buildPaddedShipSheet`, `packFrames`). Not confirmed in WebGL.
+
+- 2026-10-12: phase 3: cannon fire, impacts and the wake in the new art; tests: client 107.
 
 - 2026-10-12: phase 3: rocks drawn as stones and wind and whirlpools redrawn in pixel art behind `?art=scallywag`; phase 1 menu and lobby checked in a browser (a galleon and a brigantine in one online room: hulls, tokens, cannonballs and what each player sees all right). tests: client 105.
 

@@ -9,7 +9,13 @@ import type Phaser from 'phaser';
  * so `headingToAngle` is unchanged.
  */
 export const ScallywagKeys = {
+  /**
+   * The ships sheet as the game uses it: every frame copied onto a canvas with
+   * a transparent margin round it (see `buildPaddedShipSheet`).
+   */
   ships: 'scallywagShips',
+  /** The ships sheet exactly as it was loaded, frames touching. */
+  shipsRaw: 'scallywagShipsRaw',
   water: 'scallywagWater',
 } as const;
 
@@ -120,6 +126,15 @@ const CANNON_BOXES: readonly Box[] = [
 export const cannonFrameName = (type: number): string => `cannon/${type}`;
 export const CANNON_TYPES = CANNON_BOXES.length;
 
+/** Smoke puff and explosion: four 16x16 frames each, side by side. */
+export const FX_FRAMES = 4;
+export const fxFrameName = (kind: 'puff' | 'explosion', frame: number): string =>
+  `fx/${kind}/${frame}`;
+
+/** The bow wave: six frames, 32 px wide and 64 tall, in two rows of three. */
+export const WAKE_FRAMES = 6;
+export const wakeFrameName = (frame: number): string => `wake/${frame}`;
+
 export const SHIPS_SHEET_SIZE = { width: 720, height: 672 } as const;
 export const WATER_SHEET_SIZE = { width: 384, height: 144 } as const;
 
@@ -215,7 +230,83 @@ export function shipFrameRects(): FrameRect[] {
     rects.push({ name: cannonFrameName(index + 1), x: box.x, y: box.y, w: box.w, h: box.h });
   });
 
+  for (let frame = 0; frame < FX_FRAMES; frame += 1) {
+    rects.push({ name: fxFrameName('puff', frame), x: 448 + 16 * frame, y: 608, w: 16, h: 16 });
+    rects.push({ name: fxFrameName('explosion', frame), x: 448 + 16 * frame, y: 624, w: 16, h: 16 });
+  }
+  for (let frame = 0; frame < WAKE_FRAMES; frame += 1) {
+    rects.push({
+      name: wakeFrameName(frame),
+      x: 352 + 32 * (frame % 3),
+      y: 544 + 64 * Math.floor(frame / 3),
+      w: 32,
+      h: 64,
+    });
+  }
+
   return rects;
+}
+
+export interface PackedFrame extends FrameRect {
+  /** Where the frame's pixels start on the new sheet. */
+  readonly sheetX: number;
+  readonly sheetY: number;
+}
+
+/**
+ * Lays frames out in rows on a new sheet with `pad` transparent pixels all round
+ * each, so nothing next to a frame can show through its edge. Pure.
+ */
+export function packFrames(
+  rects: readonly FrameRect[],
+  maxWidth: number,
+  pad: number,
+): { readonly width: number; readonly height: number; readonly frames: PackedFrame[] } {
+  const frames: PackedFrame[] = [];
+  let x = 0;
+  let y = 0;
+  let rowHeight = 0;
+  let width = 0;
+
+  for (const rect of rects) {
+    const cellW = rect.w + pad * 2;
+    const cellH = rect.h + pad * 2;
+    if (x > 0 && x + cellW > maxWidth) {
+      y += rowHeight;
+      x = 0;
+      rowHeight = 0;
+    }
+    frames.push({ ...rect, sheetX: x + pad, sheetY: y + pad });
+    x += cellW;
+    width = Math.max(width, x);
+    rowHeight = Math.max(rowHeight, cellH);
+  }
+  return { width, height: y + rowHeight, frames };
+}
+
+/**
+ * Copies every ship frame from the loaded sheet onto a new one with a margin
+ * round each (the frames touch on the original, so a sprite on a fractional
+ * pixel shows a sliver of its neighbour, such as the damaged hull's top rows
+ * under a bow). The new sheet is registered as `ScallywagKeys.ships`, with the
+ * same frame names.
+ */
+export function buildPaddedShipSheet(textures: Phaser.Textures.TextureManager): void {
+  if (textures.exists(ScallywagKeys.ships)) {
+    return;
+  }
+  const raw = textures.get(ScallywagKeys.shipsRaw).getSourceImage() as CanvasImageSource;
+  const packed = packFrames(shipFrameRects(), 1024, 2);
+  const canvas = textures.createCanvas(ScallywagKeys.ships, packed.width, packed.height);
+  const context = canvas?.getContext();
+  if (!canvas || !context) {
+    return;
+  }
+  for (const frame of packed.frames) {
+    context.drawImage(raw, frame.x, frame.y, frame.w, frame.h, frame.sheetX, frame.sheetY, frame.w, frame.h);
+    canvas.add(frame.name, 0, frame.sheetX, frame.sheetY, frame.w, frame.h);
+  }
+  canvas.refresh();
 }
 
 /** Registers the stones on the loaded water sheet. Safe to call more than once. */

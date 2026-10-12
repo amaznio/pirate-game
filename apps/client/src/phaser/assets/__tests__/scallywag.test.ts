@@ -3,10 +3,13 @@ import { SHIP_TYPES } from '@pirate/game-core/config/shipTypes';
 import {
   HULL_LAYOUT,
   SHIPS_SHEET_SIZE,
+  FX_FRAMES,
   STONE_COUNT,
+  WAKE_FRAMES,
   WATER_SHEET_SIZE,
   cannonFrameName,
   hullFrameName,
+  packFrames,
   hullStateFor,
   shipFrameRects,
   stoneScale,
@@ -54,6 +57,73 @@ describe('the Scallywag ship frames', () => {
 
           expect(overlap, `${a.name} / ${b.name}`).toBe(false);
         }
+      }
+    }
+  });
+});
+
+describe('the padded ship sheet', () => {
+  const packed = packFrames(shipFrameRects(), 1024, 2);
+
+  it('keeps every frame, at its own size', () => {
+    const source = shipFrameRects();
+    expect(packed.frames).toHaveLength(source.length);
+    packed.frames.forEach((frame, index) => {
+      expect(frame.name).toBe(source[index].name);
+      expect(frame.w).toBe(source[index].w);
+      expect(frame.h).toBe(source[index].h);
+    });
+  });
+
+  it('keeps every frame inside the sheet with two clear pixels all round', () => {
+    expect(packed.width).toBeLessThanOrEqual(1024);
+    for (const frame of packed.frames) {
+      expect(frame.sheetX, frame.name).toBeGreaterThanOrEqual(2);
+      expect(frame.sheetY, frame.name).toBeGreaterThanOrEqual(2);
+      expect(frame.sheetX + frame.w + 2, frame.name).toBeLessThanOrEqual(packed.width);
+      expect(frame.sheetY + frame.h + 2, frame.name).toBeLessThanOrEqual(packed.height);
+    }
+  });
+
+  it('never lets two frames, with their margins, touch', () => {
+    for (let i = 0; i < packed.frames.length; i += 1) {
+      for (let j = i + 1; j < packed.frames.length; j += 1) {
+        const a = packed.frames[i];
+        const b = packed.frames[j];
+        const apart =
+          a.sheetX + a.w + 2 <= b.sheetX - 2 ||
+          b.sheetX + b.w + 2 <= a.sheetX - 2 ||
+          a.sheetY + a.h + 2 <= b.sheetY - 2 ||
+          b.sheetY + b.h + 2 <= a.sheetY - 2;
+
+        expect(apart, `${a.name} / ${b.name}`).toBe(true);
+      }
+    }
+  });
+});
+
+describe('the Scallywag effects', () => {
+  const rects = shipFrameRects();
+
+  it('have four smoke puffs, four explosions and six wake frames, all on the sheet', () => {
+    expect(rects.filter((rect) => rect.name.startsWith('fx/puff/'))).toHaveLength(FX_FRAMES);
+    expect(rects.filter((rect) => rect.name.startsWith('fx/explosion/'))).toHaveLength(FX_FRAMES);
+    expect(rects.filter((rect) => rect.name.startsWith('wake/'))).toHaveLength(WAKE_FRAMES);
+    for (const rect of rects.filter((r) => /^(fx|wake)\//.test(r.name))) {
+      expect(rect.x + rect.w, rect.name).toBeLessThanOrEqual(SHIPS_SHEET_SIZE.width);
+      expect(rect.y + rect.h, rect.name).toBeLessThanOrEqual(SHIPS_SHEET_SIZE.height);
+    }
+  });
+
+  it('do not overlap one another', () => {
+    const effects = rects.filter((r) => /^(fx|wake)\//.test(r.name));
+    for (let i = 0; i < effects.length; i += 1) {
+      for (let j = i + 1; j < effects.length; j += 1) {
+        const a = effects[i];
+        const b = effects[j];
+        const overlap = a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+        expect(overlap, `${a.name} / ${b.name}`).toBe(false);
       }
     }
   });

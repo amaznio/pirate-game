@@ -7,6 +7,13 @@ import { spawnMuzzleFlash, spawnDryFire } from './animateFire';
 import { spawnImpact, spawnSplash, tweenProjectile } from './animateImpact';
 import { animateDestroyed } from './animateDestroyed';
 import { animatePush, animateSpin } from './animateTerrain';
+import {
+  spawnPixelImpact,
+  spawnPixelMuzzle,
+  spawnPixelSplash,
+  usesPixelEffects,
+} from './animateEffects';
+import { startWake } from './animateWake';
 
 type PhaseGroup = GameEvent[];
 
@@ -191,6 +198,7 @@ export class EventAnimator {
 
     switch (event.type) {
       case 'SHIP_MOVED':
+        startWake(this.scene, view, 260);
         return animateMovement(this.scene, view, event);
       case 'SHIP_TURNED':
         return animateTurn(this.scene, view, event);
@@ -209,18 +217,20 @@ export class EventAnimator {
     if (!view) {
       return Promise.resolve();
     }
-    return event.type === 'SHIP_PUSHED'
-      ? animatePush(this.scene, view, event)
-      : animateSpin(this.scene, view, event);
+    if (event.type === 'SHIP_PUSHED') {
+      startWake(this.scene, view, 190);
+      return animatePush(this.scene, view, event);
+    }
+    return animateSpin(this.scene, view, event);
   }
 
   private spawnFire(event: Extract<GameEvent, { type: 'CANNON_FIRED' }>): void {
     const projectile = createProjectileView(this.scene, event.from);
-    spawnMuzzleFlash(
-      this.scene,
-      projectile.x,
-      projectile.y,
-    );
+    if (usesPixelEffects()) {
+      spawnPixelMuzzle(this.scene, event.from, event.direction);
+    } else {
+      spawnMuzzleFlash(this.scene, projectile.x, projectile.y);
+    }
     this.pendingProjectiles.set(projectileKey(event), projectile);
   }
 
@@ -250,10 +260,16 @@ export class EventAnimator {
     }
 
     if (event.type === 'PROJECTILE_HIT') {
-      spawnImpact(this.scene, event.to);
+      if (usesPixelEffects()) {
+        spawnPixelImpact(this.scene, event.to);
+      } else {
+        spawnImpact(this.scene, event.to);
+      }
       if (event.targetKind === 'ship') {
         this.flashShip(event.targetId);
       }
+    } else if (usesPixelEffects()) {
+      spawnPixelSplash(this.scene, event.to);
     } else {
       spawnSplash(this.scene, event.to);
     }

@@ -1,11 +1,14 @@
 import Phaser from 'phaser';
 import { DIRECTIONS } from '@pirate/game-core/domain/Direction';
 import {
+  BALL_SIZE,
+  PIXEL_BALL_KEY,
   PIXEL_WHIRLPOOL_SIZE,
   WHIRLPOOL_FRAMES,
   WIND_SIZE,
   pixelWhirlpoolKey,
   pixelWindKey,
+  ballPixel,
   whirlpoolPixel,
   windPixel,
   type Pixel,
@@ -120,6 +123,7 @@ function paintPixels(
 
 /** The pixel-art wind and whirlpool pictures (used with the Scallywag art). */
 export function generatePixelTerrainTextures(scene: Phaser.Scene): void {
+  paintPixels(scene, PIXEL_BALL_KEY, BALL_SIZE, ballPixel);
   for (const direction of DIRECTIONS) {
     paintPixels(scene, pixelWindKey(direction), WIND_SIZE, (x, y) =>
       windPixel(x, y, direction),

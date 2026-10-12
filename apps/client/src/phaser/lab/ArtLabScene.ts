@@ -1,6 +1,14 @@
 import Phaser from 'phaser';
 import { AssetKeys } from '../assets/AssetKeys';
-import { HULL_STATES, ScallywagKeys, registerShipFrames } from '../assets/scallywag';
+import {
+  FX_FRAMES,
+  HULL_STATES,
+  ScallywagKeys,
+  fxFrameName,
+  registerShipFrames,
+  wakeFrameName,
+} from '../assets/scallywag';
+import { attachWake } from '../animation/animateWake';
 import { useCrispFiltering } from '../assets/crispTextures';
 import { headingToAngle } from '../views/ShipView';
 import { SHIP_LOOKS, createScallywagShip, setScallywagHull } from '../views/scallywagShip';
@@ -67,6 +75,7 @@ export class ArtLabScene extends Phaser.Scene {
         cannons: cannonsPerSideOf(SHIP_TYPES[id]),
       }, 0, 0, { outline: [0x4f86c6, 0xc94f4f, 0x4f9d69][i] });
       ship.setPosition(x, 50);
+      attachWake(this, ship);
     });
 
     // Row 2: every damage step of each class.
@@ -136,6 +145,16 @@ export class ArtLabScene extends Phaser.Scene {
       this.time.delayedCall(1500, () => setScallywagHull(demo, 'damaged'));
       this.time.delayedCall(2500, () => (demo.getData('onDestroyed') as () => void)());
       this.time.delayedCall(4000, () => void animateDestroyed(this, demo));
+    }
+
+    // The effects: smoke puffs and explosions, and the six wake frames.
+    label(8, 330, 'effects: puff, explosion (x2), wake frames (x1)');
+    for (let i = 0; i < FX_FRAMES; i += 1) {
+      this.add.image(20 + i * 36, 352, ScallywagKeys.ships, fxFrameName('puff', i)).setScale(2);
+      this.add.image(20 + i * 36, 388, ScallywagKeys.ships, fxFrameName('explosion', i)).setScale(2);
+    }
+    for (let i = 0; i < 6; i += 1) {
+      this.add.image(190 + i * 36, 372, ScallywagKeys.ships, wakeFrameName(i));
     }
 
     // Terrain sheet at native size.

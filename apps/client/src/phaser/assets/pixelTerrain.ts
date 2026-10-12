@@ -106,6 +106,20 @@ export function windPixel(x: number, y: number, direction: Direction): Pixel {
   return EAST_CHEVRONS.has(`${ex},${ey}`) ? WIND_COLOURS.foam : null;
 }
 
+// --- Cannonball: 4x4 art pixels ------------------------------------------------------
+
+export const BALL_SIZE = 4;
+export const PIXEL_BALL_KEY = 'pixel-ball';
+
+/** A dark iron ball with one highlight pixel. */
+export function ballPixel(x: number, y: number): Pixel {
+  const corner = (x === 0 || x === BALL_SIZE - 1) && (y === 0 || y === BALL_SIZE - 1);
+  if (corner) {
+    return null;
+  }
+  return x === 1 && y === 1 ? '#6b6f86' : '#1b1b2b';
+}
+
 // --- Texture keys ---------------------------------------------------------------------
 
 export const pixelWindKey = (direction: Direction): string => `pixel-wind-${direction}`;

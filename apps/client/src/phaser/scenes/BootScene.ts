@@ -3,7 +3,7 @@ import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { generatePixelTerrainTextures, generateTerrainTextures } from '../assets/terrainTextures';
 import {
   ScallywagKeys,
-  registerShipFrames,
+  buildPaddedShipSheet,
   registerWaterFrames,
 } from '../assets/scallywag';
 import { useCrispFiltering } from '../assets/crispTextures';
@@ -30,7 +30,7 @@ export class BootScene extends Phaser.Scene {
       'assets/kenney/shipsMiscellaneous_sheet.xml',
     );
     if (currentArtStyle() === 'scallywag') {
-      this.load.image(ScallywagKeys.ships, 'assets/scallywag/ships.png');
+      this.load.image(ScallywagKeys.shipsRaw, 'assets/scallywag/ships.png');
       this.load.image(ScallywagKeys.water, 'assets/scallywag/water-islands.png');
     }
   }
@@ -39,7 +39,7 @@ export class BootScene extends Phaser.Scene {
     generateTerrainTextures(this);
     this.makeRockTexture();
     if (currentArtStyle() === 'scallywag') {
-      registerShipFrames(this.textures);
+      buildPaddedShipSheet(this.textures);
       registerWaterFrames(this.textures);
       generatePixelTerrainTextures(this);
       useCrispFiltering(this.textures);
