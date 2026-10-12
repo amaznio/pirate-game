@@ -1,12 +1,11 @@
 /**
- * Which art the match is drawn with. Kenney is the default; the Scallywag art
- * (see docs/ROADMAP.md, phase 3) is chosen with `?art=scallywag` until it
- * replaces it.
+ * Which art the match is drawn with. Scallywag (pixel art, see docs/ROADMAP.md,
+ * phase 3) is the default; the older Kenney art is chosen with `?art=kenney`.
  */
 export type ArtStyle = 'kenney' | 'scallywag';
 
 export function artStyleFromSearch(search: string): ArtStyle {
-  return new URLSearchParams(search).get('art') === 'scallywag' ? 'scallywag' : 'kenney';
+  return new URLSearchParams(search).get('art') === 'kenney' ? 'kenney' : 'scallywag';
 }
 
 /**

@@ -7,16 +7,16 @@ import {
 } from '../artStyle';
 
 describe('artStyleFromSearch', () => {
-  it('keeps the Kenney art unless Scallywag is asked for', () => {
-    expect(artStyleFromSearch('')).toBe('kenney');
-    expect(artStyleFromSearch('?ais=3')).toBe('kenney');
-    expect(artStyleFromSearch('?art=kenney')).toBe('kenney');
-    expect(artStyleFromSearch('?art=something')).toBe('kenney');
+  it('uses the Scallywag art unless Kenney is asked for', () => {
+    expect(artStyleFromSearch('')).toBe('scallywag');
+    expect(artStyleFromSearch('?ais=3')).toBe('scallywag');
+    expect(artStyleFromSearch('?art=scallywag')).toBe('scallywag');
+    expect(artStyleFromSearch('?art=something')).toBe('scallywag');
   });
 
-  it('switches to the Scallywag art with ?art=scallywag', () => {
-    expect(artStyleFromSearch('?art=scallywag')).toBe('scallywag');
-    expect(artStyleFromSearch('?ais=2&art=scallywag&seed=3')).toBe('scallywag');
+  it('switches to the Kenney art with ?art=kenney', () => {
+    expect(artStyleFromSearch('?art=kenney')).toBe('kenney');
+    expect(artStyleFromSearch('?ais=2&art=kenney&seed=3')).toBe('kenney');
   });
 });
 

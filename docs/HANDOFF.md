@@ -72,7 +72,7 @@ their own token economy, multi-cannon broadsides (all cannons fire from the
 ship's own cell, the player picks how many).
 
 ### Roadmap phase 3, the Scallywag art swap (this session; mostly done)
-Behind `?art=scallywag` (Kenney stays the default for now). All pure logic is
+Now the default art (`?art=kenney` brings the old Kenney art back). All pure logic is
 tested; all look-and-feel was judged by eye. Done: ships (padded sheet so no
 neighbouring frame shows), stones for rocks (3x, 2x for the smallest, never
 rotated), pixel wind and whirlpools (animated by swapping frames), cannon
@@ -105,7 +105,7 @@ Final (default): `SeaView` + `RippleField` + `SurfView`.
 - The swell direction is one of **four straight** directions chosen from a hash
   of the board, so all players see the same sea.
 
-Switches: `?art=scallywag`, `?sea=lines` (older line sea), `?bands=on` (soft
+Switches: `?art=kenney` (old art), `?sea=lines` (older line sea), `?bands=on` (soft
 swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 `?lab=art` (art lab page), `?seed=N&map=calm|normal|stormy|open`, `?ais=N`,
 `?ship=` and `?enemy=` (ship classes).
@@ -158,19 +158,17 @@ work.
 
 ## 7. Next steps (in this order)
 
-1. **Finish phase 3:** the sinking explosion, and the plan-preview ghosts in
-   the new style (cannon explosions and splashes are already done). Then the
-   optional extras (yards, flag symbols, grey wreck set).
-2. **Make `scallywag` the default art** (`presentation/artStyle.ts`), after
-   item 2, so the default is not half-styled. Keep `?art=kenney`.
-3. **Water plan, remaining:** a Calm/Normal/Stormy look (palette, ripple
+1. **Phase 3 extras (optional):** yards, flag symbols, grey wreck set. The
+   sinking explosion, plan-preview ghosts and the default switch to
+   `scallywag` are done.
+2. **Water plan, remaining:** a Calm/Normal/Stormy look (palette, ripple
    density and speed, whitecaps; needs the sea style added to `GameView`, an
    additive protocol change), spray when a swell crashes on a rock, a slow tide
    that makes the halo and foam breathe, and a sea section in the art lab.
-4. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
+3. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
    planks as a default-off "Loot" sea option; then match results and carry-over,
    objectives, a client-only solo run (`run-core`), Postgres, monsters.
-5. Known loose ends: the menu's ship choice does not carry into an online lobby
+4. Known loose ends: the menu's ship choice does not carry into an online lobby
    (it starts on Sloop); the token tray's held/cap figure was not seen; the
    canvas is not sized to the device pixel ratio (blur on sharp screens); the
    smallest zoom step on a small window may not show the whole board; Hard AI
