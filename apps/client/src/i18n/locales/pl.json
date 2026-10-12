@@ -1,0 +1,273 @@
+{
+  "app": {
+    "title": "Battle Navigation",
+    "tagline": "Zaplanuj cztery ruchy. Przechytrz flotę."
+  },
+  "language": {
+    "title": "Język"
+  },
+  "stepper": {
+    "fewer": "Mniej: {{label}}",
+    "more": "Więcej: {{label}}"
+  },
+  "common": {
+    "you": "Ty",
+    "biggerShipStronger": "Większy statek jest silniejszy, więc dobierz podobne, by walka była wyrównana.",
+    "teamFfa": "Każdy na własną rękę",
+    "teamTwoTeams": "Dwie drużyny"
+  },
+  "menu": {
+    "yourName": "Twoje imię",
+    "namePlaceholder": "Kapitanie",
+    "playComputer": "Gra z komputerem",
+    "opponents": "Przeciwnicy",
+    "skill": "Poziom",
+    "seas": "Morza",
+    "yourShip": "Twój statek",
+    "theirShips": "Ich statki",
+    "setSail": "Wyrusz",
+    "playFriends": "Gra ze znajomymi",
+    "newRoom": "Nowy pokój",
+    "connecting": "Łączenie…",
+    "createRoom": "Utwórz pokój",
+    "roomCodeOrKey": "Kod lub klucz pokoju",
+    "join": "Dołącz",
+    "enterNameOnline": "Podaj imię, aby grać online.",
+    "onlineNotSetUp": "Gra online nie jest skonfigurowana dla tej strony.",
+    "returning": "Powrót do twojego meczu…"
+  },
+  "difficulty": {
+    "easy": {
+      "label": "Łatwy",
+      "blurb": "Wolno reaguje i łatwo się rozprasza. Dobry na pierwszy rejs."
+    },
+    "normal": {
+      "label": "Normalny",
+      "blurb": "Planuje z wyprzedzeniem i cię ściga, z drobnymi wpadkami."
+    },
+    "hard": {
+      "label": "Trudny",
+      "blurb": "Gra swój najlepszy plan i trzyma się poza twoją linią ognia."
+    }
+  },
+  "sea": {
+    "calm": {
+      "label": "Spokojne",
+      "blurb": "Kilka skał i prawie brak wiatru. Głównie otwarte morze."
+    },
+    "normal": {
+      "label": "Normalne",
+      "blurb": "Rafy, kilka pasów wiatru i gdzieniegdzie wir."
+    },
+    "stormy": {
+      "label": "Sztormowe",
+      "blurb": "Pełne raf, wichrów i wirów. Każda plansza jest nowa."
+    }
+  },
+  "ship": {
+    "hull": "Kadłub {{hp}}.",
+    "sloop": {
+      "name": "Slup",
+      "description": "Lekki i tani w utrzymaniu. Pływa według klasycznych zasad."
+    },
+    "brigantine": {
+      "name": "Brygantyna",
+      "description": "Solidniejszy wszechstronny okręt z większym zapasem żetonów."
+    },
+    "galleon": {
+      "name": "Galeon",
+      "description": "Ciężki kadłub z dużym zapasem, ale skręca rzadziej."
+    }
+  },
+  "roomVisibility": {
+    "private": {
+      "label": "Prywatny",
+      "blurb": "Nie na liście. Dołączyć mogą tylko osoby ze znajomością klucza."
+    },
+    "public": {
+      "label": "Publiczny",
+      "blurb": "Widoczny dla wszystkich, którzy mogą dołączyć jednym kliknięciem."
+    },
+    "codeLabel": "Kod pokoju",
+    "keyLabel": "Klucz pokoju"
+  },
+  "lobby": {
+    "publicDescription": "Ten pokój jest widoczny dla wszystkich. Znajomi mogą też wpisać ten kod lub otworzyć link.",
+    "privateDescription": "Nie na liście. Dołączyć mogą tylko osoby z tym kluczem (lub linkiem).",
+    "players_one": "Gracze ({{count}})",
+    "players_few": "Gracze ({{count}})",
+    "players_many": "Gracze ({{count}})",
+    "players_other": "Gracze ({{count}})",
+    "you": "(ty)",
+    "host": "Gospodarz",
+    "away": "nieobecny",
+    "here": "Obecny",
+    "awayTitle": "Nieobecny",
+    "yourShip": "Twój statek",
+    "matchOptions": "Opcje meczu",
+    "matchOptionsHost": "Opcje meczu (ustawiane przez gospodarza)",
+    "whoCanJoin": "Kto może dołączyć",
+    "aiOpponents": "Przeciwnicy AI",
+    "aiSkill": "Poziom AI",
+    "aiShips": "Statki AI",
+    "seas": "Morza",
+    "teams": "Drużyny",
+    "planningTime": "Czas planowania",
+    "timerOff": "Brak",
+    "timerSeconds": "{{seconds}} s",
+    "copied": "Skopiowano!",
+    "copyLink": "Kopiuj link",
+    "starting": "Zaczynam…",
+    "startMatch_one": "Start meczu ({{count}} statek)",
+    "startMatch_few": "Start meczu ({{count}} statki)",
+    "startMatch_many": "Start meczu ({{count}} statków)",
+    "startMatch_other": "Start meczu ({{count}} statków)",
+    "addOpponent": "Dodaj przeciwnika AI albo poczekaj, aż dołączy znajomy.",
+    "waitingForHost": "Czekam, aż gospodarz rozpocznie…",
+    "leaveRoom": "Opuść pokój",
+    "connectionLost": "Utracono połączenie — próbuję połączyć ponownie…"
+  },
+  "publicRooms": {
+    "title": "Publiczne pokoje",
+    "loading": "Szukam pokoi…",
+    "empty": "Teraz brak publicznych pokoi. Utwórz jeden i ustaw jako publiczny!",
+    "loadFailed": "Nie udało się wczytać listy pokoi.",
+    "noAi": "Bez AI",
+    "aiCount_one": "{{count}} AI ({{level}})",
+    "aiCount_few": "{{count}} AI ({{level}})",
+    "aiCount_many": "{{count}} AI ({{level}})",
+    "aiCount_other": "{{count}} AI ({{level}})",
+    "noTimer": "Bez zegara",
+    "turnSeconds": "Tury po {{seconds}} s",
+    "join": "Dołącz",
+    "joinNamed": "Dołącz do pokoju {{name}}",
+    "refresh": "Odśwież"
+  },
+  "fleet": {
+    "aiSailing": "Ten statek prowadzi AI",
+    "aiSailingLevel": "Ten statek prowadzi AI ({{level}})",
+    "aiTag": "AI",
+    "sunk": "Zatopiony"
+  },
+  "shipStatus": {
+    "hull": "Kadłub {{hp}} z {{maxHp}}"
+  },
+  "token": {
+    "turnLeft": "Lewo",
+    "forward": "Naprzód",
+    "turnRight": "Prawo"
+  },
+  "cannon": {
+    "fireLeft": "Ognia na lewą burtę",
+    "fireRight": "Ognia na prawą burtę"
+  },
+  "status": {
+    "planning": "Planowanie",
+    "resolving": "Rozstrzyganie",
+    "gameOver": "Koniec bitwy"
+  },
+  "hud": {
+    "turn": "Tura {{turn}}",
+    "showPreview": "Pokaż podgląd planu na planszy",
+    "sunkWatching": "Twój statek zatopiony — oglądasz bitwę",
+    "locked": "Zablokowane",
+    "lockIn": "Zablokuj",
+    "pass": "Pas",
+    "passTurn": "Pas w turze",
+    "lockedIn": "Zablokowano",
+    "waitingFor_one": "Zablokowano — czekam na {{count}} innego gracza",
+    "waitingFor_few": "Zablokowano — czekam na {{count}} innych graczy",
+    "waitingFor_many": "Zablokowano — czekam na {{count}} innych graczy",
+    "waitingFor_other": "Zablokowano — czekam na {{count}} innych graczy",
+    "plan": "Plan",
+    "battlePlan": "Plan bitwy",
+    "hide": "Ukryj",
+    "shortcuts": {
+      "moves": "Lewo / Naprzód / Prawo",
+      "fire": "Ognia w lewo / prawo",
+      "remove": "Usuń ostatni ruch",
+      "clear": "Wyczyść plan",
+      "lockIn": "Zablokuj plan",
+      "preview": "Podgląd planu"
+    }
+  },
+  "plan": {
+    "nextToken": "Żeton na następną turę",
+    "auto": "AUTO",
+    "on": "WŁ.",
+    "off": "WYŁ.",
+    "moveTokens": "Żetony ruchu",
+    "plan": "Plan",
+    "clear": "Wyczyść",
+    "removeFrom": "Usuń {{token}} z fazy {{phase}}",
+    "chooseFor": "Wybierz żeton dla fazy {{phase}}",
+    "tapToken": "Dotknij żetonu",
+    "empty": "Puste",
+    "tapToRemove": "Dotknij, aby usunąć",
+    "cannonGroup": "Działa {{side}}, faza {{phase}}",
+    "cannonFire": "Ognia z działa {{side}} {{cannon}} w fazie {{phase}}",
+    "cannonballs": "kule armatnie",
+    "holdFull": "Twój magazyn jest pełny przy tej liczbie żetonów; nowe przepadają",
+    "planned": "{{queued}}/{{total}} zaplanowane"
+  },
+  "legend": {
+    "windTitle": "Wiatr",
+    "windText": "spycha statek o jedno pole w każdej fazie, w której kończy on na polu wiatru.",
+    "whirlpoolTitle": "Wir",
+    "whirlpoolText": "przenosi statek po jego czterech polach i obraca go o ćwierć w każdej fazie, w której kończy on w wirze."
+  },
+  "preview": {
+    "toggle": "Przełącz podgląd planu",
+    "hide": "Ukryj podgląd planu (P)",
+    "show": "Pokaż podgląd planu (P)"
+  },
+  "board": {
+    "recenter": "Wyśrodkuj na moim statku",
+    "reconnecting": "Utracono połączenie — łączę ponownie…",
+    "resolving": "Rozstrzygam turę…"
+  },
+  "result": {
+    "victoryTitle": "Zwycięstwo!",
+    "drawTitle": "Wzajemne zniszczenie",
+    "sunkTitle": "Twój statek zatonął",
+    "victoryBody": "Wrogą flotę zamieniono w szczątki.",
+    "drawBody": "Wszystkie statki poszły na dno razem.",
+    "sunkBodyAlt": "Więcej szczęścia w następnym rejsie, kapitanie.",
+    "sunkBody": "Bitwa toczy się dalej bez ciebie. Oglądaj dalej albo wróć do menu.",
+    "keepWatching": "Oglądaj dalej",
+    "leave": "Wyjdź",
+    "sailAgain": "Wyrusz ponownie",
+    "mainMenu": "Menu główne",
+    "backToMenu": "Powrót do menu"
+  },
+  "notice": {
+    "aiTookOver": "Byłeś nieobecny, więc AI prowadziło twój statek. Znów masz ster.",
+    "notEnoughTokens": "Ten plan zużywa żetony ruchu, których nie masz.",
+    "notEnoughAmmo": "Ten plan wystrzeliwuje więcej kul armatnich, niż masz.",
+    "notPlanning": "Za późno: ta tura już się rozgrywa.",
+    "alreadyLockedIn": "Plan jest już zablokowany.",
+    "malformedPlan": "Nie zrozumiano tego planu.",
+    "unknown": "Ten plan został odrzucony."
+  },
+  "error": {
+    "badRequest": "Coś poszło nie tak z tym żądaniem.",
+    "roomNotFound": "Żaden pokój nie ma tego kodu ani klucza.",
+    "roomFull": "Ten pokój jest pełny.",
+    "roomClosed": "Pokój został zamknięty.",
+    "alreadyStarted": "Ten mecz już się rozpoczął.",
+    "notHost": "Tylko gospodarz może to zrobić.",
+    "notInRoom": "Nie ma cię w tym pokoju.",
+    "tooManyAttempts": "Za dużo błędnych kodów. Poczekaj minutę i spróbuj ponownie.",
+    "badCredentials": "Nie udało się przywrócić twojego miejsca.",
+    "tooFewShips": "Mecz potrzebuje co najmniej dwóch statków. Dodaj AI lub poczekaj na znajomego.",
+    "tooManyShips": "To więcej statków, niż pozwala mecz.",
+    "serverBusy": "Serwer jest pełny. Spróbuj za chwilę.",
+    "couldNotReach": "Nie udało się połączyć z serwerem gry.",
+    "noAnswer": "Serwer gry nie odpowiedział.",
+    "matchGone": "Twój mecz nie jest już dostępny.",
+    "otherWindow": "Otwarto w innym oknie.",
+    "serverShuttingDown": "Serwer się wyłącza.",
+    "createFailed": "Nie udało się utworzyć pokoju.",
+    "unknown": "Coś poszło nie tak."
+  }
+}

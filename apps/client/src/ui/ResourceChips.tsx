@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
+import { ACTIONS_PER_TURN } from '@pirate/game-core/domain/Action';
 import { useGameUIStore } from '../store/useGameUIStore';
-import { TOKEN_META, TOKEN_ORDER } from './tokenMeta';
+import { TOKEN_META, TOKEN_ORDER, tokenLabel } from './tokenMeta';
 import { CannonballChip } from './CannonballChip';
 
 /**
@@ -8,6 +10,7 @@ import { CannonballChip } from './CannonballChip';
  * visible.
  */
 export function ResourceChips() {
+  const { t } = useTranslation();
   const tokens = useGameUIStore((state) => state.tokens);
   const tokenCap = useGameUIStore((state) => state.tokenCap);
   const held = tokens.FORWARD + tokens.TURN_LEFT + tokens.TURN_RIGHT;
@@ -25,14 +28,14 @@ export function ResourceChips() {
             className={`${meta.bgClass} flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white`}
           >
             <span aria-hidden>{meta.arrow}</span>
-            {meta.label}
+            {tokenLabel(t, action)}
             <span className="tabular-nums opacity-90">×{tokens[action]}</span>
           </span>
         );
       })}
       {tokenCap !== null && (
         <span
-          title="Your hold is full at this many tokens; new ones are lost"
+          title={t('plan.holdFull')}
           className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
             held >= tokenCap ? 'bg-amber-600 text-white' : 'bg-black/25 text-parchment/80'
           }`}
@@ -43,7 +46,7 @@ export function ResourceChips() {
       <CannonballChip />
       {queuedMoves > 0 && (
         <span className="text-xs font-semibold text-parchment/70">
-          {queuedMoves}/4 planned
+          {t('plan.planned', { queued: queuedMoves, total: ACTIONS_PER_TURN })}
         </span>
       )}
     </div>

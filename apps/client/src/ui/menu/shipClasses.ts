@@ -1,21 +1,24 @@
-import { SHIP_TYPES } from '@pirate/game-core/config/shipTypes';
+import type { TFunction } from 'i18next';
+import { SHIP_TYPES, getShipType } from '@pirate/game-core/config/shipTypes';
+import { tDynamic } from '../../i18n/translate';
 
-/** The ship classes on offer in the menus, smallest first. */
-export const SHIP_CHOICES: ReadonlyArray<{
-  readonly value: string;
-  readonly label: string;
-  readonly blurb: string;
-}> = Object.values(SHIP_TYPES).map((type) => ({
-  value: type.id,
-  label: type.name,
-  blurb: `${type.description} Hull ${type.maxHp}.`,
-}));
+/** The ship classes on offer in the menus, smallest first (ids). */
+export const SHIP_CHOICES: readonly string[] = Object.values(SHIP_TYPES).map((type) => type.id);
 
-/** A ship class's name, or the id itself if it is not one we know. */
-export function shipLabel(shipTypeId: string): string {
-  return SHIP_CHOICES.find((choice) => choice.value === shipTypeId)?.label ?? shipTypeId;
+/** A ship class's name, from the catalog (falling back to the config name). */
+export function shipLabel(t: TFunction, shipTypeId: string): string {
+  const type = SHIP_TYPES[shipTypeId];
+  return tDynamic(t, `ship.${shipTypeId}.name`, { defaultValue: type?.name ?? shipTypeId });
 }
 
-export function shipBlurb(shipTypeId: string): string {
-  return SHIP_CHOICES.find((choice) => choice.value === shipTypeId)?.blurb ?? '';
+/** A ship class's one-line description plus its hull, for the menus. */
+export function shipBlurb(t: TFunction, shipTypeId: string): string {
+  if (!SHIP_TYPES[shipTypeId]) {
+    return '';
+  }
+  const type = getShipType(shipTypeId);
+  const description = tDynamic(t, `ship.${shipTypeId}.description`, {
+    defaultValue: type.description,
+  });
+  return `${description} ${t('ship.hull', { hp: type.maxHp })}`;
 }

@@ -1,32 +1,20 @@
+import type { TFunction } from 'i18next';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 
-/** How each AI level is named and described in the menus. */
-export const AI_LEVELS: ReadonlyArray<{
-  readonly value: AiDifficulty;
-  readonly label: string;
-  readonly blurb: string;
-}> = [
-  {
-    value: 'easy',
-    label: 'Easy',
-    blurb: 'Slow to react and easily distracted. A good first voyage.',
-  },
-  {
-    value: 'normal',
-    label: 'Normal',
-    blurb: 'Plans ahead and hunts you down, with the odd slip.',
-  },
-  {
-    value: 'hard',
-    label: 'Hard',
-    blurb: 'Plays its best plan and keeps out of your line of fire.',
-  },
-];
+/** The AI levels, easiest first. Names and blurbs live in the i18n catalogs. */
+export const AI_LEVELS: readonly AiDifficulty[] = ['easy', 'normal', 'hard'];
 
-export function aiLevelLabel(level: AiDifficulty): string {
-  return AI_LEVELS.find((entry) => entry.value === level)?.label ?? level;
+/** Typed key lookup, so a wrong key is a compile error. */
+const KEYS = {
+  easy: { label: 'difficulty.easy.label', blurb: 'difficulty.easy.blurb' },
+  normal: { label: 'difficulty.normal.label', blurb: 'difficulty.normal.blurb' },
+  hard: { label: 'difficulty.hard.label', blurb: 'difficulty.hard.blurb' },
+} as const satisfies Record<AiDifficulty, { label: string; blurb: string }>;
+
+export function aiLevelLabel(t: TFunction, level: AiDifficulty): string {
+  return t(KEYS[level].label);
 }
 
-export function aiLevelBlurb(level: AiDifficulty): string {
-  return AI_LEVELS.find((entry) => entry.value === level)?.blurb ?? '';
+export function aiLevelBlurb(t: TFunction, level: AiDifficulty): string {
+  return t(KEYS[level].blurb);
 }

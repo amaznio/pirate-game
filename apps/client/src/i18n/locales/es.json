@@ -1,0 +1,265 @@
+{
+  "app": {
+    "title": "Battle Navigation",
+    "tagline": "Planea cuatro movimientos. Supera a la flota."
+  },
+  "language": {
+    "title": "Idioma"
+  },
+  "stepper": {
+    "fewer": "Menos {{label}}",
+    "more": "Más {{label}}"
+  },
+  "common": {
+    "you": "Tú",
+    "biggerShipStronger": "Un barco más grande es más fuerte, así que iguala los tamaños para una lucha justa.",
+    "teamFfa": "Todos contra todos",
+    "teamTwoTeams": "Dos equipos"
+  },
+  "menu": {
+    "yourName": "Tu nombre",
+    "namePlaceholder": "Capitán",
+    "playComputer": "Jugar contra la computadora",
+    "opponents": "Rivales",
+    "skill": "Habilidad",
+    "seas": "Mares",
+    "yourShip": "Tu barco",
+    "theirShips": "Sus barcos",
+    "setSail": "Zarpar",
+    "playFriends": "Jugar con amigos",
+    "newRoom": "Sala nueva",
+    "connecting": "Conectando…",
+    "createRoom": "Crear una sala",
+    "roomCodeOrKey": "Código o clave de sala",
+    "join": "Unirse",
+    "enterNameOnline": "Escribe un nombre para jugar en línea.",
+    "onlineNotSetUp": "El juego en línea no está disponible en este sitio.",
+    "returning": "Volviendo a tu partida…"
+  },
+  "difficulty": {
+    "easy": {
+      "label": "Fácil",
+      "blurb": "Reacciona despacio y se distrae con facilidad. Un buen primer viaje."
+    },
+    "normal": {
+      "label": "Normal",
+      "blurb": "Planea con antelación y te persigue, con algún que otro fallo."
+    },
+    "hard": {
+      "label": "Difícil",
+      "blurb": "Juega su mejor plan y se mantiene fuera de tu línea de fuego."
+    }
+  },
+  "sea": {
+    "calm": {
+      "label": "Calmado",
+      "blurb": "Pocas rocas y casi nada de viento. Sobre todo mar abierto."
+    },
+    "normal": {
+      "label": "Normal",
+      "blurb": "Arrecifes, algunas franjas de viento y algún remolino."
+    },
+    "stormy": {
+      "label": "Tormentoso",
+      "blurb": "Lleno de arrecifes, vendavales y remolinos. Cada tablero es nuevo."
+    }
+  },
+  "ship": {
+    "hull": "Casco {{hp}}.",
+    "sloop": {
+      "name": "Balandra",
+      "description": "Ligera y barata de mantener. Navega con las reglas clásicas."
+    },
+    "brigantine": {
+      "name": "Bergantín",
+      "description": "Un todoterreno más robusto con una reserva de fichas mayor."
+    },
+    "galleon": {
+      "name": "Galeón",
+      "description": "Un casco pesado con una gran reserva, pero gira menos a menudo."
+    }
+  },
+  "roomVisibility": {
+    "private": {
+      "label": "Privada",
+      "blurb": "No aparece en la lista. Solo pueden entrar quienes tengan la clave."
+    },
+    "public": {
+      "label": "Pública",
+      "blurb": "Aparece para todos, que pueden entrar con un clic."
+    },
+    "codeLabel": "Código de sala",
+    "keyLabel": "Clave de sala"
+  },
+  "lobby": {
+    "publicDescription": "Esta sala aparece para todos. Tus amigos también pueden introducir este código o abrir el enlace.",
+    "privateDescription": "No aparece en la lista. Solo pueden entrar quienes tengan esta clave (o el enlace).",
+    "players_one": "Jugadores ({{count}})",
+    "players_other": "Jugadores ({{count}})",
+    "you": "(tú)",
+    "host": "Anfitrión",
+    "away": "ausente",
+    "here": "Aquí",
+    "awayTitle": "Ausente",
+    "yourShip": "Tu barco",
+    "matchOptions": "Opciones de la partida",
+    "matchOptionsHost": "Opciones de la partida (las fija el anfitrión)",
+    "whoCanJoin": "Quién puede entrar",
+    "aiOpponents": "Rivales IA",
+    "aiSkill": "Habilidad de la IA",
+    "aiShips": "Barcos IA",
+    "seas": "Mares",
+    "teams": "Equipos",
+    "planningTime": "Tiempo de planificación",
+    "timerOff": "No",
+    "timerSeconds": "{{seconds}}s",
+    "copied": "¡Copiado!",
+    "copyLink": "Copiar enlace",
+    "starting": "Empezando…",
+    "startMatch_one": "Empezar partida ({{count}} barco)",
+    "startMatch_other": "Empezar partida ({{count}} barcos)",
+    "addOpponent": "Añade un rival IA o espera a que se una un amigo.",
+    "waitingForHost": "Esperando a que el anfitrión empiece…",
+    "leaveRoom": "Salir de la sala",
+    "connectionLost": "Conexión perdida — intentando reconectar…"
+  },
+  "publicRooms": {
+    "title": "Salas públicas",
+    "loading": "Buscando salas…",
+    "empty": "Ahora mismo no hay salas públicas. ¡Crea una y hazla pública!",
+    "loadFailed": "No se pudo cargar la lista de salas.",
+    "noAi": "Sin IA",
+    "aiCount_one": "{{count}} IA ({{level}})",
+    "aiCount_other": "{{count}} IA ({{level}})",
+    "noTimer": "Sin temporizador",
+    "turnSeconds": "turnos de {{seconds}}s",
+    "join": "Unirse",
+    "joinNamed": "Unirse a la sala de {{name}}",
+    "refresh": "Actualizar"
+  },
+  "fleet": {
+    "aiSailing": "Una IA pilota este barco",
+    "aiSailingLevel": "Una IA pilota este barco ({{level}})",
+    "aiTag": "IA",
+    "sunk": "Hundido"
+  },
+  "shipStatus": {
+    "hull": "Casco {{hp}} de {{maxHp}}"
+  },
+  "token": {
+    "turnLeft": "Izquierda",
+    "forward": "Avante",
+    "turnRight": "Derecha"
+  },
+  "cannon": {
+    "fireLeft": "Disparar a babor",
+    "fireRight": "Disparar a estribor"
+  },
+  "status": {
+    "planning": "Planificando",
+    "resolving": "Resolviendo",
+    "gameOver": "Fin de la batalla"
+  },
+  "hud": {
+    "turn": "Turno {{turn}}",
+    "showPreview": "Mostrar la vista previa del plan en el tablero",
+    "sunkWatching": "Tu barco se hundió — observando la batalla",
+    "locked": "Bloqueado",
+    "lockIn": "Bloquear",
+    "pass": "Pasar",
+    "passTurn": "Pasar turno",
+    "lockedIn": "Bloqueado",
+    "waitingFor_one": "Bloqueado — esperando a {{count}} jugador más",
+    "waitingFor_other": "Bloqueado — esperando a {{count}} jugadores más",
+    "plan": "Planear",
+    "battlePlan": "Plan de batalla",
+    "hide": "Ocultar",
+    "shortcuts": {
+      "moves": "Izquierda / Avante / Derecha",
+      "fire": "Disparar a babor / estribor",
+      "remove": "Quitar el último movimiento",
+      "clear": "Borrar el plan",
+      "lockIn": "Bloquear",
+      "preview": "Vista previa del plan"
+    }
+  },
+  "plan": {
+    "nextToken": "Ficha del próximo turno",
+    "auto": "AUTO",
+    "on": "SÍ",
+    "off": "NO",
+    "moveTokens": "Fichas de movimiento",
+    "plan": "Plan",
+    "clear": "Borrar",
+    "removeFrom": "Quitar {{token}} de la fase {{phase}}",
+    "chooseFor": "Elegir una ficha para la fase {{phase}}",
+    "tapToken": "Toca una ficha",
+    "empty": "Vacío",
+    "tapToRemove": "Toca para quitar",
+    "cannonGroup": "Cañones de {{side}}, fase {{phase}}",
+    "cannonFire": "Disparar el cañón {{cannon}} de {{side}} en la fase {{phase}}",
+    "cannonballs": "balas de cañón",
+    "holdFull": "Tu bodega se llena con esta cantidad de fichas; las nuevas se pierden",
+    "planned": "{{queued}}/{{total}} planeados"
+  },
+  "legend": {
+    "windTitle": "Viento",
+    "windText": "empuja un barco una casilla por cada fase en la que termina sobre una casilla de viento.",
+    "whirlpoolTitle": "Remolino",
+    "whirlpoolText": "arrastra un barco alrededor de sus cuatro casillas y lo gira un cuarto en cada fase en la que termina en una."
+  },
+  "preview": {
+    "toggle": "Alternar la vista previa del plan",
+    "hide": "Ocultar la vista previa del plan (P)",
+    "show": "Mostrar la vista previa del plan (P)"
+  },
+  "board": {
+    "recenter": "Centrar en mi barco",
+    "reconnecting": "Conexión perdida — reconectando…",
+    "resolving": "Resolviendo el turno…"
+  },
+  "result": {
+    "victoryTitle": "¡Victoria!",
+    "drawTitle": "Destrucción mutua",
+    "sunkTitle": "Tu barco se ha hundido",
+    "victoryBody": "La flota enemiga son restos.",
+    "drawBody": "Todos los barcos se hundieron a la vez.",
+    "sunkBodyAlt": "Más suerte en el próximo viaje, capitán.",
+    "sunkBody": "La batalla continúa sin ti. Sigue mirando o vuelve al menú.",
+    "keepWatching": "Seguir mirando",
+    "leave": "Salir",
+    "sailAgain": "Zarpar de nuevo",
+    "mainMenu": "Menú principal",
+    "backToMenu": "Volver al menú"
+  },
+  "notice": {
+    "aiTookOver": "Estabas ausente, así que una IA navegó por ti. Vuelves al mando.",
+    "notEnoughTokens": "Ese plan usa fichas de movimiento que no tienes.",
+    "notEnoughAmmo": "Ese plan dispara más balas de cañón de las que tienes.",
+    "notPlanning": "Demasiado tarde: ese turno ya se está jugando.",
+    "alreadyLockedIn": "Ya has bloqueado tu plan.",
+    "malformedPlan": "No se entendió ese plan.",
+    "unknown": "Ese plan fue rechazado."
+  },
+  "error": {
+    "badRequest": "Algo salió mal con esa solicitud.",
+    "roomNotFound": "Ninguna sala tiene ese código o clave.",
+    "roomFull": "Esa sala está llena.",
+    "roomClosed": "La sala se cerró.",
+    "alreadyStarted": "Esa partida ya ha empezado.",
+    "notHost": "Solo el anfitrión puede hacer eso.",
+    "notInRoom": "No estás en esa sala.",
+    "tooManyAttempts": "Demasiados códigos incorrectos. Espera un minuto e inténtalo de nuevo.",
+    "badCredentials": "No se pudo restaurar tu asiento.",
+    "tooFewShips": "Una partida necesita al menos dos barcos. Añade una IA o espera a un amigo.",
+    "tooManyShips": "Esos son más barcos de los que permite una partida.",
+    "serverBusy": "El servidor está lleno. Inténtalo de nuevo en un momento.",
+    "couldNotReach": "No se pudo conectar con el servidor del juego.",
+    "noAnswer": "El servidor del juego no respondió.",
+    "matchGone": "Tu partida ya no está disponible.",
+    "otherWindow": "Abierto en otra ventana.",
+    "serverShuttingDown": "El servidor se está apagando.",
+    "createFailed": "No se pudo crear la sala.",
+    "unknown": "Algo salió mal."
+  }
+}

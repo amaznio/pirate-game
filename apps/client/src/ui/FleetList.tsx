@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { HullBar } from './ShipStatus';
 import { aiLevelLabel } from './menu/aiLevels';
@@ -12,6 +13,7 @@ interface FleetListProps {
  * team colour, name and hull. Sunk ships stay listed but dimmed.
  */
 export function FleetList({ compact = false }: FleetListProps) {
+  const { t } = useTranslation();
   const hull = useGameUIStore((state) => state.hull);
   const maxHull = useGameUIStore((state) => state.maxHull);
   const selfColor = useGameUIStore((state) => state.selfColor);
@@ -20,7 +22,7 @@ export function FleetList({ compact = false }: FleetListProps) {
   const rows = [
     {
       id: 'self',
-      name: 'You',
+      name: t('common.you'),
       color: selfColor,
       hull,
       maxHull,
@@ -68,16 +70,16 @@ export function FleetList({ compact = false }: FleetListProps) {
               className="rounded bg-parchment/15 px-1 text-[9px] font-bold uppercase tracking-wide text-parchment/70"
               title={
                 row.difficulty
-                  ? `An AI is sailing this ship (${aiLevelLabel(row.difficulty)})`
-                  : 'An AI is sailing this ship'
+                  ? t('fleet.aiSailingLevel', { level: aiLevelLabel(t, row.difficulty) })
+                  : t('fleet.aiSailing')
               }
             >
-              AI
+              {t('fleet.aiTag')}
             </span>
           )}
           <HullBar hp={row.hull} maxHp={row.maxHull} />
           <span className="ml-auto text-xs font-semibold tabular-nums text-parchment">
-            {row.alive ? `${row.hull}/${row.maxHull}` : 'Sunk'}
+            {row.alive ? `${row.hull}/${row.maxHull}` : t('fleet.sunk')}
           </span>
         </li>
       ))}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameClient } from '@pirate/game-core/client/GameClient';
 import { createPhaserGame, type PhaserHandle } from '../phaser/PhaserGame';
 import { bindGameClient, useGameUIStore } from '../store/useGameUIStore';
@@ -21,15 +22,15 @@ interface GameScreenProps {
   notice?: string | null;
 }
 
-/** Friendly wording for the short messages shown over the board. */
-const NOTICES: Record<string, string> = {
-  ai_took_over: 'You were away, so an AI sailed for you. You are back in command.',
-  not_enough_tokens: 'That plan uses movement tokens you do not have.',
-  not_enough_ammo: 'That plan fires more cannonballs than you have.',
-  not_planning: 'Too late: that turn is already being played.',
-  already_locked_in: 'You have already locked in.',
-  malformed_plan: 'That plan was not understood.',
-};
+/** Catalog keys for the short messages shown over the board. */
+const NOTICE_KEYS = {
+  ai_took_over: 'notice.aiTookOver',
+  not_enough_tokens: 'notice.notEnoughTokens',
+  not_enough_ammo: 'notice.notEnoughAmmo',
+  not_planning: 'notice.notPlanning',
+  already_locked_in: 'notice.alreadyLockedIn',
+  malformed_plan: 'notice.malformedPlan',
+} as const;
 
 export function GameScreen({
   client,
@@ -38,6 +39,7 @@ export function GameScreen({
   disconnected = false,
   notice = null,
 }: GameScreenProps) {
+  const { t } = useTranslation();
   // Point the UI at this match before anything below reads from the store.
   useState(() => {
     bindGameClient(client);
@@ -88,6 +90,11 @@ export function GameScreen({
     handleRef.current?.setInsets({ top: insetTop, bottom: insetBottom });
   }, [insetTop, insetBottom]);
 
+  const noticeKey =
+    notice && notice in NOTICE_KEYS
+      ? NOTICE_KEYS[notice as keyof typeof NOTICE_KEYS]
+      : 'notice.unknown';
+
   return (
     <div className="flex h-full w-full overflow-hidden bg-ocean-deep">
       <div className="relative h-full min-w-0 flex-1 overflow-hidden">
@@ -104,8 +111,8 @@ export function GameScreen({
             type="button"
             onClick={() => handleRef.current?.recenterOnPlayer()}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-ocean/80 text-lg text-parchment shadow-lg backdrop-blur transition hover:bg-ocean active:scale-95"
-            aria-label="Recenter on my ship"
-            title="Recenter on my ship"
+            aria-label={t('board.recenter')}
+            title={t('board.recenter')}
           >
             ◎
           </button>
@@ -123,7 +130,7 @@ export function GameScreen({
                 role="status"
                 className="rounded-full bg-hull/90 px-3 py-1 text-xs font-bold text-white"
               >
-                Connection lost — reconnecting…
+                {t('board.reconnecting')}
               </span>
             )}
             {notice && (
@@ -131,12 +138,12 @@ export function GameScreen({
                 role="status"
                 className="rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-parchment"
               >
-                {NOTICES[notice] ?? 'That plan was refused.'}
+                {t(noticeKey)}
               </span>
             )}
             {busy && !disconnected && (
               <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-parchment">
-                Resolving turn…
+                {t('board.resolving')}
               </span>
             )}
           </div>
@@ -150,23 +157,21 @@ export function GameScreen({
       {spectating && status === 'planning' && !sunkDismissed && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-parchment/25 bg-ocean p-6 text-center shadow-2xl">
-            <h2 className="text-2xl font-black text-parchment">Your ship has sunk</h2>
-            <p className="mt-2 text-sm text-parchment/70">
-              The battle goes on without you. Keep watching, or head back to the menu.
-            </p>
+            <h2 className="text-2xl font-black text-parchment">{t('result.sunkTitle')}</h2>
+            <p className="mt-2 text-sm text-parchment/70">{t('result.sunkBody')}</p>
             <button
               type="button"
               onClick={() => setSunkDismissed(true)}
               className="mt-5 w-full rounded-xl bg-parchment px-4 py-3 text-base font-black uppercase tracking-wide text-ink shadow-lg active:scale-95"
             >
-              Keep watching
+              {t('result.keepWatching')}
             </button>
             <button
               type="button"
               onClick={onExit}
               className="mt-2 w-full rounded-xl bg-parchment/15 px-4 py-3 text-base font-black uppercase tracking-wide text-parchment shadow-lg active:scale-95"
             >
-              Leave
+              {t('result.leave')}
             </button>
           </div>
         </div>
@@ -177,17 +182,17 @@ export function GameScreen({
           <div className="w-full max-w-sm rounded-2xl border border-parchment/25 bg-ocean p-6 text-center shadow-2xl">
             <h2 className="text-2xl font-black text-parchment">
               {result === 'win'
-                ? 'Victory!'
+                ? t('result.victoryTitle')
                 : result === 'draw'
-                  ? 'Mutual destruction'
-                  : 'Your ship has sunk'}
+                  ? t('result.drawTitle')
+                  : t('result.sunkTitle')}
             </h2>
             <p className="mt-2 text-sm text-parchment/70">
               {result === 'win'
-                ? 'The enemy fleet is wreckage.'
+                ? t('result.victoryBody')
                 : result === 'draw'
-                  ? 'Every ship went down together.'
-                  : 'Better luck next voyage, captain.'}
+                  ? t('result.drawBody')
+                  : t('result.sunkBodyAlt')}
             </p>
             {canRestart && (
               <button
@@ -195,7 +200,7 @@ export function GameScreen({
                 onClick={restart}
                 className="mt-5 w-full rounded-xl bg-parchment px-4 py-3 text-base font-black uppercase tracking-wide text-ink shadow-lg active:scale-95"
               >
-                Sail Again
+                {t('result.sailAgain')}
               </button>
             )}
             <button
@@ -207,7 +212,7 @@ export function GameScreen({
                   : 'mt-5 bg-parchment text-ink'
               }`}
             >
-              {canRestart ? 'Main menu' : 'Back to menu'}
+              {canRestart ? t('result.mainMenu') : t('result.backToMenu')}
             </button>
           </div>
         </div>

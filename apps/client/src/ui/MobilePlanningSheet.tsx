@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { PlanningControls } from './PlanningControls';
 import { SeaLegend } from './SeaLegend';
@@ -16,6 +17,7 @@ interface MobilePlanningSheetProps {
  * while planning) it is a compact sheet that overlays the board.
  */
 export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps) {
+  const { t } = useTranslation();
   const panelOpen = useGameUIStore((state) => state.panelOpen);
   const setPanelOpen = useGameUIStore((state) => state.setPanelOpen);
   const status = useGameUIStore((state) => state.status);
@@ -56,7 +58,7 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           {spectating ? (
             <p className="flex-1 text-center text-sm font-semibold text-parchment">
-              Your ship was sunk — watching the battle
+              {t('hud.sunkWatching')}
             </p>
           ) : (
             <ResourceChips />
@@ -69,7 +71,7 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
               onClick={lockIn}
               className="ml-auto shrink-0 rounded-xl bg-parchment/15 px-3 py-2 text-sm font-bold text-parchment active:scale-95 disabled:opacity-40"
             >
-              {lockedIn ? 'Locked' : hasPlan ? 'Lock In' : 'Pass'}
+              {lockedIn ? t('hud.locked') : hasPlan ? t('hud.lockIn') : t('hud.pass')}
             </button>
             <button
               type="button"
@@ -77,7 +79,7 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
               onClick={() => setPanelOpen(true)}
               className="shrink-0 rounded-xl bg-parchment px-3 py-2 text-sm font-bold text-ink shadow active:scale-95 disabled:opacity-40"
             >
-              Plan <span aria-hidden>▴</span>
+              {t('hud.plan')} <span aria-hidden>▴</span>
             </button>
             </>
           )}
@@ -94,7 +96,7 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
       <div className="mx-auto max-w-xl">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-parchment">
-            Battle Plan
+            {t('hud.battlePlan')}
           </h2>
           <TimerBar className="flex-1" />
           <button
@@ -102,7 +104,7 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
             onClick={() => setPanelOpen(false)}
             className="rounded-lg bg-parchment/15 px-3 py-1 text-sm font-bold text-parchment active:scale-95"
           >
-            Hide <span aria-hidden>▾</span>
+            {t('hud.hide')} <span aria-hidden>▾</span>
           </button>
         </div>
         <PlanningControls />

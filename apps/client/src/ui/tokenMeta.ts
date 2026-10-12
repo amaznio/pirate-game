@@ -1,7 +1,7 @@
+import type { TFunction } from 'i18next';
 import type { CannonSide, MovementAction } from '@pirate/game-core/domain/Action';
 
 export interface TokenMeta {
-  readonly label: string;
   readonly short: string;
   readonly arrow: string;
   /** Desktop keyboard shortcut. */
@@ -12,7 +12,6 @@ export interface TokenMeta {
 
 export const TOKEN_META: Record<MovementAction, TokenMeta> = {
   TURN_LEFT: {
-    label: 'Left',
     short: 'LEFT',
     arrow: '↰',
     key: '1',
@@ -20,7 +19,6 @@ export const TOKEN_META: Record<MovementAction, TokenMeta> = {
     ringClass: 'ring-token-left',
   },
   FORWARD: {
-    label: 'Forward',
     short: 'FORWARD',
     arrow: '↑',
     key: '2',
@@ -28,7 +26,6 @@ export const TOKEN_META: Record<MovementAction, TokenMeta> = {
     ringClass: 'ring-token-forward',
   },
   TURN_RIGHT: {
-    label: 'Right',
     short: 'RIGHT',
     arrow: '↱',
     key: '3',
@@ -43,7 +40,22 @@ export const TOKEN_ORDER: readonly MovementAction[] = [
   'TURN_RIGHT',
 ];
 
-export const CANNON_META: Record<CannonSide, { readonly label: string }> = {
-  left: { label: 'Fire left' },
-  right: { label: 'Fire right' },
-};
+const TOKEN_LABEL_KEYS = {
+  TURN_LEFT: 'token.turnLeft',
+  FORWARD: 'token.forward',
+  TURN_RIGHT: 'token.turnRight',
+} as const satisfies Record<MovementAction, string>;
+
+const CANNON_SIDE_KEYS = {
+  left: 'token.turnLeft',
+  right: 'token.turnRight',
+} as const satisfies Record<CannonSide, string>;
+
+export function tokenLabel(t: TFunction, action: MovementAction): string {
+  return t(TOKEN_LABEL_KEYS[action]);
+}
+
+/** The word for a broadside ("Left" / "Right"), for labels and aria text. */
+export function cannonSideLabel(t: TFunction, side: CannonSide): string {
+  return t(CANNON_SIDE_KEYS[side]);
+}

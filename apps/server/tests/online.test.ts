@@ -163,7 +163,7 @@ describe('the lobby', () => {
 
     expect(ok).toBe(false);
     expect(bart.getState().phase).toBe('menu');
-    expect(bart.getState().message).toMatch(/no room/i);
+    expect(bart.getState().message?.text).toMatch(/no room/i);
   });
 
   it('explains when the server cannot be reached', async () => {
@@ -172,7 +172,7 @@ describe('the lobby', () => {
     const ok = await lost.createRoom('Anne');
 
     expect(ok).toBe(false);
-    expect(lost.getState().message).toMatch(/could not reach/i);
+    expect(lost.getState().message?.text).toMatch(/could not reach/i);
     expect(lost.getState().phase).toBe('menu');
   });
 
@@ -183,7 +183,7 @@ describe('the lobby', () => {
     await anne.start();
 
     expect(anne.getState().phase).toBe('lobby');
-    expect(anne.getState().message).toMatch(/at least two ships/i);
+    expect(anne.getState().message?.text).toMatch(/at least two ships/i);
   });
 
   it('removes a player who leaves the lobby and forgets their seat', async () => {
@@ -422,7 +422,7 @@ describe('coming back after a refresh', () => {
     await until(second, (s) => s.phase === 'lobby');
 
     const state = await until(first, (s) => s.phase === 'menu');
-    expect(state.message).toMatch(/another window/i);
+    expect(state.message?.text).toMatch(/another window/i);
   });
 });
 
@@ -524,7 +524,7 @@ describe('public and private rooms', () => {
 
     expect(await fetchPublicRooms(url())).toEqual([]);
     expect(await bart.joinRoom(lobby.roomId, 'Bart')).toBe(false);
-    expect(bart.getState().message).toMatch(/no room has that code or key/i);
+    expect(bart.getState().message?.text).toMatch(/no room has that code or key/i);
     expect(await bart.joinRoom(lobby.shareCode, 'Bart')).toBe(true);
     expect(bart.getState().lobby?.seats).toHaveLength(2);
   });
@@ -559,7 +559,7 @@ describe('public and private rooms', () => {
 
     await bart.joinRoom('WRONG9', 'Bart');
 
-    expect(bart.getState().message).toMatch(/too many wrong codes/i);
+    expect(bart.getState().message?.text).toMatch(/too many wrong codes/i);
     expect(bart.getState().phase).toBe('menu');
   });
 });

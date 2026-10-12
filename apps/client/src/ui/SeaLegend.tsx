@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
 
 /**
@@ -5,6 +6,7 @@ import { useGameUIStore } from '../store/useGameUIStore';
  * actually has are listed, and nothing is shown on open water.
  */
 export function SeaLegend({ className = '' }: { className?: string }) {
+  const { t } = useTranslation();
   const hazards = useGameUIStore((state) => state.hazards);
   if (!hazards.wind && !hazards.whirlpool) {
     return null;
@@ -16,8 +18,8 @@ export function SeaLegend({ className = '' }: { className?: string }) {
         <div className="flex gap-2">
           <dt className="w-4 shrink-0 text-center font-black text-parchment">»</dt>
           <dd>
-            <b className="text-parchment/90">Wind</b> pushes a ship one cell, each
-            phase it ends on a wind cell.
+            <b className="text-parchment/90">{t('legend.windTitle')}</b>{' '}
+            {t('legend.windText')}
           </dd>
         </div>
       )}
@@ -25,8 +27,8 @@ export function SeaLegend({ className = '' }: { className?: string }) {
         <div className="flex gap-2">
           <dt className="w-4 shrink-0 text-center font-black text-parchment">◎</dt>
           <dd>
-            <b className="text-parchment/90">Whirlpool</b> carries a ship round its
-            four cells and turns it a quarter, every phase it ends in one.
+            <b className="text-parchment/90">{t('legend.whirlpoolTitle')}</b>{' '}
+            {t('legend.whirlpoolText')}
           </dd>
         </div>
       )}

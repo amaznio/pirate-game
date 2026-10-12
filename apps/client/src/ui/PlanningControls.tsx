@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { MoveTokenTray } from './MoveTokenTray';
 import { PlannedMoves } from './PlannedMoves';
 import { CannonballChip } from './CannonballChip';
-import { TOKEN_META, TOKEN_ORDER } from './tokenMeta';
+import { TOKEN_META, TOKEN_ORDER, tokenLabel } from './tokenMeta';
 
 function SectionTitle({ children }: { children: string }) {
   return (
@@ -18,6 +19,7 @@ function SectionTitle({ children }: { children: string }) {
  * sheet and the desktop sidebar so both behave identically.
  */
 export function PlanningControls() {
+  const { t } = useTranslation();
   const status = useGameUIStore((state) => state.status);
   const hasPlan = useGameUIStore(
     (state) =>
@@ -41,20 +43,17 @@ export function PlanningControls() {
     <div className="flex flex-col gap-3">
       {spectating && (
         <p className="rounded-xl bg-hull/25 px-3 py-2 text-center text-sm font-semibold text-parchment">
-          Your ship was sunk — watching the battle
+          {t('hud.sunkWatching')}
         </p>
       )}
       {lockedIn && planning && !spectating && (
         <p className="rounded-xl bg-token-forward/20 px-3 py-2 text-center text-sm font-semibold text-parchment">
-          Locked in
-          {waitingFor > 0
-            ? ` — waiting for ${waitingFor} other player${waitingFor === 1 ? '' : 's'}`
-            : ''}
+          {waitingFor > 0 ? t('hud.waitingFor', { count: waitingFor }) : t('hud.lockedIn')}
         </p>
       )}
       <div className="rounded-xl bg-black/20 px-3 py-2">
         <div className="flex items-center justify-between">
-          <SectionTitle>Next turn token</SectionTitle>
+          <SectionTitle>{t('plan.nextToken')}</SectionTitle>
           <button
             type="button"
             disabled={!planning}
@@ -63,7 +62,7 @@ export function PlanningControls() {
               auto ? 'bg-token-forward text-white' : 'bg-parchment text-ink'
             }`}
           >
-            AUTO {auto ? 'ON' : 'OFF'}
+            {t('plan.auto')} {auto ? t('plan.on') : t('plan.off')}
           </button>
         </div>
         {!auto && (
@@ -83,7 +82,7 @@ export function PlanningControls() {
                       : 'bg-parchment/15 text-parchment'
                   }`}
                 >
-                  {meta.label}
+                  {tokenLabel(t, action)}
                 </button>
               );
             })}
@@ -92,13 +91,13 @@ export function PlanningControls() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <SectionTitle>Move tokens</SectionTitle>
+        <SectionTitle>{t('plan.moveTokens')}</SectionTitle>
         <MoveTokenTray />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <SectionTitle>Plan</SectionTitle>
+          <SectionTitle>{t('plan.plan')}</SectionTitle>
           <CannonballChip />
         </div>
         <PlannedMoves />
@@ -111,7 +110,7 @@ export function PlanningControls() {
           onClick={clearPlayerActions}
           className="rounded-xl bg-parchment/15 px-4 py-2.5 text-sm font-bold text-parchment transition hover:bg-parchment/25 active:scale-95 disabled:opacity-40"
         >
-          Clear
+          {t('plan.clear')}
         </button>
         <button
           type="button"
@@ -119,7 +118,7 @@ export function PlanningControls() {
           onClick={lockIn}
           className="flex-1 rounded-xl bg-parchment px-4 py-2.5 text-base font-black uppercase tracking-wide text-ink shadow-lg transition hover:brightness-105 active:scale-95 disabled:opacity-40"
         >
-          {lockedIn ? 'Locked in' : hasPlan ? 'Lock In' : 'Pass Turn'}
+          {lockedIn ? t('hud.lockedIn') : hasPlan ? t('hud.lockIn') : t('hud.passTurn')}
         </button>
       </div>
     </div>

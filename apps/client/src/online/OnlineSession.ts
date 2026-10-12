@@ -8,6 +8,7 @@ import type {
   RoomOptions,
   SeatCredentials,
 } from '@pirate/game-core/protocol/messages';
+import type { TranslatableMessage } from '../i18n/humanMessage';
 import { SocketTransport, type GameSocket } from './SocketTransport';
 
 /** Where a seat is remembered so the player can come back after a refresh. */
@@ -32,7 +33,7 @@ export interface SessionState {
   /** Trying to get back into a room remembered from before a refresh. */
   readonly resuming: boolean;
   /** Something the player should be told (an error, or why they were removed). */
-  readonly message: string | null;
+  readonly message: TranslatableMessage | null;
   /** The last plan the server refused (shown briefly). */
   readonly notice: string | null;
 }
@@ -117,7 +118,7 @@ export class OnlineSession {
     if (result?.ok) {
       this.set({ lobby: result.lobby, message: null });
     } else if (result) {
-      this.set({ message: result.message });
+      this.set({ message: { code: result.error, text: result.message } });
     }
   }
 
@@ -127,7 +128,7 @@ export class OnlineSession {
     if (result?.ok) {
       this.set({ lobby: result.lobby, message: null });
     } else if (result) {
-      this.set({ message: result.message });
+      this.set({ message: { code: result.error, text: result.message } });
     }
   }
 
@@ -135,7 +136,7 @@ export class OnlineSession {
   async start(): Promise<void> {
     const result = await this.request<Record<string, never>>('room:start');
     if (result && !result.ok) {
-      this.set({ message: result.message });
+      this.set({ message: { code: result.error, text: result.message } });
     }
   }
 
@@ -161,7 +162,7 @@ export class OnlineSession {
   }
 
   /** Gives up the seat and goes back to the menu. */
-  leave(message: string | null = null): void {
+  leave(message: TranslatableMessage | null = null): void {
     this.reset(message, true);
   }
 
@@ -246,7 +247,9 @@ export class OnlineSession {
 
     socket.on('game:rejected', ({ reason }) => this.showNotice(reason));
 
-    socket.on('room:closed', ({ reason }) => this.reset(reason));
+    socket.on('room:closed', ({ reason, code }) =>
+      this.reset({ code: code ?? null, text: reason }),
+    );
 
     return socket;
   }
@@ -268,7 +271,9 @@ export class OnlineSession {
     }
     if (!result.ok) {
       this.reset(
-        this.state.resuming ? null : 'Your match is no longer available.',
+        this.state.resuming
+          ? null
+          : { code: 'client_match_gone', text: 'Your match is no longer available.' },
       );
       return;
     }
@@ -294,18 +299,22 @@ export class OnlineSession {
     try {
       await this.ensureConnected();
     } catch (error) {
-      this.set({ message: (error as Error).message });
+      this.set({
+        message: { code: 'client_could_not_reach', text: (error as Error).message },
+      });
       this.disconnectSocket();
       return false;
     }
 
     const result = await this.request<JoinResult>(event, payload);
     if (!result) {
-      this.set({ message: 'The game server did not answer.' });
+      this.set({
+        message: { code: 'client_no_answer', text: 'The game server did not answer.' },
+      });
       return false;
     }
     if (!result.ok) {
-      this.set({ message: result.message });
+      this.set({ message: { code: result.error, text: result.message } });
       return false;
     }
 
@@ -353,7 +362,7 @@ export class OnlineSession {
   }
 
   /** Forgets the room and returns to the menu. */
-  private reset(message: string | null, farewell = false): void {
+  private reset(message: TranslatableMessage | null, farewell = false): void {
     this.credentials = null;
     this.playerId = null;
     this.clearSavedSeat();

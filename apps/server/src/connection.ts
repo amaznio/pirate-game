@@ -91,7 +91,7 @@ export function handleConnection(socket: GameSocket, rooms: RoomManager): void {
       try {
         return bind(room, room.join(name, socket));
       } catch (error) {
-        room.close('The room could not be created.');
+        room.close('The room could not be created.', 'create_failed');
         throw error;
       }
     });

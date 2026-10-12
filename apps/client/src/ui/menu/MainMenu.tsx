@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   MenuLayout,
@@ -8,24 +9,27 @@ import {
   Segmented,
   Stepper,
 } from './MenuLayout';
-import { AI_LEVELS, aiLevelBlurb } from './aiLevels';
+import { AI_LEVELS, aiLevelBlurb, aiLevelLabel } from './aiLevels';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
-import { MAP_STYLE_CHOICES, mapStyleBlurb } from './mapStyles';
+import { MAP_STYLE_CHOICES, mapStyleBlurb, mapStyleLabel } from './mapStyles';
 import { useStoredDifficulty } from './useStoredDifficulty';
 import { useStoredMapStyle } from './useStoredMapStyle';
 import { useStoredName } from './useStoredName';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { RoomVisibility } from '@pirate/game-core/protocol/messages';
 import { onlineSession, serverUrl, useOnlineSession } from '../../app/onlineSession';
-import { SHIP_CHOICES, shipBlurb } from './shipClasses';
+import { SHIP_CHOICES, shipBlurb, shipLabel } from './shipClasses';
 import type { OfflineShips } from '../../app/offlineMatch';
 import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 import { PublicRoomList } from './PublicRoomList';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { humanMessage } from '../../i18n/humanMessage';
 import {
   VISIBILITY_CHOICES,
   loadVisibility,
   saveVisibility,
   visibilityBlurb,
+  visibilityLabel,
 } from './visibility';
 
 interface MainMenuProps {
@@ -42,6 +46,7 @@ interface MainMenuProps {
 
 /** The first screen: play against the computer, or play with friends online. */
 export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps) {
+  const { t } = useTranslation();
   const session = useOnlineSession();
   const [name, setName] = useStoredName();
   const [opponents, setOpponents] = useState(1);
@@ -60,6 +65,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const cleanName = name.trim();
   const online = onlineSession;
   const working = busy || session.resuming;
+  const messageText = humanMessage(t, session.message);
 
   async function run(action: () => Promise<boolean>) {
     setBusy(true);
@@ -72,22 +78,24 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
 
   return (
     <MenuLayout>
-      <Card title="Your name">
+      <Card title={t('menu.yourName')}>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
           maxLength={20}
-          placeholder="Captain"
-          aria-label="Your name"
+          placeholder={t('menu.namePlaceholder')}
+          aria-label={t('menu.yourName')}
           className="rounded-xl bg-black/25 px-3 py-2.5 text-base font-semibold text-parchment placeholder:text-parchment/30 focus:outline-none focus:ring-2 focus:ring-parchment/50"
         />
       </Card>
 
-      <Card title="Play against the computer">
+      <LanguageSwitcher />
+
+      <Card title={t('menu.playComputer')}>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-parchment">Opponents</span>
+          <span className="text-sm font-semibold text-parchment">{t('menu.opponents')}</span>
           <Stepper
-            label="opponents"
+            label={t('menu.opponents')}
             value={opponents}
             min={1}
             max={7}
@@ -95,49 +103,47 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-parchment">Skill</span>
+          <span className="text-sm font-semibold text-parchment">{t('menu.skill')}</span>
           <Segmented
             value={difficulty}
             disabled={false}
             onChange={setDifficulty}
-            choices={AI_LEVELS.map((level) => ({ label: level.label, value: level.value }))}
+            choices={AI_LEVELS.map((level) => ({ label: aiLevelLabel(t, level), value: level }))}
           />
-          <p className="text-xs text-parchment/50">{aiLevelBlurb(difficulty)}</p>
+          <p className="text-xs text-parchment/50">{aiLevelBlurb(t, difficulty)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-parchment">Seas</span>
+          <span className="text-sm font-semibold text-parchment">{t('menu.seas')}</span>
           <Segmented
             value={mapStyle}
             disabled={false}
             onChange={setMapStyle}
-            choices={MAP_STYLE_CHOICES.map((choice) => ({
-              label: choice.label,
-              value: choice.value,
+            choices={MAP_STYLE_CHOICES.map((style) => ({
+              label: mapStyleLabel(t, style),
+              value: style,
             }))}
           />
-          <p className="text-xs text-parchment/50">{mapStyleBlurb(mapStyle)}</p>
+          <p className="text-xs text-parchment/50">{mapStyleBlurb(t, mapStyle)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-parchment">Your ship</span>
+          <span className="text-sm font-semibold text-parchment">{t('menu.yourShip')}</span>
           <Segmented
             value={yourShip}
             disabled={false}
             onChange={setYourShip}
-            choices={SHIP_CHOICES.map((choice) => ({ label: choice.label, value: choice.value }))}
+            choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
           />
-          <p className="text-xs text-parchment/50">{shipBlurb(yourShip)}</p>
+          <p className="text-xs text-parchment/50">{shipBlurb(t, yourShip)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-parchment">Their ships</span>
+          <span className="text-sm font-semibold text-parchment">{t('menu.theirShips')}</span>
           <Segmented
             value={theirShip}
             disabled={false}
             onChange={setTheirShip}
-            choices={SHIP_CHOICES.map((choice) => ({ label: choice.label, value: choice.value }))}
+            choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
           />
-          <p className="text-xs text-parchment/50">
-            A bigger ship is stronger, so match them for an even fight.
-          </p>
+          <p className="text-xs text-parchment/50">{t('common.biggerShipStronger')}</p>
         </div>
         <PrimaryButton
           onClick={() =>
@@ -147,39 +153,39 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
             })
           }
         >
-          Set sail
+          {t('menu.setSail')}
         </PrimaryButton>
       </Card>
 
-      <Card title="Play with friends">
+      <Card title={t('menu.playFriends')}>
         {online ? (
           <>
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-parchment">New room</span>
+              <span className="text-sm font-semibold text-parchment">{t('menu.newRoom')}</span>
               <Segmented
                 value={visibility}
                 disabled={false}
                 onChange={setVisibility}
-                choices={VISIBILITY_CHOICES.map((choice) => ({
-                  label: choice.label,
-                  value: choice.value,
+                choices={VISIBILITY_CHOICES.map((value) => ({
+                  label: visibilityLabel(t, value),
+                  value,
                 }))}
               />
-              <p className="text-xs text-parchment/50">{visibilityBlurb(visibility)}</p>
+              <p className="text-xs text-parchment/50">{visibilityBlurb(t, visibility)}</p>
             </div>
             <PrimaryButton
               disabled={working || !cleanName}
               onClick={() => run(() => online.createRoom(cleanName, { visibility }))}
             >
-              {working ? 'Connecting…' : 'Create a room'}
+              {working ? t('menu.connecting') : t('menu.createRoom')}
             </PrimaryButton>
             <div className="flex gap-2">
               <input
                 value={code}
                 onChange={(event) => setCode(event.target.value.toUpperCase())}
                 maxLength={12}
-                placeholder="Room code or key"
-                aria-label="Room code or key"
+                placeholder={t('menu.roomCodeOrKey')}
+                aria-label={t('menu.roomCodeOrKey')}
                 autoCapitalize="characters"
                 autoComplete="off"
                 spellCheck={false}
@@ -189,17 +195,15 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
                 disabled={working || !cleanName || code.length < 3}
                 onClick={() => run(() => online.joinRoom(code, cleanName))}
               >
-                Join
+                {t('menu.join')}
               </SecondaryButton>
             </div>
             {!cleanName && (
-              <p className="text-xs text-parchment/50">Enter a name to play online.</p>
+              <p className="text-xs text-parchment/50">{t('menu.enterNameOnline')}</p>
             )}
           </>
         ) : (
-          <p className="text-sm text-parchment/60">
-            Online play is not set up for this site.
-          </p>
+          <p className="text-sm text-parchment/60">{t('menu.onlineNotSetUp')}</p>
         )}
       </Card>
 
@@ -211,8 +215,8 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
         />
       )}
 
-      {session.resuming && <Notice>Returning to your match…</Notice>}
-      {session.message && !session.resuming && <Notice>{session.message}</Notice>}
+      {session.resuming && <Notice>{t('menu.returning')}</Notice>}
+      {!session.resuming && messageText && <Notice>{messageText}</Notice>}
     </MenuLayout>
   );
 }

@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import type { CannonSide } from '@pirate/game-core/domain/Action';
 import { CannonToggle } from './CannonToggle';
+import { cannonSideLabel } from './tokenMeta';
 
 interface CannonGroupProps {
   side: CannonSide;
@@ -21,7 +23,9 @@ interface CannonGroupProps {
  * costs a cannonball, so a toggle is out of reach when there are not enough.
  */
 export function CannonGroup({ side, phase, cannons, shots, available, canPlan, onChange }: CannonGroupProps) {
+  const { t } = useTranslation();
   const count = Math.max(1, cannons);
+  const sideWord = cannonSideLabel(t, side);
   // The first cannon sits next to the move slot on both sides, so the left group
   // is drawn in reverse: the cannon nearest the centre is the first one loaded.
   const indices = Array.from({ length: count }, (_, index) => index);
@@ -29,7 +33,11 @@ export function CannonGroup({ side, phase, cannons, shots, available, canPlan, o
     indices.reverse();
   }
   return (
-    <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label={`${side} cannons, phase ${phase + 1}`}>
+    <div
+      className="flex shrink-0 items-center gap-0.5"
+      role="group"
+      aria-label={t('plan.cannonGroup', { side: sideWord, phase: phase + 1 })}
+    >
       {indices.map((index) => {
         const active = index < shots;
         // Turning this cannon on also turns on the ones before it.
@@ -40,7 +48,11 @@ export function CannonGroup({ side, phase, cannons, shots, available, canPlan, o
             small={count > 1}
             active={active}
             disabled={!canPlan || unaffordable}
-            label={`Fire ${side} cannon ${index + 1} in phase ${phase + 1}`}
+            label={t('plan.cannonFire', {
+              side: sideWord,
+              cannon: index + 1,
+              phase: phase + 1,
+            })}
             onClick={() => onChange(active ? index : index + 1)}
           />
         );

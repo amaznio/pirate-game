@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** Shared frame for the menu and the lobby: title on the ocean, content in a card. */
 export function MenuLayout({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full w-full overflow-y-auto bg-ocean-deep px-4 py-8">
       <div className="m-auto flex w-full max-w-md flex-col gap-5">
         <header className="text-center">
           <h1 className="text-3xl font-black tracking-wide text-parchment">
-            Battle Navigation
+            {t('app.title')}
           </h1>
-          <p className="mt-1 text-sm text-parchment/60">
-            Plan four moves. Out-sail the fleet.
-          </p>
+          <p className="mt-1 text-sm text-parchment/60">{t('app.tagline')}</p>
         </header>
         {children}
       </div>
@@ -96,6 +96,7 @@ export function Stepper({
   disabled?: boolean;
   label: string;
 }) {
+  const { t } = useTranslation();
   const button =
     'flex h-9 w-9 items-center justify-center rounded-lg bg-parchment/15 text-lg font-black text-parchment transition hover:bg-parchment/25 active:scale-95 disabled:opacity-30';
   return (
@@ -105,7 +106,7 @@ export function Stepper({
         className={button}
         disabled={disabled || value <= min}
         onClick={() => onChange(value - 1)}
-        aria-label={`Fewer ${label}`}
+        aria-label={t('stepper.fewer', { label })}
       >
         −
       </button>
@@ -117,7 +118,7 @@ export function Stepper({
         className={button}
         disabled={disabled || value >= max}
         onClick={() => onChange(value + 1)}
-        aria-label={`More ${label}`}
+        aria-label={t('stepper.more', { label })}
       >
         +
       </button>

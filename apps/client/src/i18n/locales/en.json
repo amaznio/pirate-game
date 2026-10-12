@@ -1,0 +1,265 @@
+{
+  "app": {
+    "title": "Battle Navigation",
+    "tagline": "Plan four moves. Out-sail the fleet."
+  },
+  "language": {
+    "title": "Language"
+  },
+  "stepper": {
+    "fewer": "Fewer {{label}}",
+    "more": "More {{label}}"
+  },
+  "common": {
+    "you": "You",
+    "biggerShipStronger": "A bigger ship is stronger, so match them for an even fight.",
+    "teamFfa": "Free for all",
+    "teamTwoTeams": "Two teams"
+  },
+  "menu": {
+    "yourName": "Your name",
+    "namePlaceholder": "Captain",
+    "playComputer": "Play against the computer",
+    "opponents": "Opponents",
+    "skill": "Skill",
+    "seas": "Seas",
+    "yourShip": "Your ship",
+    "theirShips": "Their ships",
+    "setSail": "Set sail",
+    "playFriends": "Play with friends",
+    "newRoom": "New room",
+    "connecting": "Connecting…",
+    "createRoom": "Create a room",
+    "roomCodeOrKey": "Room code or key",
+    "join": "Join",
+    "enterNameOnline": "Enter a name to play online.",
+    "onlineNotSetUp": "Online play is not set up for this site.",
+    "returning": "Returning to your match…"
+  },
+  "difficulty": {
+    "easy": {
+      "label": "Easy",
+      "blurb": "Slow to react and easily distracted. A good first voyage."
+    },
+    "normal": {
+      "label": "Normal",
+      "blurb": "Plans ahead and hunts you down, with the odd slip."
+    },
+    "hard": {
+      "label": "Hard",
+      "blurb": "Plays its best plan and keeps out of your line of fire."
+    }
+  },
+  "sea": {
+    "calm": {
+      "label": "Calm",
+      "blurb": "A few rocks and hardly any wind. Mostly open water."
+    },
+    "normal": {
+      "label": "Normal",
+      "blurb": "Reefs, some wind lanes and the odd whirlpool."
+    },
+    "stormy": {
+      "label": "Stormy",
+      "blurb": "Crowded with reefs, gales and whirlpools. Every board is new."
+    }
+  },
+  "ship": {
+    "hull": "Hull {{hp}}.",
+    "sloop": {
+      "name": "Sloop",
+      "description": "Light and cheap to run. Sails with the classic rules."
+    },
+    "brigantine": {
+      "name": "Brigantine",
+      "description": "A sturdier all-rounder with a deeper token reserve."
+    },
+    "galleon": {
+      "name": "Galleon",
+      "description": "A heavy hull with a big reserve, but it turns less often."
+    }
+  },
+  "roomVisibility": {
+    "private": {
+      "label": "Private",
+      "blurb": "Not listed. Only people you give the room key to can join."
+    },
+    "public": {
+      "label": "Public",
+      "blurb": "Listed for everyone, who can join with one click."
+    },
+    "codeLabel": "Room code",
+    "keyLabel": "Room key"
+  },
+  "lobby": {
+    "publicDescription": "This room is listed for everyone. Friends can also enter this code, or open the link.",
+    "privateDescription": "Not listed. Only people you give this key (or the link) to can join.",
+    "players_one": "Players ({{count}})",
+    "players_other": "Players ({{count}})",
+    "you": "(you)",
+    "host": "Host",
+    "away": "away",
+    "here": "Here",
+    "awayTitle": "Away",
+    "yourShip": "Your ship",
+    "matchOptions": "Match options",
+    "matchOptionsHost": "Match options (set by the host)",
+    "whoCanJoin": "Who can join",
+    "aiOpponents": "AI opponents",
+    "aiSkill": "AI skill",
+    "aiShips": "AI ships",
+    "seas": "Seas",
+    "teams": "Teams",
+    "planningTime": "Planning time",
+    "timerOff": "Off",
+    "timerSeconds": "{{seconds}}s",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "starting": "Starting…",
+    "startMatch_one": "Start match ({{count}} ship)",
+    "startMatch_other": "Start match ({{count}} ships)",
+    "addOpponent": "Add an AI opponent or wait for a friend to join.",
+    "waitingForHost": "Waiting for the host to start…",
+    "leaveRoom": "Leave room",
+    "connectionLost": "Connection lost — trying to reconnect…"
+  },
+  "publicRooms": {
+    "title": "Public rooms",
+    "loading": "Looking for rooms…",
+    "empty": "No public rooms right now. Create one and make it public!",
+    "loadFailed": "Could not load the room list.",
+    "noAi": "No AI",
+    "aiCount_one": "{{count}} AI ({{level}})",
+    "aiCount_other": "{{count}} AI ({{level}})",
+    "noTimer": "No timer",
+    "turnSeconds": "{{seconds}}s turns",
+    "join": "Join",
+    "joinNamed": "Join {{name}}'s room",
+    "refresh": "Refresh"
+  },
+  "fleet": {
+    "aiSailing": "An AI is sailing this ship",
+    "aiSailingLevel": "An AI is sailing this ship ({{level}})",
+    "aiTag": "AI",
+    "sunk": "Sunk"
+  },
+  "shipStatus": {
+    "hull": "Hull {{hp}} of {{maxHp}}"
+  },
+  "token": {
+    "turnLeft": "Left",
+    "forward": "Forward",
+    "turnRight": "Right"
+  },
+  "cannon": {
+    "fireLeft": "Fire left",
+    "fireRight": "Fire right"
+  },
+  "status": {
+    "planning": "Planning",
+    "resolving": "Resolving",
+    "gameOver": "Battle over"
+  },
+  "hud": {
+    "turn": "Turn {{turn}}",
+    "showPreview": "Show plan preview on board",
+    "sunkWatching": "Your ship was sunk — watching the battle",
+    "locked": "Locked",
+    "lockIn": "Lock In",
+    "pass": "Pass",
+    "passTurn": "Pass Turn",
+    "lockedIn": "Locked in",
+    "waitingFor_one": "Locked in — waiting for {{count}} other player",
+    "waitingFor_other": "Locked in — waiting for {{count}} other players",
+    "plan": "Plan",
+    "battlePlan": "Battle Plan",
+    "hide": "Hide",
+    "shortcuts": {
+      "moves": "Left / Forward / Right",
+      "fire": "Fire left / right",
+      "remove": "Remove last move",
+      "clear": "Clear plan",
+      "lockIn": "Lock in",
+      "preview": "Plan preview"
+    }
+  },
+  "plan": {
+    "nextToken": "Next turn token",
+    "auto": "AUTO",
+    "on": "ON",
+    "off": "OFF",
+    "moveTokens": "Move tokens",
+    "plan": "Plan",
+    "clear": "Clear",
+    "removeFrom": "Remove {{token}} from phase {{phase}}",
+    "chooseFor": "Choose a token for phase {{phase}}",
+    "tapToken": "Tap a token",
+    "empty": "Empty",
+    "tapToRemove": "Tap to remove",
+    "cannonGroup": "{{side}} cannons, phase {{phase}}",
+    "cannonFire": "Fire {{side}} cannon {{cannon}} in phase {{phase}}",
+    "cannonballs": "cannonballs",
+    "holdFull": "Your hold is full at this many tokens; new ones are lost",
+    "planned": "{{queued}}/{{total}} planned"
+  },
+  "legend": {
+    "windTitle": "Wind",
+    "windText": "pushes a ship one cell, each phase it ends on a wind cell.",
+    "whirlpoolTitle": "Whirlpool",
+    "whirlpoolText": "carries a ship round its four cells and turns it a quarter, every phase it ends in one."
+  },
+  "preview": {
+    "toggle": "Toggle plan preview",
+    "hide": "Hide plan preview (P)",
+    "show": "Show plan preview (P)"
+  },
+  "board": {
+    "recenter": "Recenter on my ship",
+    "reconnecting": "Connection lost — reconnecting…",
+    "resolving": "Resolving turn…"
+  },
+  "result": {
+    "victoryTitle": "Victory!",
+    "drawTitle": "Mutual destruction",
+    "sunkTitle": "Your ship has sunk",
+    "victoryBody": "The enemy fleet is wreckage.",
+    "drawBody": "Every ship went down together.",
+    "sunkBodyAlt": "Better luck next voyage, captain.",
+    "sunkBody": "The battle goes on without you. Keep watching, or head back to the menu.",
+    "keepWatching": "Keep watching",
+    "leave": "Leave",
+    "sailAgain": "Sail Again",
+    "mainMenu": "Main menu",
+    "backToMenu": "Back to menu"
+  },
+  "notice": {
+    "aiTookOver": "You were away, so an AI sailed for you. You are back in command.",
+    "notEnoughTokens": "That plan uses movement tokens you do not have.",
+    "notEnoughAmmo": "That plan fires more cannonballs than you have.",
+    "notPlanning": "Too late: that turn is already being played.",
+    "alreadyLockedIn": "You have already locked in.",
+    "malformedPlan": "That plan was not understood.",
+    "unknown": "That plan was refused."
+  },
+  "error": {
+    "badRequest": "Something went wrong with that request.",
+    "roomNotFound": "No room has that code or key.",
+    "roomFull": "That room is full.",
+    "roomClosed": "The room was closed.",
+    "alreadyStarted": "That match has already started.",
+    "notHost": "Only the host can do that.",
+    "notInRoom": "You are not in that room.",
+    "tooManyAttempts": "Too many wrong codes. Wait a minute and try again.",
+    "badCredentials": "Could not restore your seat.",
+    "tooFewShips": "A match needs at least two ships. Add an AI or wait for a friend.",
+    "tooManyShips": "That is more ships than a match allows.",
+    "serverBusy": "The server is full. Try again in a moment.",
+    "couldNotReach": "Could not reach the game server.",
+    "noAnswer": "The game server did not answer.",
+    "matchGone": "Your match is no longer available.",
+    "otherWindow": "Opened in another window.",
+    "serverShuttingDown": "The server is shutting down.",
+    "createFailed": "The room could not be created.",
+    "unknown": "Something went wrong."
+  }
+}

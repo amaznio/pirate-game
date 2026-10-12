@@ -1,30 +1,31 @@
+import type { TFunction } from 'i18next';
 import type { RoomVisibility } from '@pirate/game-core/protocol/messages';
 
-/** How the two kinds of room are named and described. */
-export const VISIBILITY_CHOICES: ReadonlyArray<{
-  readonly value: RoomVisibility;
-  readonly label: string;
-  readonly blurb: string;
-}> = [
-  {
-    value: 'private',
-    label: 'Private',
-    blurb: 'Not listed. Only people you give the room key to can join.',
-  },
-  {
-    value: 'public',
-    label: 'Public',
-    blurb: 'Listed for everyone, who can join with one click.',
-  },
-];
+/** How the two kinds of room are named and described (private first). */
+export const VISIBILITY_CHOICES: readonly RoomVisibility[] = ['private', 'public'];
 
-export function visibilityBlurb(value: RoomVisibility): string {
-  return VISIBILITY_CHOICES.find((choice) => choice.value === value)?.blurb ?? '';
+const KEYS = {
+  private: {
+    label: 'roomVisibility.private.label',
+    blurb: 'roomVisibility.private.blurb',
+  },
+  public: {
+    label: 'roomVisibility.public.label',
+    blurb: 'roomVisibility.public.blurb',
+  },
+} as const satisfies Record<RoomVisibility, { label: string; blurb: string }>;
+
+export function visibilityLabel(t: TFunction, value: RoomVisibility): string {
+  return t(KEYS[value].label);
+}
+
+export function visibilityBlurb(t: TFunction, value: RoomVisibility): string {
+  return t(KEYS[value].blurb);
 }
 
 /** What to call the thing you give a friend. */
-export function shareCodeLabel(value: RoomVisibility): string {
-  return value === 'public' ? 'Room code' : 'Room key';
+export function shareCodeLabel(t: TFunction, value: RoomVisibility): string {
+  return value === 'public' ? t('roomVisibility.codeLabel') : t('roomVisibility.keyLabel');
 }
 
 const KEY = 'pirate:visibility';

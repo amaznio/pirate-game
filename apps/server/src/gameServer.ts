@@ -113,7 +113,7 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
     port: (httpServer.address() as AddressInfo).port,
     rooms,
     close: async () => {
-      rooms.closeAll('The server is shutting down.');
+      rooms.closeAll('The server is shutting down.', 'server_shutting_down');
       await io.close();
     },
   };

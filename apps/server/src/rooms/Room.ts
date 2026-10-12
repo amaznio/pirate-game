@@ -19,6 +19,7 @@ import {
   type LobbyState,
   type PublicRoomSummary,
   type RoomOptions,
+  type RoomClosedCode,
   type RoomStatus,
   type SeatInfo,
   type ServerToClientEvents,
@@ -143,7 +144,7 @@ export class Room {
     seat.socket = socket;
     if (previous && previous !== socket) {
       // A second tab or a stale connection: the newest one wins.
-      previous.emit('room:closed', { reason: 'Opened in another window.' });
+      previous.emit('room:closed', { reason: 'Opened in another window.', code: 'other_window' });
       previous.disconnect(true);
     }
 
@@ -475,14 +476,14 @@ export class Room {
   }
 
   /** Ends the room: tells everyone, stops the timer, forgets the match. */
-  close(reason: string): void {
+  close(reason: string, code?: RoomClosedCode): void {
     if (this.closed) {
       return;
     }
     this.closed = true;
     for (const seat of this.seats.values()) {
       this.clearAwayTimer(seat);
-      seat.socket?.emit('room:closed', { reason });
+      seat.socket?.emit('room:closed', { reason, ...(code ? { code } : {}) });
       seat.disconnectFromHost?.();
     }
     this.cleanups.forEach((cleanup) => cleanup());

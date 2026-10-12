@@ -360,6 +360,38 @@ half or less = cracked, zero = broken). The sloop is about the size of the curre
 Kenney ship; the galleon spills half a cell past each end of its 64 px cell. Cannon
 sprites at the deck edge read as clamps when large: types 1 and 2 look right.
 
+### 3b. Localisation (i18n): `done` (English plus Spanish and Polish stubs; more languages are a file each)
+The interface can be shown in another language. `i18next` and `react-i18next` are
+wired into the **client only**; `game-core`, the server and the rules are
+untouched, no game-core field changed and the golden snapshots are green.
+
+- [x] `apps/client/src/i18n/`: init, typed catalogs (`locales/en.json`,
+      `locales/es.json`, `locales/pl.json`) and `i18next.d.ts`, so a typo or a
+      missing key fails `pnpm typecheck`
+- [x] Detection and persistence: `?lang=` first, then the remembered choice
+      (`pirate:lang`), then `navigator.language`, then English; `<html lang>` and
+      the page title follow the language. Left-to-right only for now
+- [x] A language switcher in the menu; the choice updates live
+- [x] All menu, lobby, in-battle HUD and planning text extracted (aria labels and
+      titles included); `ACTIONS_PER_TURN` replaces a hardcoded `4`
+- [x] Ship names and descriptions come from the catalog by id, falling back to
+      the game-core config
+- [x] Server and plan messages translated by their stable code (`ErrorCode`,
+      `PlanRejection`, and an optional `code` on the `room:closed` event), with
+      the server's English text as the fallback; the protocol change is additive
+- [x] Tests: catalog parity (every locale has the English keys, plural forms
+      matched), `t`/plural/interpolation, and code to message mapping. Polish
+      exercises four plural forms (`_one`/`_few`/`_many`/`_other`)
+- [x] Spanish (`es`) and Polish (`pl`) catalogs: machine-drafted, **not yet
+      reviewed** by a speaker
+- [ ] Only partly seen in a real browser (menu, an offline battle and the lobby
+      paths); the WebGL board is unaffected
+- [ ] More languages: add `<code>.json` and a `LANGUAGES` entry; nothing else
+      changes
+
+Rules honoured: English stays the default, so nothing changes without a choice;
+`room:closed` only gained an optional field.
+
 ### 4. Pickups: `todo`
 Cannonball barrels, token crates, repair planks. "Loot" sea option, default off.
 Art: Fort barrels, coins, gems and potions; Water and Islands chests (10-frame
@@ -401,6 +433,12 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: phase 3b (i18n): `i18next` + `react-i18next` in the client, typed
+  catalogs, a language switcher, `?lang=`/`pirate:lang`/`navigator.language`
+  detection, all menu/lobby/HUD text extracted, server messages translated by
+  code (an optional `code` on `room:closed`), and machine-drafted Spanish and
+  Polish stubs. Tests: game-core 356, client 196, server 174.
 
 - 2026-10-12: phase 3 finished apart from the extras: sinking explosion, plan preview ghosts, `scallywag` the default art (`c63477e`), ship footprints, yards and emblems, and the Calm/Normal/Stormy look with a slow tide (spray built but off). Commits `cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`, not pushed. Tests: game-core 356, client 189, server 174.
 

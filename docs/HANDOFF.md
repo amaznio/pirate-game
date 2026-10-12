@@ -87,6 +87,24 @@ Cell size question, settled: tiles stay 64 px and ships stay at native size;
 scaling the tiles up to the largest ship would double the board on screen and
 need every other sprite redone, and fractional ship scales blur pixel art.
 
+### Localisation (i18n) — a later session; new phase 3b in ROADMAP.md
+The client can show English, Spanish or Polish (the last two are machine-drafted
+stubs). `i18next` plus `react-i18next` live in `apps/client/src/i18n/`; nothing
+in `game-core`, the server rules or the golden snapshots changed. `locales/en.json`
+is the source of truth, `i18next.d.ts` types the keys (a typo or missing key
+fails `pnpm typecheck`), and a test checks every locale has the English keys with
+plural forms matched. Polish has four plural forms (`_one`/`_few`/`_many`/`_other`),
+which the parity test normalises. The language is chosen from `?lang=`, then the
+remembered choice (`pirate:lang`), then `navigator.language`, then English;
+`<html lang>` and the page title follow, and a switcher sits in the menu. All
+menu, lobby, in-battle HUD and planning text is extracted (aria labels and titles
+too); ship names/descriptions come from the catalog by id with the game-core
+config as fallback. Server and plan messages are translated by their stable code
+(`ErrorCode`, `PlanRejection`, and an optional `code` on the `room:closed` event)
+with the server's English text as the fallback; the socket protocol gained only
+that optional field. To add a language: copy `en.json`, translate it, and add the
+code and label to `LANGUAGES` in `i18n/languages.ts`.
+
 ## 3. The sea, and why it ended up this way
 
 Three versions were rejected by the user, which is why the final design is what
@@ -130,15 +148,13 @@ swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 
 ## 4. Git state at the end of the session
 
-On `main`. Everything up to `9da7b0f` is pushed. **Six commits after it are not
-pushed** (ask first): `cc93317` sinking explosion, `dc8389b` plan-preview
-ghosts, `c63477e` Scallywag the default art, `e149fc1` ship footprints,
-`a3a3a7b` yards and emblems, `a46f575` sea look and tide, plus the docs commit
-that follows them. The earlier phase 3 work is `49c9fa4` (sea and depth),
-`06ba35b` (camera and zoom), `72d6579`, `71d7923`, `37270d4`, `4624fc0`.
+On `main`, tracking `origin/main`. Everything is pushed, including the phase 3
+art commits (`cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`,
+`2bdd578` docs) and the i18n work (phase 3b, the commit that carries this file).
+Still ask before pushing new work.
+
 `PhaserGame.ts` sometimes shows as modified with no real change; it is a
-CRLF/timestamp artefact, `git add` clears it. Still ask before pushing new
-work.
+CRLF/timestamp artefact, `git add` clears it.
 
 ## 5. How the user likes to work (follow this)
 
@@ -189,6 +205,11 @@ work.
    canvas is not sized to the device pixel ratio (blur on sharp screens); the
    smallest zoom step on a small window may not show the whole board; Hard AI
    barely beats Easy on generated boards.
+4. **i18n follow-ups:** the Spanish and Polish catalogs are machine-drafted and
+   want a speaker's review; more languages are a `locales/<code>.json` plus a
+   `LANGUAGES` entry (see the i18n note above); only the menu and one offline
+   battle were checked in a browser (the WebGL board cannot run in the in-app
+   browser).
 
 ## 8. Rules from the roadmap that always apply
 

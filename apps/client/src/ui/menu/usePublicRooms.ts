@@ -7,7 +7,7 @@ export interface PublicRoomsState {
   /** The first load has not finished yet. */
   readonly loading: boolean;
   /** Set when the last refresh failed; the previous list is kept. */
-  readonly error: string | null;
+  readonly failed: boolean;
   readonly refresh: () => void;
 }
 
@@ -21,7 +21,7 @@ export function usePublicRooms(
 ): PublicRoomsState {
   const [rooms, setRooms] = useState<readonly PublicRoomSummary[]>([]);
   const [loading, setLoading] = useState(serverUrl !== null);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const inFlight = useRef(false);
   const alive = useRef(true);
 
@@ -34,11 +34,11 @@ export function usePublicRooms(
       const next = await fetchPublicRooms(serverUrl);
       if (alive.current) {
         setRooms(next);
-        setError(null);
+        setFailed(false);
       }
     } catch {
       if (alive.current) {
-        setError('Could not load the room list.');
+        setFailed(true);
       }
     } finally {
       inFlight.current = false;
@@ -62,5 +62,5 @@ export function usePublicRooms(
     };
   }, [load, intervalMs]);
 
-  return { rooms, loading, error, refresh: () => void load() };
+  return { rooms, loading, failed, refresh: () => void load() };
 }

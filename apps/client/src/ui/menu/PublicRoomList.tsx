@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import type { PublicRoomSummary } from '@pirate/game-core/protocol/messages';
 import { Card, SecondaryButton } from './MenuLayout';
 import { aiLevelLabel } from './aiLevels';
@@ -10,34 +12,35 @@ interface PublicRoomListProps {
   onJoin: (code: string) => void;
 }
 
-function describe(room: PublicRoomSummary): string[] {
+function describe(t: TFunction, room: PublicRoomSummary): string[] {
   return [
     room.ais === 0
-      ? 'No AI'
-      : `${room.ais} AI (${aiLevelLabel(room.aiDifficulty)})`,
-    room.teamMode === 'teams' ? 'Two teams' : 'Free for all',
-    room.turnDurationSeconds === null ? 'No timer' : `${room.turnDurationSeconds}s turns`,
+      ? t('publicRooms.noAi')
+      : t('publicRooms.aiCount', { count: room.ais, level: aiLevelLabel(t, room.aiDifficulty) }),
+    room.teamMode === 'teams' ? t('common.teamTwoTeams') : t('common.teamFfa'),
+    room.turnDurationSeconds === null
+      ? t('publicRooms.noTimer')
+      : t('publicRooms.turnSeconds', { seconds: room.turnDurationSeconds }),
   ];
 }
 
 /** Rooms anyone can join, refreshed every few seconds. */
 export function PublicRoomList({ serverUrl, canJoin, onJoin }: PublicRoomListProps) {
-  const { rooms, loading, error, refresh } = usePublicRooms(serverUrl);
+  const { t } = useTranslation();
+  const { rooms, loading, failed, refresh } = usePublicRooms(serverUrl);
 
   return (
-    <Card title="Public rooms">
-      {loading && <p className="text-sm text-parchment/60">Looking for rooms…</p>}
+    <Card title={t('publicRooms.title')}>
+      {loading && <p className="text-sm text-parchment/60">{t('publicRooms.loading')}</p>}
 
-      {!loading && rooms.length === 0 && !error && (
-        <p className="text-sm text-parchment/60">
-          No public rooms right now. Create one and make it public!
-        </p>
+      {!loading && rooms.length === 0 && !failed && (
+        <p className="text-sm text-parchment/60">{t('publicRooms.empty')}</p>
       )}
 
-      {error && <p className="text-sm text-parchment/60">{error}</p>}
+      {failed && <p className="text-sm text-parchment/60">{t('publicRooms.loadFailed')}</p>}
 
       {rooms.length > 0 && (
-        <ul className="flex flex-col gap-2" aria-label="Public rooms">
+        <ul className="flex flex-col gap-2" aria-label={t('publicRooms.title')}>
           {rooms.map((room) => (
             <li
               key={room.code}
@@ -53,15 +56,15 @@ export function PublicRoomList({ serverUrl, canJoin, onJoin }: PublicRoomListPro
                   </span>
                 </div>
                 <p className="truncate text-xs text-parchment/60">
-                  {describe(room).join(' · ')}
+                  {describe(t, room).join(' · ')}
                 </p>
               </div>
               <SecondaryButton
                 disabled={!canJoin}
                 onClick={() => onJoin(room.code)}
-                aria-label={`Join ${room.hostName}'s room`}
+                aria-label={t('publicRooms.joinNamed', { name: room.hostName })}
               >
-                Join
+                {t('publicRooms.join')}
               </SecondaryButton>
             </li>
           ))}
@@ -73,7 +76,7 @@ export function PublicRoomList({ serverUrl, canJoin, onJoin }: PublicRoomListPro
         onClick={refresh}
         className="self-start text-xs font-semibold text-parchment/60 underline-offset-2 hover:text-parchment hover:underline"
       >
-        Refresh
+        {t('publicRooms.refresh')}
       </button>
     </Card>
   );

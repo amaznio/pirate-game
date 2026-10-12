@@ -128,6 +128,10 @@ Open the client and pick a mode on the menu:
   the planning timer and the seas, then starts the match. Your seat is remembered, so a
   refresh (or a dropped connection) puts you back in the match.
 
+The interface is available in **English, Spanish and Polish**. Pick a language on
+the menu; the choice is remembered, and `?lang=es` (or `pl`) picks one for a
+single link. It changes interface text only, never the rules or a match.
+
 To try online play on one machine run `pnpm dev`, then open the client in two
 different browsers (or `localhost` in one and `127.0.0.1` in the other; each
 origin is its own player, because the seat is saved per origin). For a second
@@ -211,6 +215,7 @@ player never gets the host's state, only a **view** of it:
 | Events | `packages/game-core/src/events/EventBus.ts` | Typed pub/sub |
 | Phaser | `apps/client/src/phaser/` | Scenes, views, animations, camera |
 | React UI | `apps/client/src/ui/`, `apps/client/src/app/`, `apps/client/src/store/` | HUD, planning sheet, screen |
+| i18n | `apps/client/src/i18n/` | Locale catalogs (typed), language detection and the switcher |
 
 ### Matches, players and teams
 
@@ -368,6 +373,10 @@ moves it.
   `apps/client/public/assets/kenney/`. Texture keys and frame ids are centralised in
   `apps/client/src/phaser/assets/AssetKeys.ts` and loaded in `BootScene.ts`; no simulation
   code references filenames. See `apps/client/src/assets/scallywag/README.md`.
+- **Add a language**: copy `apps/client/src/i18n/locales/en.json`, translate it
+  as `locales/<code>.json`, then import it in `i18n/index.ts` and add the code
+  and label to `LANGUAGES` in `i18n/languages.ts`. Keys are typed against English,
+  so a missing one fails `pnpm typecheck`; a test keeps every locale in step.
 
 ## Controls
 

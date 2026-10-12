@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
-import { TOKEN_META } from './tokenMeta';
+import { TOKEN_META, tokenLabel } from './tokenMeta';
 import { CannonGroup } from './CannonGroup';
 import { useAmmo } from './useAmmo';
 
@@ -12,6 +13,7 @@ import { useAmmo } from './useAmmo';
  * there and earlier slots left empty (e.g. move, empty, move, move).
  */
 export function PlannedMoves() {
+  const { t } = useTranslation();
   const queue = useGameUIStore((state) => state.queue);
   const cannonQueue = useGameUIStore((state) => state.cannonQueue);
   const canPlan = useGameUIStore((state) => state.canPlan);
@@ -45,7 +47,11 @@ export function PlannedMoves() {
             <button
               type="button"
               disabled={!canPlan}
-              aria-label={meta ? `Remove ${meta.label} from phase ${index + 1}` : `Choose a token for phase ${index + 1}`}
+              aria-label={
+                slot
+                  ? t('plan.removeFrom', { token: tokenLabel(t, slot), phase: index + 1 })
+                  : t('plan.chooseFor', { phase: index + 1 })
+              }
               onClick={() => {
                 if (slot) {
                   removePlayerAction(index);
@@ -68,12 +74,12 @@ export function PlannedMoves() {
                 {meta ? meta.arrow : '＋'}
               </span>
               <span className="min-w-0 truncate text-sm font-semibold">
-                {meta ? meta.label : armed ? 'Tap a token' : 'Empty'}
+                {slot ? tokenLabel(t, slot) : armed ? t('plan.tapToken') : t('plan.empty')}
               </span>
               {meta && (
                 <span
                   className="ml-auto shrink-0 text-base leading-none opacity-70"
-                  title="Tap to remove"
+                  title={t('plan.tapToRemove')}
                   aria-hidden
                 >
                   ×

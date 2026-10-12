@@ -1,5 +1,6 @@
 import type {
   PublicRoomSummary,
+  RoomClosedCode,
   RoomOptions,
 } from '@pirate/game-core/protocol/messages';
 import { newRoomCode, newRoomKey } from '../ids';
@@ -95,7 +96,7 @@ export class RoomManager {
         room.isAbandoned() ||
         abandoned
       ) {
-        room.close('The room was closed.');
+        room.close('The room was closed.', 'room_closed');
         this.rooms.delete(id);
         this.keys.delete(room.key);
         removed += 1;
@@ -110,13 +111,13 @@ export class RoomManager {
     this.sweeper.unref();
   }
 
-  closeAll(reason: string): void {
+  closeAll(reason: string, code?: RoomClosedCode): void {
     if (this.sweeper) {
       clearInterval(this.sweeper);
       this.sweeper = null;
     }
     for (const room of this.rooms.values()) {
-      room.close(reason);
+      room.close(reason, code);
     }
     this.rooms.clear();
     this.keys.clear();

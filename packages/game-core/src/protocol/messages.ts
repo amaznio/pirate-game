@@ -99,6 +99,16 @@ export type ErrorCode =
   | 'too_many_ships'
   | 'server_busy';
 
+/**
+ * Why a room closed. Sent alongside the human `reason` on `room:closed`, so a
+ * client can translate it instead of showing the server's English text.
+ */
+export type RoomClosedCode =
+  | 'room_closed'
+  | 'other_window'
+  | 'server_shutting_down'
+  | 'create_failed';
+
 export type Ack<T> =
   | ({ readonly ok: true } & T)
   | { readonly ok: false; readonly error: ErrorCode; readonly message: string };
@@ -200,5 +210,9 @@ export interface ServerToClientEvents {
   'game:turn': (turn: { events: GameEvent[] }) => void;
   /** A plan was refused (it is not locked in). */
   'game:rejected': (info: { reason: string }) => void;
-  'room:closed': (info: { reason: string }) => void;
+  /**
+   * The room has closed. `reason` is human text (kept for old clients); `code`
+   * is a stable reason a client can translate.
+   */
+  'room:closed': (info: { reason: string; code?: RoomClosedCode }) => void;
 }

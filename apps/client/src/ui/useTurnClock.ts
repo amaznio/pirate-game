@@ -1,12 +1,20 @@
+import type { TFunction } from 'i18next';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { useCountdown } from './useCountdown';
 
-export const STATUS_LABEL: Record<string, string> = {
-  planning: 'Planning',
-  resolving: 'Resolving',
-  animating: 'Resolving',
-  game_over: 'Battle over',
-};
+const STATUS_KEYS = {
+  planning: 'status.planning',
+  resolving: 'status.resolving',
+  animating: 'status.resolving',
+  game_over: 'status.gameOver',
+} as const;
+
+/** A human word for the match status, or the raw status if it is unknown. */
+export function statusLabel(t: TFunction, status: string): string {
+  return status in STATUS_KEYS
+    ? t(STATUS_KEYS[status as keyof typeof STATUS_KEYS])
+    : status;
+}
 
 export function formatSeconds(seconds: number): string {
   return `0:${Math.ceil(seconds).toString().padStart(2, '0')}`;
