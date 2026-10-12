@@ -59,26 +59,28 @@ describe('pickups', () => {
   });
 
   it('a crate adds tokens, stopping at the ship cap', () => {
-    const state = sea({ '6,10': { kind: 'crate' } });
-    const before = totalTokens(state.players.player.tokens);
-    const result = resolveTurn(state, submitted(['FORWARD', null, null, null]));
-    expect(totalTokens(result.nextState.players.player.tokens)).toBe(
-      before + PICKUP_EFFECTS.crate.tokens,
-    );
+    const base = sea({ '6,10': { kind: 'crate' } });
+    const holding = (tokens: { FORWARD: number; TURN_LEFT: number; TURN_RIGHT: number }): GameState => ({
+      ...base,
+      players: { ...base.players, player: { ...base.players.player, tokens } },
+    });
+    const play = (state: GameState) => resolveTurn(state, submitted(['FORWARD', null, null, null]));
+    const taken = (state: GameState) => state.players.player.tokens;
 
-    const full: GameState = {
-      ...state,
-      players: {
-        ...state.players,
-        player: {
-          ...state.players.player,
-          tokens: { FORWARD: 8, TURN_LEFT: 0, TURN_RIGHT: 0 },
-        },
-      },
-    };
-    // The sloop's cargo cap is 8, but its token cap is the classic uncapped economy.
-    const capped = resolveTurn(full, submitted(['FORWARD', null, null, null]));
-    expect(capped.events.find((e) => e.type === 'PICKUP_COLLECTED')).toBeDefined();
+    // Room to spare: the whole crate fits.
+    const roomy = holding({ FORWARD: 2, TURN_LEFT: 1, TURN_RIGHT: 1 });
+    expect(totalTokens(taken(play(roomy).nextState))).toBe(4 + PICKUP_EFFECTS.crate.tokens);
+
+    // One short of the sloop's cap of 10: only one token fits, and the crate is still used up.
+    const nearlyFull = play(holding({ FORWARD: 5, TURN_LEFT: 2, TURN_RIGHT: 2 }));
+    expect(totalTokens(taken(nearlyFull.nextState))).toBe(10);
+    expect(nearlyFull.events.find((e) => e.type === 'PICKUP_COLLECTED')).toMatchObject({ gained: 1 });
+    expect(nearlyFull.nextState.pickups).toEqual({});
+
+    // Already full: nothing fits.
+    const full = play(holding({ FORWARD: 6, TURN_LEFT: 2, TURN_RIGHT: 2 }));
+    expect(totalTokens(taken(full.nextState))).toBe(10);
+    expect(full.events.find((e) => e.type === 'PICKUP_COLLECTED')).toMatchObject({ gained: 0 });
   });
 
   it('an enemy ship can collect too, and only the ship on the cell does', () => {

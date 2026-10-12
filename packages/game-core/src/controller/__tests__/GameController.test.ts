@@ -94,7 +94,7 @@ describe('storing plans', () => {
   it('rejects a plan that needs tokens the player does not hold', () => {
     const host = makeHost();
 
-    const reason = host.submitDraft('player', plan(['TURN_RIGHT', 'TURN_RIGHT', null, null]));
+    const reason = host.submitDraft('player', plan(['TURN_RIGHT', 'TURN_RIGHT', 'TURN_RIGHT', null]));
 
     expect(reason).toBe('not_enough_tokens');
     expect(host.getState().players.player.queue).toEqual([null, null, null, null]);
@@ -421,7 +421,7 @@ describe('locking in with several humans', () => {
 
     const reason = host.submitPlayerPlan(
       'p2',
-      plan(['TURN_RIGHT', 'TURN_RIGHT', null, null]),
+      plan(['TURN_RIGHT', 'TURN_RIGHT', 'TURN_RIGHT', null]),
     );
 
     expect(reason).toBe('not_enough_tokens');

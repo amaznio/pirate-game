@@ -58,7 +58,7 @@ describe('applyPlayerPlan', () => {
     const result = applyPlayerPlan(
       createGame(),
       'player',
-      plan(['TURN_RIGHT', 'TURN_RIGHT', null, null]),
+      plan(['TURN_RIGHT', 'TURN_RIGHT', 'TURN_RIGHT', null]),
     );
 
     expect(result).toEqual({ ok: false, reason: 'not_enough_tokens' });

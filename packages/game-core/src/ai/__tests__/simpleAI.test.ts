@@ -133,6 +133,7 @@ function matchup(a: AiDifficulty, b: AiDifficulty, seeds: number[], sea?: MapSty
 }
 
 const SEEDS = [1, 2, 3, 4, 5, 6];
+const LADDER_SEEDS = Array.from({ length: 16 }, (_, index) => index + 1);
 
 describe('movement economy', () => {
   const withPool = (pool: Partial<TokenInventory>, level: AiDifficulty = 'normal') => {
@@ -431,9 +432,12 @@ describe('difficulty', () => {
   });
 
   it('hard beats easy, normal beats easy, and hard beats normal over whole matches', () => {
-    const hardVsEasy = matchup('hard', 'easy', SEEDS);
-    const normalVsEasy = matchup('normal', 'easy', SEEDS);
-    const hardVsNormal = matchup('hard', 'normal', SEEDS);
+    // On generated boards: with the plentiful tokens of today's economy the old open
+    // benchmark board ends in mutual destruction (about 98 per cent ties), which says
+    // nothing about skill.
+    const hardVsEasy = matchup('hard', 'easy', LADDER_SEEDS, 'normal');
+    const normalVsEasy = matchup('normal', 'easy', LADDER_SEEDS, 'normal');
+    const hardVsNormal = matchup('hard', 'normal', LADDER_SEEDS, 'normal');
 
     expect(hardVsEasy.aWins).toBeGreaterThan(hardVsEasy.bWins);
     expect(normalVsEasy.aWins).toBeGreaterThan(normalVsEasy.bWins);

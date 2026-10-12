@@ -2,8 +2,8 @@
 
 exports[`golden matches > plays the same way: duel, brigantine v sloop, seed 6 1`] = `
 {
-  "events": 104,
-  "hash": "15d2411a72f379",
+  "events": 218,
+  "hash": "1409d9ea56a6bf",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 4,
@@ -12,14 +12,14 @@ exports[`golden matches > plays the same way: duel, brigantine v sloop, seed 6 1
     "kind": "win",
     "teamId": "player",
   },
-  "turns": 4,
+  "turns": 9,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, calm sea, seed 5 1`] = `
 {
-  "events": 156,
-  "hash": "1413c19dbff3c4",
+  "events": 145,
+  "hash": "075dcbd64ee313",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 0,
@@ -27,14 +27,14 @@ exports[`golden matches > plays the same way: duel, calm sea, seed 5 1`] = `
   "outcome": {
     "kind": "draw",
   },
-  "turns": 8,
+  "turns": 7,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, galleon v brigantine, stormy, seed 8 1`] = `
 {
-  "events": 218,
-  "hash": "123b913e6944be",
+  "events": 216,
+  "hash": "0287404025fc2b",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 2,
@@ -49,39 +49,40 @@ exports[`golden matches > plays the same way: duel, galleon v brigantine, stormy
 
 exports[`golden matches > plays the same way: duel, normal sea, seed 1 1`] = `
 {
-  "events": 182,
-  "hash": "0220b72961adc8",
+  "events": 96,
+  "hash": "1f49d580d0a15b",
   "hull": {
-    "enemy-ship": 4,
+    "enemy-ship": 2,
     "player-ship": 0,
   },
   "outcome": {
     "kind": "win",
     "teamId": "enemy",
   },
-  "turns": 10,
+  "turns": 4,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, normal sea, seed 7, hard 1`] = `
 {
-  "events": 237,
-  "hash": "0d33595db6face",
+  "events": 123,
+  "hash": "050ec68ce6e60d",
   "hull": {
-    "enemy-ship": 0,
+    "enemy-ship": 1,
     "player-ship": 0,
   },
   "outcome": {
-    "kind": "draw",
+    "kind": "win",
+    "teamId": "enemy",
   },
-  "turns": 13,
+  "turns": 5,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, open water, seed 2, hard 1`] = `
 {
-  "events": 175,
-  "hash": "1e5577c5a740b6",
+  "events": 155,
+  "hash": "0a88b3ebe525d1",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 0,
@@ -89,14 +90,14 @@ exports[`golden matches > plays the same way: duel, open water, seed 2, hard 1`]
   "outcome": {
     "kind": "draw",
   },
-  "turns": 9,
+  "turns": 7,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, salvage race to 3, seed 6 1`] = `
 {
-  "events": 84,
-  "hash": "031578140a1e28",
+  "events": 133,
+  "hash": "15c8e6ca64202e",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 4,
@@ -105,14 +106,14 @@ exports[`golden matches > plays the same way: duel, salvage race to 3, seed 6 1`
     "kind": "win",
     "teamId": "player",
   },
-  "turns": 4,
+  "turns": 6,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`] = `
 {
-  "events": 523,
-  "hash": "1e9bb8667c07df",
+  "events": 287,
+  "hash": "152dfd2af574c6",
   "hull": {
     "enemy-ship": 0,
     "player-ship": 2,
@@ -121,33 +122,34 @@ exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`]
     "kind": "win",
     "teamId": "player",
   },
-  "turns": 36,
+  "turns": 15,
 }
 `;
 
 exports[`golden matches > plays the same way: duel, survive 5 turns, seed 4 1`] = `
 {
-  "events": 77,
-  "hash": "084ffd4e935f07",
+  "events": 115,
+  "hash": "040ab379603f0f",
   "hull": {
-    "enemy-ship": 0,
+    "enemy-ship": 3,
     "player-ship": 4,
   },
   "outcome": {
     "kind": "win",
+    "reason": "survived",
     "teamId": "player",
   },
-  "turns": 4,
+  "turns": 5,
 }
 `;
 
 exports[`golden matches > plays the same way: free-for-all of 3 classes and a bot, seed 13 1`] = `
 {
-  "events": 273,
-  "hash": "1fc096c9fac303",
+  "events": 319,
+  "hash": "18e1052f7ecbf4",
   "hull": {
     "p1-ship": 0,
-    "p2-ship": 3,
+    "p2-ship": 5,
     "p3-ship": 0,
     "p4-ship": 0,
   },
@@ -155,83 +157,82 @@ exports[`golden matches > plays the same way: free-for-all of 3 classes and a bo
     "kind": "win",
     "teamId": "p2",
   },
-  "turns": 9,
+  "turns": 11,
 }
 `;
 
 exports[`golden matches > plays the same way: free-for-all of 4, seed 11 1`] = `
 {
-  "events": 134,
-  "hash": "1799df411f3d44",
-  "hull": {
-    "p1-ship": 0,
-    "p2-ship": 0,
-    "p3-ship": 0,
-    "p4-ship": 4,
-  },
-  "outcome": {
-    "kind": "win",
-    "teamId": "p4",
-  },
-  "turns": 5,
-}
-`;
-
-exports[`golden matches > plays the same way: free-for-all of 6, stormy, seed 4 1`] = `
-{
-  "events": 420,
-  "hash": "172f4311216700",
-  "hull": {
-    "p1-ship": 0,
-    "p2-ship": 0,
-    "p3-ship": 0,
-    "p4-ship": 0,
-    "p5-ship": 0,
-    "p6-ship": 2,
-  },
-  "outcome": {
-    "kind": "win",
-    "teamId": "p6",
-  },
-  "turns": 19,
-}
-`;
-
-exports[`golden matches > plays the same way: large board, 5 ships, seed 21 1`] = `
-{
-  "events": 408,
-  "hash": "1065a6f9f360ba",
+  "events": 264,
+  "hash": "0378e3ddf5450c",
   "hull": {
     "p1-ship": 3,
     "p2-ship": 0,
     "p3-ship": 0,
     "p4-ship": 0,
-    "p5-ship": 0,
   },
   "outcome": {
     "kind": "win",
     "teamId": "p1",
   },
-  "turns": 20,
+  "turns": 9,
 }
 `;
 
-exports[`golden matches > plays the same way: two teams of 3, seed 9 1`] = `
+exports[`golden matches > plays the same way: free-for-all of 6, stormy, seed 4 1`] = `
 {
-  "events": 442,
-  "hash": "08f2657c067d09",
+  "events": 409,
+  "hash": "17be267add3b64",
   "hull": {
     "p1-ship": 0,
     "p2-ship": 0,
     "p3-ship": 0,
     "p4-ship": 0,
     "p5-ship": 0,
-    "p6-ship": 3,
+    "p6-ship": 0,
+  },
+  "outcome": {
+    "kind": "draw",
+  },
+  "turns": 11,
+}
+`;
+
+exports[`golden matches > plays the same way: large board, 5 ships, seed 21 1`] = `
+{
+  "events": 429,
+  "hash": "149e76e6f39ca4",
+  "hull": {
+    "p1-ship": 0,
+    "p2-ship": 0,
+    "p3-ship": 0,
+    "p4-ship": 0,
+    "p5-ship": 4,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "p5",
+  },
+  "turns": 14,
+}
+`;
+
+exports[`golden matches > plays the same way: two teams of 3, seed 9 1`] = `
+{
+  "events": 343,
+  "hash": "0e5ce08e7a343c",
+  "hull": {
+    "p1-ship": 0,
+    "p2-ship": 4,
+    "p3-ship": 0,
+    "p4-ship": 0,
+    "p5-ship": 0,
+    "p6-ship": 0,
   },
   "outcome": {
     "kind": "win",
     "teamId": "team-b",
   },
-  "turns": 20,
+  "turns": 11,
 }
 `;

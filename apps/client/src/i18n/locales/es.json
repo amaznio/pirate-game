@@ -81,7 +81,7 @@
     "hull": "Casco {{hp}}.",
     "sloop": {
       "name": "Balandra",
-      "description": "Ligera y barata de mantener. Navega con las reglas clásicas."
+      "description": "Ligero y barato de manejar, con la reserva de fichas más pequeña."
     },
     "brigantine": {
       "name": "Bergantín",
@@ -89,7 +89,7 @@
     },
     "galleon": {
       "name": "Galeón",
-      "description": "Un casco pesado con una gran reserva, pero gira menos a menudo."
+      "description": "Un casco pesado que avanza deprisa, pero gira con menos frecuencia."
     }
   },
   "roomVisibility": {

@@ -81,7 +81,7 @@
     "hull": "Hull {{hp}}.",
     "sloop": {
       "name": "Sloop",
-      "description": "Light and cheap to run. Sails with the classic rules."
+      "description": "Light and cheap to run, with the smallest token reserve."
     },
     "brigantine": {
       "name": "Brigantine",
@@ -89,7 +89,7 @@
     },
     "galleon": {
       "name": "Galleon",
-      "description": "A heavy hull with a big reserve, but it turns less often."
+      "description": "A heavy hull that covers ground fast, but turns less often."
     }
   },
   "roomVisibility": {

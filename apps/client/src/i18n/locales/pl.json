@@ -81,7 +81,7 @@
     "hull": "Kadłub {{hp}}.",
     "sloop": {
       "name": "Slup",
-      "description": "Lekki i tani w utrzymaniu. Pływa według klasycznych zasad."
+      "description": "Lekki i tani w użyciu, z najmniejszą rezerwą żetonów."
     },
     "brigantine": {
       "name": "Brygantyna",
@@ -89,7 +89,7 @@
     },
     "galleon": {
       "name": "Galeon",
-      "description": "Ciężki kadłub z dużym zapasem, ale skręca rzadziej."
+      "description": "Ciężki kadłub, który szybko pokonuje dystans, ale rzadziej skręca."
     }
   },
   "roomVisibility": {

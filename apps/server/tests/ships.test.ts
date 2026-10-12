@@ -85,7 +85,7 @@ describe('choosing a ship in the lobby', () => {
 
     expect(Object.values(shipsOf(view))).toEqual(['galleon', 'sloop', 'brigantine', 'brigantine']);
     expect(view.ships[view.self.shipId].maxHp).toBe(6);
-    expect(view.self.tokens.FORWARD).toBe(6);
+    expect(view.self.tokens.FORWARD).toBe(8);
   });
 
   it('lets the host choose what the AIs sail, and only the host', async () => {

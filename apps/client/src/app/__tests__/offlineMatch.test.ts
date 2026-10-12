@@ -103,7 +103,7 @@ describe('ship classes of an offline match', () => {
 
     expect(state.ships['player-ship'].maxHp).toBe(6);
     expect(state.ships['enemy-ship'].maxHp).toBe(4);
-    expect(state.players.player.tokens.FORWARD).toBe(6);
+    expect(state.players.player.tokens.FORWARD).toBe(8);
   });
 
   it('shows the player the cap of their ship', () => {

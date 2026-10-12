@@ -263,7 +263,7 @@ describe('playing', () => {
     // Lie to the server about what we hold: queue a token we do not have.
     client.queueToken('TURN_RIGHT');
     (client as unknown as { transport: { lockIn(plan: object): void } }).transport.lockIn({
-      movement: ['TURN_RIGHT', 'TURN_RIGHT', null, null],
+      movement: ['TURN_RIGHT', 'TURN_RIGHT', 'TURN_RIGHT', null],
       cannons: Array.from({ length: 4 }, () => ({ left: 0, right: 0 })),
     });
 

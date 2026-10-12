@@ -118,9 +118,17 @@ the galleon a heavy hull that turns less often.
 
 | Class | Hull | Start tokens | Income | Cap | Rest bonus | Rotation | Supplies/leg | Cargo |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Sloop | 4 | 6 (3F 2L 1R) | 1 | none | 0 | F L F R | 1 | 8 |
-| Brigantine | 5 | 8 (4F 2L 2R) | 2 | 10 | +1 | F L F R | 2 | 12 |
-| Galleon | 6 | 10 (6F 2L 2R) | 2 | 12 | +1 | F F L F F R | 3 | 18 |
+| Sloop | 4 | 8 (4F 2L 2R) | 2 | 10 | +2 | F L F R | 1 | 8 |
+| Brigantine | 5 | 10 (5F 3L 2R) | 3 | 12 | +1 | F L F R | 2 | 12 |
+| Galleon | 6 | 12 (8F 2L 2R) | 4 | 14 | 0 | F F F L F F F R | 3 | 18 |
+
+Identities: the sloop is the patient ship (smallest hold, the biggest rest
+bonus); the brigantine the all-rounder; the galleon covers ground fast (four a
+turn, three forward to each turn token) but swings round slowly.
+
+*(Economy raised in a later change, see "Token economy revisited" below; the
+first numbers were sloop 6 start, +1, no cap, no rest bonus; brigantine 8, +2,
+cap 10; galleon 10, +2, cap 12.)*
 
 - [x] Optional token stats on `ShipType` (`tokens`, `supplyUse`, `cargoCap`);
       a missing stat falls back to today's rules, so the sloop is unchanged
@@ -158,6 +166,42 @@ Findings: mirror matches are even; a bigger class beats the next one down about
 run out of tokens (starved about 0 per cent), so for them the cap matters more
 than income. Phase 2 adds guns and will widen the gap: re-run this table then.
 Matches against an equal class last longer (7 to 8 turns).
+
+**Token economy revisited (after phase 6 slices A to C).** One token a turn
+against four phases a turn meant a sloop could move in about one phase in four
+once its six starting tokens were spent, which felt far too tight for longer
+matches (objectives, and later the solo voyage). The economy was raised in one
+step: the sloop and the default are now 8 start, +2 a turn, cap 10, +2 for a
+turn with no move (`INITIAL_TOKEN_POOL`, `TOKENS_PER_TURN`, `DEFAULT_TOKEN_CAP`,
+`DEFAULT_REST_BONUS` in `config/gameRules.ts`); the brigantine and galleon moved
+up with it (table above); a crate pickup gives 3 tokens instead of 2.
+- Before (harness, sloop mirror): 1.35 moves per ship per turn. After: about
+  1.5 to 1.8. The AI is thrifty with tokens and stops to shoot, so the harness
+  cannot show how it feels for a person planning four moves a turn: **the
+  numbers want a hands-on pass** (they are all constants).
+- Tests that pinned the old numbers were updated; all golden snapshots were
+  refreshed on purpose.
+- The AI ladder test (hard beats normal beats easy) now runs on generated boards
+  with 16 seeds: on the old open benchmark board with six rocks the duel ends in
+  mutual destruction 98 per cent of the time under the new economy, so it said
+  nothing about skill. On generated seas the ladder holds (hard 31 v normal 19,
+  hard 51 v easy 23, normal 40 v easy 33, over 80 duels each).
+- **Different identities per class (second step).** With everyone's tokens
+  plentiful the classes had stopped feeling different, so they were separated
+  again: the sloop is the patient ship (8 start, +2, cap 10, **+2 for resting**),
+  the brigantine the all-rounder (10, +3, cap 12, +1), the galleon covers ground
+  fast (12, **+4**, cap 14, no rest bonus, token order F F F L F F F R: three
+  forward to each turn token, so it swings round slowly).
+- **Class balance changed, and needs its own pass.** Class harness with these
+  numbers (normal sea, 40 seeds, 80 duels each; A is the first-named class):
+  sloop v sloop 21-21 (38 draws); sloop v brigantine 4-73; sloop v galleon
+  4-73; brigantine v brigantine 24-24; brigantine v galleon 34-25 (21 draws);
+  galleon v galleon 28-28. Ships almost never run short of tokens now (starved
+  about 0 per cent), so tokens no longer decide fights: guns and hull do. A
+  sloop loses to a bigger class about 90 per cent of the time (it was about
+  80), and the galleon has no edge over the brigantine (it used to win about 80
+  per cent). To fix later, in the same harness: hull, cannon counts and ammo per
+  class, or give the sloop a bit more punch. Not done in this change.
 
 ### 2. Multi-cannon broadsides: `done` (reworked)
 Rules only; the cannon sprites arrive with phase 3. **Every cannon fires from the

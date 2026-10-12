@@ -4,15 +4,32 @@ import type { MovementAction, TokenInventory } from '../domain/Action';
 export const BOARD_WIDTH = 20;
 export const BOARD_HEIGHT = 20;
 
-/** Each player starts with this many tokens of each type. */
+/**
+ * The sloop's starting tokens, and what any ship type that sets none starts
+ * with. Eight is two turns of full movement (four phases each), so a ship can
+ * open the match on the move before income has to carry it.
+ */
 export const INITIAL_TOKEN_POOL: TokenInventory = {
-  FORWARD: 3,
+  FORWARD: 4,
   TURN_LEFT: 2,
-  TURN_RIGHT: 1,
+  TURN_RIGHT: 2,
 };
 
-/** Number of tokens produced at the start of each new turn. */
-export const TOKENS_PER_TURN = 1;
+/**
+ * Tokens produced at the start of each new turn. Two means a ship that always
+ * rests still builds up, and one that moves every phase runs dry in about two
+ * turns: movement is a choice, not a shortage.
+ */
+export const TOKENS_PER_TURN = 2;
+
+/** Most tokens a sloop (or a type that sets no cap) can hold: use them or lose the surplus. */
+export const DEFAULT_TOKEN_CAP = 10;
+
+/**
+ * Extra tokens a sloop earns for a turn spent making no move. The sloop is the
+ * patient ship: it has the smallest hold, so waiting is how it builds a burst.
+ */
+export const DEFAULT_REST_BONUS = 2;
 
 /**
  * Default wall-clock seconds each player has to plan a turn (overridable per
@@ -74,8 +91,8 @@ export interface TokenEconomy {
  */
 export const DEFAULT_TOKEN_ECONOMY: TokenEconomy = {
   perTurn: TOKENS_PER_TURN,
-  cap: null,
-  restBonus: 0,
+  cap: DEFAULT_TOKEN_CAP,
+  restBonus: DEFAULT_REST_BONUS,
   rotation: AUTO_TOKEN_ROTATION,
 };
 
@@ -87,7 +104,7 @@ export const DEFAULT_TOKEN_ECONOMY: TokenEconomy = {
  */
 export const PICKUP_EFFECTS = {
   barrel: { ammo: 3 },
-  crate: { tokens: 2 },
+  crate: { tokens: 3 },
   plank: { hull: 1 },
 } as const;
 

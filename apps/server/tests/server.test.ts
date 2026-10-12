@@ -370,7 +370,7 @@ describe('playing a turn', () => {
   it('tells a player when a plan is refused and does not lock them in', async () => {
     const { host } = await startedDuel();
 
-    host.client.send('game:lockIn', plan(['TURN_RIGHT', 'TURN_RIGHT', null, null]));
+    host.client.send('game:lockIn', plan(['TURN_RIGHT', 'TURN_RIGHT', 'TURN_RIGHT', null]));
 
     const rejected = await host.client.waitFor<{ reason: string }>('game:rejected');
     expect(rejected.reason).toBe('not_enough_tokens');

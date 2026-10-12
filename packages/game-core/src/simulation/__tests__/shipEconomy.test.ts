@@ -30,16 +30,16 @@ function holding(state: GameState, tokens: { FORWARD: number; TURN_LEFT: number;
 }
 
 describe('ship classes', () => {
-  it('has a sloop that sails with the classic rules', () => {
+  it('has a sloop that sails with the default rules', () => {
     const state = duelOf('sloop');
     const player = state.players.player;
 
     expect(player.tokens).toEqual(INITIAL_TOKEN_POOL);
     expect(player.ammo).toBe(CANNON_STARTING_AMMO);
     expect(tokenEconomyOf(getShipType('sloop'))).toMatchObject({
-      perTurn: 1,
-      cap: null,
-      restBonus: 0,
+      perTurn: 2,
+      cap: 10,
+      restBonus: 2,
     });
     expect(state.ships['player-ship'].maxHp).toBe(4);
   });
@@ -55,7 +55,7 @@ describe('ship classes', () => {
 
       expect(bigger.maxHp).toBeGreaterThan(smaller.maxHp);
       expect(start(bigger)).toBeGreaterThan(start(smaller));
-      expect(bigger.tokens?.perTurn ?? 1).toBeGreaterThanOrEqual(smaller.tokens?.perTurn ?? 1);
+      expect(tokenEconomyOf(bigger).perTurn).toBeGreaterThanOrEqual(tokenEconomyOf(smaller).perTurn);
       expect(bigger.supplyUse).toBeGreaterThan(smaller.supplyUse);
       expect(bigger.cargoCap).toBeGreaterThan(smaller.cargoCap);
     }
@@ -64,8 +64,8 @@ describe('ship classes', () => {
   it('gives a ship its own reserve and hull', () => {
     const state = duelOf('galleon', 'brigantine');
 
-    expect(totalTokens(state.players.player.tokens)).toBe(10);
-    expect(totalTokens(state.players.enemy.tokens)).toBe(8);
+    expect(totalTokens(state.players.player.tokens)).toBe(12);
+    expect(totalTokens(state.players.enemy.tokens)).toBe(10);
     expect(state.ships['player-ship'].maxHp).toBe(6);
     expect(state.ships['enemy-ship'].maxHp).toBe(5);
   });
@@ -85,39 +85,49 @@ describe('ship classes', () => {
 
 describe('token income', () => {
   it('produces the ship income each turn', () => {
-    expect(beginNextTurn(duelOf('sloop')).produced.player).toHaveLength(1);
-    expect(beginNextTurn(duelOf('brigantine')).produced.player).toHaveLength(2);
+    // From an empty hold, so the cap does not get in the way.
+    expect(beginNextTurn(holding(duelOf('sloop'), empty)).produced.player).toHaveLength(2);
+    expect(beginNextTurn(holding(duelOf('brigantine'), empty)).produced.player).toHaveLength(3);
   });
 
   it('follows the class rotation, so a galleon turns less often', () => {
     let state = holding(duelOf('galleon'), empty);
     const made: string[] = [];
-    // A galleon makes 2 a turn, so 3 turns is one full pass of its 6-token rotation.
-    for (let i = 0; i < 3; i += 1) {
+    // A galleon makes 4 a turn, so 2 turns is one full pass of its 8-token rotation.
+    for (let i = 0; i < 2; i += 1) {
       const next = beginNextTurn(state);
       made.push(...next.produced.player);
       state = next.state;
     }
 
-    expect(made).toEqual(['FORWARD', 'FORWARD', 'TURN_LEFT', 'FORWARD', 'FORWARD', 'TURN_RIGHT']);
+    expect(made).toEqual([
+      'FORWARD',
+      'FORWARD',
+      'FORWARD',
+      'TURN_LEFT',
+      'FORWARD',
+      'FORWARD',
+      'FORWARD',
+      'TURN_RIGHT',
+    ]);
   });
 
   it('stops producing once the hold is full', () => {
-    const nearlyFull = holding(duelOf('brigantine'), { FORWARD: 5, TURN_LEFT: 3, TURN_RIGHT: 1 });
+    const nearlyFull = holding(duelOf('brigantine'), { FORWARD: 6, TURN_LEFT: 3, TURN_RIGHT: 2 });
 
     const next = beginNextTurn(nearlyFull);
 
     expect(next.produced.player).toHaveLength(1);
-    expect(totalTokens(next.state.players.player.tokens)).toBe(10);
+    expect(totalTokens(next.state.players.player.tokens)).toBe(12);
 
     const again = beginNextTurn(next.state);
 
     expect(again.produced.player).toEqual([]);
-    expect(totalTokens(again.state.players.player.tokens)).toBe(10);
+    expect(totalTokens(again.state.players.player.tokens)).toBe(12);
   });
 
   it('does not move the rotation on while the hold is full', () => {
-    const full = holding(duelOf('brigantine'), { FORWARD: 5, TURN_LEFT: 3, TURN_RIGHT: 2 });
+    const full = holding(duelOf('brigantine'), { FORWARD: 6, TURN_LEFT: 3, TURN_RIGHT: 3 });
 
     const next = beginNextTurn(full);
 
@@ -139,30 +149,42 @@ describe('rest bonus', () => {
 
     const paid = beginNextTurn(resolved.nextState);
 
-    expect(paid.produced.player).toHaveLength(3);
+    expect(paid.produced.player).toHaveLength(4);
     expect(paid.state.players.player.restedLastTurn).toBe(false);
   });
 
   it('pays nothing extra after a turn with a move', () => {
-    const resolved = resolveTurn(duelOf('brigantine'), { player: movingPlan, enemy: movingPlan });
+    const resolved = resolveTurn(holding(duelOf('brigantine'), empty), {
+      player: movingPlan,
+      enemy: movingPlan,
+    });
 
-    expect(beginNextTurn(resolved.nextState).produced.player).toHaveLength(2);
+    expect(beginNextTurn(resolved.nextState).produced.player).toHaveLength(3);
   });
 
-  it('never pays a sloop anything extra', () => {
-    const resolved = resolveTurn(duelOf('sloop'), { player: idlePlan, enemy: idlePlan });
+  it('pays a sloop the biggest rest bonus, and a galleon none', () => {
+    const resolved = resolveTurn(holding(duelOf('sloop'), empty), {
+      player: idlePlan,
+      enemy: idlePlan,
+    });
 
-    expect(beginNextTurn(resolved.nextState).produced.player).toHaveLength(1);
+    expect(beginNextTurn(resolved.nextState).produced.player).toHaveLength(4);
+
+    const galleon = resolveTurn(holding(duelOf('galleon'), empty), {
+      player: idlePlan,
+      enemy: idlePlan,
+    });
+    expect(beginNextTurn(galleon.nextState).produced.player).toHaveLength(4);
   });
 
   it('is still limited by the cap', () => {
     const resolved = resolveTurn(
-      holding(duelOf('brigantine'), { FORWARD: 5, TURN_LEFT: 3, TURN_RIGHT: 1 }),
+      holding(duelOf('brigantine'), { FORWARD: 6, TURN_LEFT: 3, TURN_RIGHT: 2 }),
       { player: idlePlan, enemy: idlePlan },
     );
 
     const paid = beginNextTurn(resolved.nextState);
 
-    expect(totalTokens(paid.state.players.player.tokens)).toBe(10);
+    expect(totalTokens(paid.state.players.player.tokens)).toBe(12);
   });
 });

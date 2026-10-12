@@ -13,15 +13,24 @@ import {
 
 describe('token generation', () => {
   it('auto mode follows the deterministic rotation', () => {
-    let state = createGame();
+    // From an empty hold, so every token made shows (the cap would stop them otherwise).
+    const base = createGame();
+    let state: ReturnType<typeof createGame> = {
+      ...base,
+      players: {
+        ...base.players,
+        player: { ...base.players.player, tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 } },
+      },
+    };
     const produced: string[] = [];
 
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 2; i += 1) {
       const result = beginNextTurn(state);
-      produced.push(result.tokens.player);
+      produced.push(...result.produced.player);
       state = result.state;
     }
 
+    // The sloop makes two a turn, in the order F L F R.
     expect(produced).toEqual([
       'FORWARD',
       'TURN_LEFT',
@@ -114,7 +123,7 @@ describe('cannonball reload', () => {
 });
 
 describe('movement economy', () => {
-  it('gives every player one token per new turn', () => {
+  it('gives every player the sloop income each new turn, up to the cap', () => {
     const state = createGame();
     const total = (inventory: {
       FORWARD: number;
@@ -126,7 +135,7 @@ describe('movement economy', () => {
 
     for (const id of Object.keys(state.players)) {
       expect(total(result.state.players[id].tokens)).toBe(
-        total(state.players[id].tokens) + 1,
+        total(state.players[id].tokens) + 2,
       );
     }
   });
