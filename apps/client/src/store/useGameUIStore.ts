@@ -14,6 +14,7 @@ import { getShipType, tokenEconomyOf } from '@pirate/game-core/config/shipTypes'
 import { assignTeamStyles } from '../presentation/teamStyle';
 import { NO_HAZARDS, seaHazards, type SeaHazards } from '../presentation/seaHazards';
 import type { MatchResult as BattleResult } from '@pirate/game-core/domain/MatchResult';
+import { endNote, objectiveProgress, type EndNote, type ObjectiveProgress } from '../presentation/objectiveProgress';
 
 /** Another ship in the match, as the local player sees it (public info only). */
 export interface ShipSummary {
@@ -72,6 +73,10 @@ export interface GameUISnapshot {
   battle: BattleResult | null;
   /** The local player's id, to find their ship in `battle`. */
   viewerId: string;
+  /** How the match's objective stands; null for a standard match. */
+  objective: ObjectiveProgress | null;
+  /** What to say under the title of a finished match about its objective. */
+  endNote: EndNote;
   /** Epoch-ms the current planning window closes, or null when not planning. */
   deadline: number | null;
   turnDurationSeconds: number;
@@ -170,6 +175,12 @@ function snapshot({
     result,
     battle: view.result ?? null,
     viewerId: view.viewerId,
+    objective: objectiveProgress(view),
+    endNote: endNote(
+      view,
+      result,
+      view.outcome && 'reason' in view.outcome ? view.outcome.reason : undefined,
+    ),
     deadline,
     turnDurationSeconds: view.rules.turnDurationSeconds ?? 0,
   };
@@ -200,6 +211,8 @@ const EMPTY: GameUISnapshot = {
   result: null,
   battle: null,
   viewerId: '',
+  objective: null,
+  endNote: null,
   deadline: null,
   turnDurationSeconds: 0,
 };

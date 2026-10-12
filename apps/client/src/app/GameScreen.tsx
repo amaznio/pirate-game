@@ -52,6 +52,7 @@ export function GameScreen({
   const handleRef = useRef<PhaserHandle | null>(null);
   const status = useGameUIStore((state) => state.status);
   const result = useGameUIStore((state) => state.result);
+  const note = useGameUIStore((state) => state.endNote);
   const spectating = useGameUIStore((state) => state.spectating);
   // Told once per sinking; it comes back only if the player is afloat again.
   const [sunkDismissed, setSunkDismissed] = useState(false);
@@ -189,7 +190,9 @@ export function GameScreen({
                   : t('result.sunkTitle')}
             </h2>
             <p className="mt-2 text-sm text-parchment/70">
-              {result === 'win'
+              {note
+                ? t(`result.note.${note}`)
+                : result === 'win'
                 ? t('result.victoryBody')
                 : result === 'draw'
                   ? t('result.drawBody')

@@ -1,3 +1,4 @@
+import { objectiveFor, type ObjectiveChoice } from '../ui/menu/objectiveChoices';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
@@ -53,9 +54,19 @@ export default function App() {
       mapStyle: MapStyle,
       loot: boolean,
       ships: OfflineShips,
+      objective: ObjectiveChoice,
     ) => {
       setOffline(
-        startOfflineMatch(offlineConfig(opponents, name, difficulty, mapStyle, undefined, ships, loot)),
+        startOfflineMatch(offlineConfig(
+          opponents,
+          name,
+          difficulty,
+          mapStyle,
+          undefined,
+          ships,
+          loot,
+          objectiveFor(objective),
+        )),
       );
     },
     [],

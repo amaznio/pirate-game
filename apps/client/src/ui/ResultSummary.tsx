@@ -19,6 +19,14 @@ export function ResultSummary() {
       <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
         <dt>{t('result.turnsPlayed')}</dt>
         <dd className="text-right font-bold text-parchment">{battle.turns}</dd>
+        {battle.objective && (
+          <>
+            <dt>{t('result.objective')}</dt>
+            <dd className="text-right font-bold text-parchment">
+              {battle.objective.met ? t('result.objectiveMet') : t('result.objectiveMissed')}
+            </dd>
+          </>
+        )}
         {mine && (
           <>
             <dt>{t('result.yourHull')}</dt>

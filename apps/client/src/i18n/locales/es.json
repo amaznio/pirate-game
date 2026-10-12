@@ -38,7 +38,16 @@
     "join": "Unirse",
     "enterNameOnline": "Escribe un nombre para jugar en línea.",
     "onlineNotSetUp": "El juego en línea no está disponible en este sitio.",
-    "returning": "Volviendo a tu partida…"
+    "returning": "Volviendo a tu partida…",
+    "objective": "Objetivo",
+    "objectiveStandard": "Normal",
+    "objectiveSurvive": "Sobrevivir",
+    "objectiveSalvage": "Rescate",
+    "objectiveBlurb": {
+      "standard": "Gana el último barco a flote.",
+      "survive": "Mantente a flote durante {{turns}} turnos. Si tu barco se hunde antes, pierdes.",
+      "salvage": "Una carrera por la carga flotante: gana quien recoja {{target}} primero."
+    }
   },
   "difficulty": {
     "easy": {
@@ -242,7 +251,17 @@
     "cannonballsLeft": "Balas de cañón restantes",
     "lootTaken": "Botín recogido",
     "otherShips": "Otros barcos",
-    "sunkShort": "Hundido"
+    "sunkShort": "Hundido",
+    "note": {
+      "survived": "Te mantuviste a flote hasta el final.",
+      "objectiveFailed": "Tu barco se hundió antes de que acabara el tiempo.",
+      "salvageWon": "Te llevaste más carga.",
+      "salvageLost": "Un rival se llevó la carga primero.",
+      "salvageDraw": "Nadie se adelantó en la carrera por la carga."
+    },
+    "objective": "Objetivo",
+    "objectiveMet": "Cumplido",
+    "objectiveMissed": "Fallado"
   },
   "notice": {
     "aiTookOver": "Estabas ausente, así que una IA navegó por ti. Vuelves al mando.",
@@ -273,5 +292,9 @@
     "serverShuttingDown": "El servidor se está apagando.",
     "createFailed": "No se pudo crear la sala.",
     "unknown": "Algo salió mal."
+  },
+  "objective": {
+    "surviveProgress": "Sobrevive: turno {{turn}} de {{turns}}",
+    "salvageProgress": "Carga: tú {{yours}} · rivales {{rival}} · el primero en {{target}}"
   }
 }

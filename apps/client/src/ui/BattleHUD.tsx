@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FleetList } from './FleetList';
 import { TimerBar } from './TimerBar';
+import { ObjectiveBanner } from './ObjectiveBanner';
 import { formatSeconds, statusLabel, useTurnClock } from './useTurnClock';
 
 interface BattleHUDProps {
@@ -55,6 +56,7 @@ export function BattleHUD({ onHeightChange }: BattleHUDProps) {
       </div>
 
       <TimerBar className="mx-auto w-40" />
+      <ObjectiveBanner className="pointer-events-auto mx-auto bg-ocean/80 backdrop-blur" />
     </header>
   );
 }

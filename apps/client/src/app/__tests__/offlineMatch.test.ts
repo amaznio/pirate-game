@@ -8,6 +8,18 @@ describe('offlineConfig', () => {
     expect(offlineConfig(3, '').participants).toHaveLength(4);
   });
 
+  it('carries a chosen objective into duels and skirmishes, and none by default', () => {
+    expect(offlineConfig(1, '').objective).toBeUndefined();
+    for (const opponents of [1, 3]) {
+      const config = offlineConfig(opponents, '', 'normal', 'normal', 1, {}, false, {
+        kind: 'survive',
+        turns: 6,
+      });
+      expect(config.objective).toEqual({ kind: 'survive', turns: 6 });
+    }
+    expect(offlineConfig(1, '', 'normal', 'normal', 1, {}, false, { kind: 'salvage', target: 2 }).pickups).toBeDefined();
+  });
+
   it('names the player', () => {
     expect(offlineConfig(1, '  Anne ').participants[0].name).toBe('Anne');
     expect(offlineConfig(2, 'Anne').participants[0].name).toBe('Anne');

@@ -38,7 +38,16 @@
     "join": "Join",
     "enterNameOnline": "Enter a name to play online.",
     "onlineNotSetUp": "Online play is not set up for this site.",
-    "returning": "Returning to your match…"
+    "returning": "Returning to your match…",
+    "objective": "Objective",
+    "objectiveStandard": "Standard",
+    "objectiveSurvive": "Survive",
+    "objectiveSalvage": "Salvage",
+    "objectiveBlurb": {
+      "standard": "The last ship afloat wins.",
+      "survive": "Stay afloat for {{turns}} turns. If your ship sinks first, you lose.",
+      "salvage": "A race for floating cargo: the first to take {{target}} wins."
+    }
   },
   "difficulty": {
     "easy": {
@@ -242,7 +251,17 @@
     "cannonballsLeft": "Cannonballs left",
     "lootTaken": "Loot taken",
     "otherShips": "Other ships",
-    "sunkShort": "Sunk"
+    "sunkShort": "Sunk",
+    "note": {
+      "survived": "You stayed afloat to the end.",
+      "objectiveFailed": "Your ship went down before the time was up.",
+      "salvageWon": "You took the most cargo.",
+      "salvageLost": "A rival took the cargo first.",
+      "salvageDraw": "Nobody pulled ahead in the race for cargo."
+    },
+    "objective": "Objective",
+    "objectiveMet": "Met",
+    "objectiveMissed": "Missed"
   },
   "notice": {
     "aiTookOver": "You were away, so an AI sailed for you. You are back in command.",
@@ -273,5 +292,9 @@
     "serverShuttingDown": "The server is shutting down.",
     "createFailed": "The room could not be created.",
     "unknown": "Something went wrong."
+  },
+  "objective": {
+    "surviveProgress": "Survive: turn {{turn}} of {{turns}}",
+    "salvageProgress": "Cargo: you {{yours}} · rivals {{rival}} · first to {{target}}"
   }
 }

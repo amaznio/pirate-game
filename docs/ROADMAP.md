@@ -498,8 +498,17 @@ what makes a node on the voyage map a particular kind of battle.
       (the existing ones did not move). The AI does not play to an objective
       yet, so the salvage golden ends by sinking: slice C changes that.
       Not yet reachable from the menu or the screens (slice B).
-- [ ] B. HUD and screens: an objective banner ("Turn 4 of 10", "Salvage 3/5"),
+- [x] B. HUD and screens: an objective banner ("Turn 4 of 10", "Salvage 3/5"),
       the reason on the game-over dialog, an offline menu selector, en/es/pl text.
+      Built: `presentation/objectiveProgress.ts` (progress from the viewer's
+      side, and which end note to show), `ui/ObjectiveBanner.tsx` in the mobile
+      HUD and the desktop sidebar ("Survive: turn 3 of 8", "Cargo: you 1 ·
+      rivals 0 · first to 3"), a note under the game-over title (survived, sunk
+      before time, took the most cargo, a rival took it, a draw), an Objective
+      row (Met or Missed) in the result summary, and an Objective selector in
+      the offline menu (Standard by default; survive 8 turns, salvage 3). Not
+      in the online lobby, and no URL switch. The survive banner and the menu
+      were seen in a browser; the game-over notes were only unit-tested.
 - [ ] C. AI awareness: hunters value what the objective asks (salvage raises the
       AI's loot weight, survive keeps them closing in); a harness check that the
       objectives are winnable and not trivial on every sea.

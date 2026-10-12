@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { usePreviewSettings } from '../store/previewSettings';
 import { FleetList } from './FleetList';
 import { PlanningControls } from './PlanningControls';
+import { ObjectiveBanner } from './ObjectiveBanner';
 import { SeaLegend } from './SeaLegend';
 import { TimerBar } from './TimerBar';
 import { formatSeconds, statusLabel, useTurnClock } from './useTurnClock';
@@ -41,6 +42,7 @@ export function DesktopSidebar() {
           </span>
         </div>
         <TimerBar />
+        <ObjectiveBanner />
         <FleetList />
       </div>
 

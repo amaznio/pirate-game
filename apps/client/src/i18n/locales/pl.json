@@ -38,7 +38,16 @@
     "join": "Dołącz",
     "enterNameOnline": "Podaj imię, aby grać online.",
     "onlineNotSetUp": "Gra online nie jest skonfigurowana dla tej strony.",
-    "returning": "Powrót do twojego meczu…"
+    "returning": "Powrót do twojego meczu…",
+    "objective": "Cel",
+    "objectiveStandard": "Standardowy",
+    "objectiveSurvive": "Przetrwanie",
+    "objectiveSalvage": "Ratunek ładunku",
+    "objectiveBlurb": {
+      "standard": "Wygrywa ostatni statek na wodzie.",
+      "survive": "Utrzymaj się na wodzie przez {{turns}} tur. Jeśli twój statek zatonie wcześniej, przegrywasz.",
+      "salvage": "Wyścig po pływający ładunek: wygrywa ten, kto pierwszy zbierze {{target}}."
+    }
   },
   "difficulty": {
     "easy": {
@@ -250,7 +259,17 @@
     "cannonballsLeft": "Pozostałe kule armatnie",
     "lootTaken": "Zebrane łupy",
     "otherShips": "Pozostałe statki",
-    "sunkShort": "Zatopiony"
+    "sunkShort": "Zatopiony",
+    "note": {
+      "survived": "Utrzymałeś się na wodzie do końca.",
+      "objectiveFailed": "Twój statek zatonął przed upływem czasu.",
+      "salvageWon": "Zebrałeś najwięcej ładunku.",
+      "salvageLost": "Rywal zebrał ładunek pierwszy.",
+      "salvageDraw": "Nikt nie wysunął się na prowadzenie w wyścigu po ładunek."
+    },
+    "objective": "Cel",
+    "objectiveMet": "Osiągnięty",
+    "objectiveMissed": "Nieosiągnięty"
   },
   "notice": {
     "aiTookOver": "Byłeś nieobecny, więc AI prowadziło twój statek. Znów masz ster.",
@@ -281,5 +300,9 @@
     "serverShuttingDown": "Serwer się wyłącza.",
     "createFailed": "Nie udało się utworzyć pokoju.",
     "unknown": "Coś poszło nie tak."
+  },
+  "objective": {
+    "surviveProgress": "Przetrwaj: tura {{turn}} z {{turns}}",
+    "salvageProgress": "Ładunek: ty {{yours}} · rywale {{rival}} · pierwszy do {{target}}"
   }
 }

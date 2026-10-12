@@ -12,6 +12,12 @@ import {
 import { AI_LEVELS, aiLevelBlurb, aiLevelLabel } from './aiLevels';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import { MAP_STYLE_CHOICES, mapStyleBlurb, mapStyleLabel } from './mapStyles';
+import {
+  OBJECTIVE_CHOICES,
+  objectiveBlurb,
+  objectiveLabel,
+  type ObjectiveChoice,
+} from './objectiveChoices';
 import { useStoredDifficulty } from './useStoredDifficulty';
 import { useStoredMapStyle } from './useStoredMapStyle';
 import { useStoredName } from './useStoredName';
@@ -42,6 +48,7 @@ interface MainMenuProps {
     mapStyle: MapStyle,
     loot: boolean,
     ships: OfflineShips,
+    objective: ObjectiveChoice,
   ) => void;
 }
 
@@ -54,6 +61,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   const [difficulty, setDifficulty] = useStoredDifficulty();
   const [mapStyle, setMapStyle] = useStoredMapStyle();
   const [loot, setLoot] = useState(false);
+  const [objective, setObjective] = useState<ObjectiveChoice>('standard');
   const [yourShip, setYourShip] = useState(DEFAULT_SHIP_TYPE_ID);
   const [theirShip, setTheirShip] = useState(DEFAULT_SHIP_TYPE_ID);
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
@@ -128,6 +136,19 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
           <p className="text-xs text-parchment/50">{mapStyleBlurb(t, mapStyle)}</p>
         </div>
         <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-parchment">{t('menu.objective')}</span>
+          <Segmented
+            value={objective}
+            disabled={false}
+            onChange={setObjective}
+            choices={OBJECTIVE_CHOICES.map((choice) => ({
+              label: objectiveLabel(t, choice),
+              value: choice,
+            }))}
+          />
+          <p className="text-xs text-parchment/50">{objectiveBlurb(t, objective)}</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-parchment">{t('common.loot')}</span>
           <Segmented
             value={loot ? 'on' : 'off'}
@@ -165,7 +186,7 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
             onPlayOffline(opponents, cleanName, difficulty, mapStyle, loot, {
               yours: yourShip,
               theirs: theirShip,
-            })
+            }, objective)
           }
         >
           {t('menu.setSail')}
