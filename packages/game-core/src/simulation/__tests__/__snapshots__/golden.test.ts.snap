@@ -93,6 +93,22 @@ exports[`golden matches > plays the same way: duel, open water, seed 2, hard 1`]
 }
 `;
 
+exports[`golden matches > plays the same way: duel, salvage race to 3, seed 6 1`] = `
+{
+  "events": 182,
+  "hash": "0059583ddfbb1f",
+  "hull": {
+    "enemy-ship": 4,
+    "player-ship": 0,
+  },
+  "outcome": {
+    "kind": "win",
+    "teamId": "enemy",
+  },
+  "turns": 11,
+}
+`;
+
 exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`] = `
 {
   "events": 523,
@@ -106,6 +122,23 @@ exports[`golden matches > plays the same way: duel, stormy sea, seed 3, easy 1`]
     "teamId": "player",
   },
   "turns": 36,
+}
+`;
+
+exports[`golden matches > plays the same way: duel, survive 5 turns, seed 4 1`] = `
+{
+  "events": 91,
+  "hash": "054e595ce6367c",
+  "hull": {
+    "enemy-ship": 4,
+    "player-ship": 3,
+  },
+  "outcome": {
+    "kind": "win",
+    "reason": "survived",
+    "teamId": "player",
+  },
+  "turns": 5,
 }
 `;
 

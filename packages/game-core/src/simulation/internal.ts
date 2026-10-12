@@ -6,6 +6,7 @@ import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { PickupTally } from '../domain/MatchResult';
+import type { Objective } from '../domain/Objective';
 import { cloneInventory } from '../domain/Action';
 
 /**
@@ -23,6 +24,7 @@ export interface MutableGameState {
   obstacles: Record<EntityId, Obstacle>;
   terrain: TerrainMap;
   pickups?: PickupMap;
+  objective?: Objective;
   pickupsTaken?: Record<PlayerId, PickupTally>;
   players: Record<PlayerId, PlayerState>;
   outcome: GameState['outcome'];
@@ -57,6 +59,7 @@ export function toMutable(state: GameState): MutableGameState {
     obstacles,
     terrain: state.terrain,
     ...(state.pickups === undefined ? {} : { pickups: state.pickups }),
+    ...(state.objective === undefined ? {} : { objective: state.objective }),
     ...(state.pickupsTaken === undefined ? {} : { pickupsTaken: state.pickupsTaken }),
     players,
     outcome: state.outcome,

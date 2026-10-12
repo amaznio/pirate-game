@@ -53,6 +53,11 @@ const SCENARIOS: Record<string, () => MatchConfig> = {
       seed: 13,
       shipTypeIds: ['sloop', 'brigantine', 'galleon', 'sloop'],
     }),
+  // Added with the battle objectives (phase 6).
+  'duel, survive 5 turns, seed 4': () =>
+    createDuelConfig({ seed: 4, objective: { kind: 'survive', turns: 5 } }),
+  'duel, salvage race to 3, seed 6': () =>
+    createDuelConfig({ seed: 6, objective: { kind: 'salvage', target: 3 } }),
 };
 
 describe('golden matches', () => {

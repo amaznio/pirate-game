@@ -11,6 +11,7 @@ import type { MatchRules } from './Rules';
 import type { TerrainMap } from './Terrain';
 import type { PickupMap } from './Pickup';
 import type { PickupTally } from './MatchResult';
+import type { Objective, OutcomeReason } from './Objective';
 import type { SeaChoice } from '../board/generateBoard';
 
 export type ControllerKind = 'human' | 'ai';
@@ -60,8 +61,8 @@ export interface PlayerState {
  * is called off instead of being played out with nobody watching.
  */
 export type Outcome =
-  | { readonly kind: 'win'; readonly teamId: TeamId }
-  | { readonly kind: 'draw' }
+  | { readonly kind: 'win'; readonly teamId: TeamId; readonly reason?: OutcomeReason }
+  | { readonly kind: 'draw'; readonly reason?: OutcomeReason }
   | { readonly kind: 'eliminated' };
 
 /**
@@ -81,6 +82,8 @@ export interface GameState {
   readonly terrain: TerrainMap;
   /** Barrels, crates and planks afloat, taken by the ship that ends a phase on one. None when left out. */
   readonly pickups?: PickupMap;
+  /** A way for the match to end besides last team standing. None when absent. */
+  readonly objective?: Objective;
   /** What each player has picked up so far. Only present once someone has taken something. */
   readonly pickupsTaken?: Readonly<Record<PlayerId, PickupTally>>;
   /** The kind of sea chosen for the match, when one was; the water is drawn to suit. */

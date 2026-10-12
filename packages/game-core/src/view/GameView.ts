@@ -11,7 +11,8 @@ import type { Ship } from '../domain/Ship';
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
-import type { MatchResult } from '../domain/MatchResult';
+import type { MatchResult, PickupTally } from '../domain/MatchResult';
+import type { Objective } from '../domain/Objective';
 import type { SeaChoice } from '../board/generateBoard';
 
 /** What every player may know about another player. */
@@ -47,6 +48,10 @@ export interface GameView {
   readonly terrain: TerrainMap;
   /** Barrels, crates and planks afloat, taken by the ship that ends a phase on one. None when left out. */
   readonly pickups?: PickupMap;
+  /** What each player has picked up so far (public, it is a score). None when nobody has. */
+  readonly pickupsTaken?: Readonly<Record<PlayerId, PickupTally>>;
+  /** The match's objective, when it has one. */
+  readonly objective?: Objective;
   /** The kind of sea chosen for the match, when one was; the water is drawn to suit. */
   readonly sea?: SeaChoice;
   /** The viewer's own player state, including their private plan and resources. */

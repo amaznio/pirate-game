@@ -1,6 +1,7 @@
 import type { PlayerId, TeamId } from './Entity';
 import type { Outcome } from './GameState';
 import type { PickupKind } from './Pickup';
+import type { ObjectiveKind } from './Objective';
 
 /** How many of each pickup a ship took during a match. */
 export type PickupTally = Readonly<Record<PickupKind, number>>;
@@ -35,4 +36,6 @@ export interface MatchResult {
   readonly turns: number;
   /** Every ship, in seat order. */
   readonly ships: readonly ShipResult[];
+  /** The objective the match had, and whether the hero team met it. Absent for a standard match. */
+  readonly objective?: { readonly kind: ObjectiveKind; readonly met: boolean };
 }

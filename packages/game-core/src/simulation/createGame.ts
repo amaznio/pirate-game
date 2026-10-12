@@ -128,6 +128,7 @@ export function createGame(
     obstacles,
     terrain: config.terrain ?? {},
     ...(config.pickups === undefined ? {} : { pickups: config.pickups }),
+    ...(config.objective === undefined ? {} : { objective: config.objective }),
     ...(config.sea === undefined ? {} : { sea: config.sea }),
     players,
     outcome: null,

@@ -477,11 +477,27 @@ what makes a node on the voyage map a particular kind of battle.
   taken, merchant distance to the exit) so the HUD can show it. Public to all.
 
 **Slices.**
-- [ ] A. Core and the two simple objectives: the type, evaluator, outcome
+- [x] A. Core and the two simple objectives: the type, evaluator, outcome
       reasons, **survive N** (win by being afloat after turn N; a loss if the
       hero team is sunk) and **salvage race** (a target count of pickups taken
       first, built on the phase 4 loot; ties are a draw). Tests, a golden
       scenario each, harness support.
+      Built: `domain/Objective.ts` (`survive { turns }`, `salvage { target }`,
+      `DEFAULT_OBJECTIVES` survive 8 turns and salvage 3, `OutcomeReason`),
+      `simulation/objectives.ts` (`heroTeams`, `evaluateObjective`), called first
+      by `evaluateOutcome(state, endOfTurn)`. The hero team is the humans' team,
+      or the first player's with no human. Survive: hero sunk is a win for the
+      first living opponent (`objective_failed`), turn N done is a win
+      (`survived`), the usual last-ship rule still applies. Salvage: the match
+      ends when a team has the target or no pickup is afloat; the most wins
+      (`salvaged`), a tie or nothing taken is a draw. A salvage board floats
+      `2 * target - 1` pickups, with or without Loot. Optional `objective` on
+      `MatchConfig`, state and view, and the view also carries `pickupsTaken`
+      (the scores); `MatchResult.objective` says whether the hero team met it.
+      Harness: `--objective survive|salvage`. Two golden scenarios were added
+      (the existing ones did not move). The AI does not play to an objective
+      yet, so the salvage golden ends by sinking: slice C changes that.
+      Not yet reachable from the menu or the screens (slice B).
 - [ ] B. HUD and screens: an objective banner ("Turn 4 of 10", "Salvage 3/5"),
       the reason on the game-over dialog, an offline menu selector, en/es/pl text.
 - [ ] C. AI awareness: hunters value what the objective asks (salvage raises the

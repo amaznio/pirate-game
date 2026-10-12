@@ -7,6 +7,7 @@
  *   pnpm harness --ship-a galleon --ship-b sloop     # class against class
  *   pnpm harness --classes                           # every ship class pairing
  *   pnpm harness --loot                              # with barrels, crates and planks afloat
+ *   pnpm harness --objective survive|salvage         # a battle objective (hero team is A's seat)
  *
  * Each pairing is played from both sides on every seed, so a side advantage
  * shows up as an uneven result for two identical opponents. "Starved" is the
@@ -20,6 +21,7 @@ import {
   AI_DIFFICULTIES,
   type AiDifficulty,
 } from '../src/domain/GameState';
+import { DEFAULT_OBJECTIVES, OBJECTIVE_KINDS, type ObjectiveKind } from '../src/domain/Objective';
 import { runMatch } from '../src/testing/matchRunner';
 
 interface Options {
@@ -31,6 +33,7 @@ interface Options {
   shipB: string | null;
   classes: boolean;
   loot: boolean;
+  objective: ObjectiveKind | null;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -43,6 +46,7 @@ function parseArgs(argv: string[]): Options {
     shipB: null,
     classes: false,
     loot: false,
+    objective: null,
   };
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
@@ -67,6 +71,12 @@ function parseArgs(argv: string[]): Options {
         break;
       case '--b':
         options.b = value as AiDifficulty;
+        break;
+      case '--objective':
+        if (!OBJECTIVE_KINDS.includes(value as ObjectiveKind)) {
+          throw new Error(`Unknown objective ${value}`);
+        }
+        options.objective = value as ObjectiveKind;
         break;
       case '--ship-a':
         options.shipA = value;
@@ -129,6 +139,7 @@ function play(
         seed,
         sea: options.sea,
         loot: options.loot,
+        ...(options.objective === null ? {} : { objective: DEFAULT_OBJECTIVES[options.objective] }),
         shipTypeIds: aIsPlayer ? [shipA, shipB] : [shipB, shipA],
       });
       const config = {
@@ -191,7 +202,7 @@ function main(): void {
   }
 
   console.log(
-    `Duels on the ${options.sea} sea${options.loot ? " with loot" : ""}, ${options.seeds} seeds x 2 sides per pairing
+    `Duels on the ${options.sea} sea${options.loot ? " with loot" : ""}${options.objective ? ` and the ${options.objective} objective` : ""}, ${options.seeds} seeds x 2 sides per pairing
 `,
   );
   console.log(

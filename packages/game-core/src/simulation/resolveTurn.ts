@@ -9,12 +9,19 @@ import { ACTIONS_PER_TURN } from '../domain/Action';
 import { toMutable, freeze } from './internal';
 import { resolvePhase } from './resolvePhase';
 import { getLivingShips } from './selectors';
+import { evaluateObjective } from './objectives';
 
 /**
  * The match is over when at most one team still has a ship afloat. One team
- * left is a win; none left (e.g. a simultaneous kill) is a draw.
+ * left is a win; none left (e.g. a simultaneous kill) is a draw. A match with an
+ * objective is settled by that first (see `evaluateObjective`); `endOfTurn` is
+ * true after the last phase of a turn.
  */
-export function evaluateOutcome(state: GameState): Outcome | null {
+export function evaluateOutcome(state: GameState, endOfTurn = false): Outcome | null {
+  const byObjective = evaluateObjective(state, endOfTurn);
+  if (byObjective) {
+    return byObjective;
+  }
   const teams = new Set(getLivingShips(state).map((ship) => ship.teamId));
   if (teams.size === 0) {
     return { kind: 'draw' };
@@ -46,7 +53,7 @@ export function resolveTurn(
     events.push(...result.events);
 
     if (state.outcome === null) {
-      const outcome = evaluateOutcome(state);
+      const outcome = evaluateOutcome(state, phase === ACTIONS_PER_TURN - 1);
       if (outcome) {
         state.status = 'game_over';
         state.outcome = outcome;

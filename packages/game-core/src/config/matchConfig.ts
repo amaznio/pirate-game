@@ -11,6 +11,7 @@ import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
+import { salvagePickupCount, type Objective } from '../domain/Objective';
 import {
   DEFAULT_MAP_STYLE,
   generateBoard,
@@ -67,6 +68,8 @@ export interface MatchConfig {
   /** The kind of sea the board was made for; shown in how the water looks. */
   readonly sea?: SeaChoice;
   readonly participants: readonly ParticipantConfig[];
+  /** A way for the match to end besides last team standing. None when left out. */
+  readonly objective?: Objective;
   /**
    * What each ship brings from earlier battles, by player id. Set only by code
    * that builds a match; nothing the players send can reach it. Nobody carries
@@ -116,6 +119,7 @@ function seaFor(
   spawns: readonly Position[],
   sea: SeaChoice | undefined,
   loot = false,
+  objective?: Objective,
 ): {
   obstacles: readonly ObstacleConfig[];
   terrain: TerrainMap;
@@ -128,10 +132,12 @@ function seaFor(
     style === 'open'
       ? { obstacles: [] as ObstacleConfig[], terrain: {} as TerrainMap }
       : generateBoard({ width, height, seed, spawns, style });
-  if (!loot) {
+  // A salvage race needs its own number of pickups, whether or not Loot is on.
+  const count = objective?.kind === 'salvage' ? salvagePickupCount(objective.target) : undefined;
+  if (!loot && count === undefined) {
     return { ...water, ...chosen };
   }
-  const pickups = generatePickups({ width, height, seed, spawns, ...water });
+  const pickups = generatePickups({ width, height, seed, spawns, ...water, ...(count === undefined ? {} : { count }) });
   return { ...water, ...chosen, pickups };
 }
 
@@ -147,6 +153,8 @@ export function createDuelConfig(
     sea?: SeaChoice;
     /** Float barrels, crates and planks on the water. */
     loot?: boolean;
+    /** A way for the match to end besides last team standing. */
+    objective?: Objective;
     /** Ship types for [player, enemy]; sloops when left out. */
     shipTypeIds?: readonly string[];
   } = {},
@@ -159,7 +167,8 @@ export function createDuelConfig(
   const config: MatchConfig = {
     seed,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
-    ...seaFor(BOARD_WIDTH, BOARD_HEIGHT, seed, duelSpawns, overrides.sea, overrides.loot),
+    ...seaFor(BOARD_WIDTH, BOARD_HEIGHT, seed, duelSpawns, overrides.sea, overrides.loot, overrides.objective),
+    ...(overrides.objective === undefined ? {} : { objective: overrides.objective }),
     participants: [
       {
         playerId: 'player',
@@ -200,6 +209,8 @@ export interface SkirmishOptions {
   readonly sea?: SeaChoice;
   /** Float barrels, crates and planks on the water (off when left out). */
   readonly loot?: boolean;
+  /** A way for the match to end besides last team standing. None when left out. */
+  readonly objective?: Objective;
   /** Ship types in seat order (humans first); sloops when left out. */
   readonly shipTypeIds?: readonly string[];
 }
@@ -324,6 +335,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
     spawns.map((spawn) => spawn.position),
     options.sea,
     options.loot,
+    options.objective,
   );
 
   return withAiDifficulty(
@@ -331,6 +343,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
       seed,
       board: { width, height },
       ...sea,
+      ...(options.objective === undefined ? {} : { objective: options.objective }),
       participants,
       rules: options.rules ?? DEFAULT_RULES,
       startingTokens: INITIAL_TOKEN_POOL,
