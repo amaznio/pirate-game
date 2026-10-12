@@ -17,11 +17,25 @@ function noise(x: number, y: number, salt: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-/**
- * Every rock is the same stone, but each cell turns, sizes and shades it a
- * little differently (always the same way for a given cell), so a ridge reads
- * as a run of different boulders instead of one tile repeated.
- */
+/** Which stone a rock is, how big, which way round, and where it sits, all fixed by its cell. */
+export interface StonePlacement {
+  readonly index: number;
+  readonly scale: number;
+  readonly flipX: boolean;
+  readonly x: number;
+  readonly y: number;
+}
+
+export function stonePlacement(obstacle: Obstacle): StonePlacement {
+  const { x, y } = gridToWorld(obstacle.position);
+  const cx = obstacle.position.x;
+  const cy = obstacle.position.y;
+  const index = Math.floor(noise(cx, cy, 7) * STONE_COUNT);
+  const scale = stoneScale(index);
+  const nudge = (salt: number): number => Math.round((noise(cx, cy, salt) - 0.5) * 6) * scale;
+  return { index, scale, flipX: noise(cx, cy, 6) < 0.5, x: x + nudge(8), y: y + nudge(9) };
+}
+
 /**
  * A rock in the Scallywag art: one of the sheet's twelve stones, never rotated
  * (rotating pixel art smears it), scaled by a whole number so it stays crisp,
@@ -33,18 +47,12 @@ function createStoneView(
   scene: Phaser.Scene,
   obstacle: Obstacle,
 ): Phaser.GameObjects.Image {
-  const { x, y } = gridToWorld(obstacle.position);
-  const cx = obstacle.position.x;
-  const cy = obstacle.position.y;
-  const index = Math.floor(noise(cx, cy, 7) * STONE_COUNT);
-  const scale = stoneScale(index);
-  const nudge = (salt: number): number => Math.round((noise(cx, cy, salt) - 0.5) * 6) * scale;
-
+  const place = stonePlacement(obstacle);
   return scene.add
-    .image(x + nudge(8), y + nudge(9), ScallywagKeys.water, stoneFrameName(index))
+    .image(place.x, place.y, ScallywagKeys.water, stoneFrameName(place.index))
     .setDepth(10)
-    .setScale(scale)
-    .setFlipX(noise(cx, cy, 6) < 0.5);
+    .setScale(place.scale)
+    .setFlipX(place.flipX);
 }
 
 export function createObstacleView(

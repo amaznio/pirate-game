@@ -6,6 +6,7 @@ import {
   buildPaddedShipSheet,
   registerWaterFrames,
 } from '../assets/scallywag';
+import { buildSurfTextures } from '../assets/surfTextures';
 import { useCrispFiltering } from '../assets/crispTextures';
 import { currentArtStyle } from '../../presentation/artStyle';
 import { TILE_SIZE } from '../Grid';
@@ -42,6 +43,7 @@ export class BootScene extends Phaser.Scene {
       buildPaddedShipSheet(this.textures);
       registerWaterFrames(this.textures);
       generatePixelTerrainTextures(this);
+      buildSurfTextures(this);
       useCrispFiltering(this.textures);
     }
     this.scene.start('BattleScene');

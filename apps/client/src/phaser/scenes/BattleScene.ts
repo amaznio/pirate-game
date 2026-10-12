@@ -7,7 +7,11 @@ import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
 import { createShipView, headingToAngle, hudLift, setShipHull } from '../views/ShipView';
-import { currentArtStyle } from '../../presentation/artStyle';
+import { ScallywagKeys, WATER_TILES, waterTileFrameName } from '../assets/scallywag';
+import { currentArtStyle, currentSeaMode, currentWaterStyle } from '../../presentation/artStyle';
+import { hashText } from '../assets/seaPixels';
+import { SeaView } from '../views/SeaView';
+import { SurfView } from '../views/SurfView';
 import { createObstacleView } from '../views/ObstacleView';
 import { createTerrainViews } from '../views/TerrainView';
 import { ShipHudView } from '../views/ShipHudView';
@@ -26,6 +30,10 @@ export class BattleScene extends Phaser.Scene {
   private animator!: EventAnimator;
   private cameraController!: BattleCameraController;
   private preview!: PlanPreviewView;
+  /** The pixel-art sea, when it is drawn (it drifts a little every frame). */
+  private sea: SeaView | null = null;
+  /** Foam round the rocks, with the pixel art. */
+  private surf: SurfView | null = null;
   private indicators!: OffscreenIndicators;
   /** Avatar above each ship, by ship id. */
   private readonly huds = new Map<string, ShipHudView>();
@@ -50,19 +58,27 @@ export class BattleScene extends Phaser.Scene {
     // The water extends past the board as a purely decorative margin (the
     // playable area is still board.width x board.height). It runs on far enough
     // that the camera can be dragged any way on a window bigger than the board.
+    const pixelArt = currentArtStyle() === 'scallywag';
     const margin = WORLD_MARGIN_TILES * TILE_SIZE;
-    this.add
-      .tileSprite(
-        -margin,
-        -margin,
-        worldWidth + margin * 2,
-        worldHeight + margin * 2,
-        AssetKeys.tiles,
-        TileFrames.water,
-      )
-      .setOrigin(0)
-      .setDepth(0);
+    if (pixelArt) {
+      this.addPixelWater(state, -margin, -margin, worldWidth + margin * 2, worldHeight + margin * 2);
+    } else {
+      this.add
+        .tileSprite(
+          -margin,
+          -margin,
+          worldWidth + margin * 2,
+          worldHeight + margin * 2,
+          AssetKeys.tiles,
+          TileFrames.water,
+        )
+        .setOrigin(0)
+        .setDepth(0);
+    }
     this.drawGrid(state, worldWidth, worldHeight, margin);
+    if (pixelArt) {
+      this.surf = new SurfView(this, Object.values(state.obstacles), this.sea?.direction ?? [1, 0]);
+    }
     createTerrainViews(this, state.terrain);
 
     this.views = new EntityViewRegistry();
@@ -117,6 +133,54 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * The sea in the pixel-art style: layered, drifting and never the same two
+   * cells over (`SeaView`), or the pack's own six water tiles in turn
+   * (`?water=pack`). The seed comes from the board's rocks and hazards, so every
+   * player sees the same sea for the same board.
+   */
+  private addPixelWater(
+    state: GameView,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    if (currentWaterStyle() === 'calm') {
+      const board = [
+        ...Object.values(state.obstacles).map((o) => `${o.position.x},${o.position.y}`),
+        ...Object.keys(state.terrain),
+      ].sort();
+      this.sea = new SeaView(this, { x, y, width, height }, hashText(`${state.board.width}x${state.board.height}|${board.join(';')}`), currentSeaMode(), {
+        board: { x: 0, y: 0, width: state.board.width * TILE_SIZE, height: state.board.height * TILE_SIZE },
+        rocks: Object.values(state.obstacles).map((o) => gridToWorld(o.position)),
+        // Each whirlpool is four cells; its middle is where the four meet.
+        whirlpools: Object.entries(state.terrain)
+          .filter(([, cell]) => cell.kind === 'whirlpool' && cell.corner === 'topLeft')
+          .map(([key]) => {
+            const [cx, cy] = key.split(',').map(Number);
+            const corner = gridToWorld({ x: cx, y: cy });
+            return { x: corner.x + TILE_SIZE / 2, y: corner.y + TILE_SIZE / 2 };
+          }),
+      });
+      return;
+    }
+    const water = this.add
+      .tileSprite(x, y, width, height, ScallywagKeys.water, waterTileFrameName(0))
+      .setOrigin(0)
+      .setDepth(0)
+      .setTileScale(2, 2);
+    let tile = 0;
+    this.time.addEvent({
+      delay: 260,
+      loop: true,
+      callback: () => {
+        tile = (tile + 1) % WATER_TILES;
+        water.setFrame(waterTileFrameName(tile));
+      },
+    });
+  }
+
   private onResize(): void {
     if (!this.cameraController.userMoved) {
       this.recenterOnPlayer();
@@ -124,7 +188,9 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /** Keeps avatars on their ships and edge indicators on off-screen ones. */
-  update(): void {
+  update(time: number, delta: number): void {
+    this.sea?.update(delta);
+    this.surf?.update(time);
     if (!this.client || !this.cameraController) {
       return;
     }
@@ -226,7 +292,8 @@ export class BattleScene extends Phaser.Scene {
     shade.strokeRect(0, 0, worldWidth, worldHeight);
 
     const g = this.add.graphics().setDepth(1);
-    g.lineStyle(1, 0x0d3b49, 0.5);
+    // The pixel art keeps the grid fainter: it is a lot to look at on a calm sea.
+    g.lineStyle(1, 0x0d3b49, currentArtStyle() === 'scallywag' ? 0.28 : 0.5);
     for (let x = 0; x <= state.board.width; x += 1) {
       g.lineBetween(x * TILE_SIZE, 0, x * TILE_SIZE, worldHeight);
     }

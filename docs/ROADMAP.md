@@ -254,16 +254,50 @@ approved. Needs the cell-size decision under "Art".
       and 5x, which was too big), nudged by whole art pixels. Not sand islets: the sea has no islands,
       only stones, singles, clumps and ridges. Frames measured from the pixels
       (`STONE_BOXES`) and tested.
-- [x] Zoom fix and free dragging (pixel art). The first whole-step zoom had to
-      keep the board filling the screen, which on a big window left one step and
-      froze the zoom; the board may now shrink to 40% of the screen, and a fast
-      wheel spin is up to four steps. The camera's scroll limits were the board
-      plus two tiles, so a window wider than the board could only be dragged up
-      and down; they now reach half the visible size past the board
-      (`camera/panPadding.ts`, never more than the sea drawn, which is 40 tiles
-      each side for both arts), so any point of the board can reach the middle
-      of the screen.
-- [ ] Animated deep water and shallow ring
+- [x] The sea (`?art=scallywag`), fourth version. The tiled 32x32 water was
+      rejected twice (a tile repeated every cell), and the noise-contour lines of
+      the third version looked like a static line sliding across the water, busy,
+      and clashed when swell and chop ran different ways. Now nothing is a line
+      and nothing slides (`SeaView`, `RippleField`, `assets/seaPixels.ts`,
+      `ripplePixels.ts`, tested): water in three shades of blue in broad patches
+      that stay still. In the default sea they are worked out from the board
+      (`assets/seaDepth.ts`, tested), not tiled: non-repeating fractal noise bent
+      by a second field so the patches curve, made shallower round every rock
+      (a pale shelf), deeper round every whirlpool, and open sea past the edge of
+      the board, cut into four levels with a light dither at the edges; one
+      picture of the board and 8 cells round it, made in about 10 ms from a
+      coarse grid filled in by blocks (a first version that sampled every pixel
+      took 0.9 s). Plain open-sea colour fills the rest. The older tiled layer
+      (`depthLayer`) is kept for `?sea=lines`; a passing swell as fine, soft stripes of slightly
+      lighter and darker water, four to a layer (about four cells apart), bent by
+      noise, drifting about a cell every seven seconds (`bandLayer`, mostly
+      see-through; first tried broad, which looked like the depth patches and
+      hid them); and the surface as 420 ripples (a dash 9 px wide, an arch 13 and
+      a wide arch 17, up to 3 px high, so 18 to 34 px on screen) that grow,
+      hold, shrink and vanish in place over about 1.4 s, then reappear somewhere
+      else after a random 0.8 to 6.5 s, lying across the swell (about a quarter
+      are visible at once), with 30 glints. Each layer is seamless
+      (`PeriodicNoise` repeats exactly every 512 px) and moves in whole art
+      pixels. The board decides the seed (so every player sees the same sea) and
+      which of four straight directions the swell travels. The grid is fainter
+      with this art. The swell stripes are switched off for now, to see the sea
+      without them (`?bands=on` brings them back). `?sea=lines` brings back the third version (long swell and
+      chop lines) to compare; `?water=pack` the pack's own tiles.
+- [x] Surf on the rocks (`assets/surfPixels.ts`, `surfTextures.ts`,
+      `views/SurfView.ts`, tested): each stone's outline is traced from the sheet
+      and gives a halo of pale shallows and four steps of foam washing out from
+      the stone and fading, every 6 s. The wave arrives at each rock in the
+      swell's direction, a cell a second, so one wave rolls over the rocks in turn.
+      Still to do from the plan: spray when a crest crashes on a rock, a slow tide
+      that makes the halo and foam breathe, and the Calm/Normal/Stormy look
+      (palette, swell speed, whitecaps), which needs the sea style to reach the
+      client (it is not in the view yet).
+- [x] (first try) Animated deep water: the sheet's six 16x16 water tiles
+      (3x2 at x 224, y 0; each tiles seamlessly) as a tiled sea at 2x, so a tile
+      is half a cell and the grid lines fall on tile edges, changing to the next
+      tile every 260 ms. The shallow ring and shore foam are for island edges and
+      are not used: the sea has no islands. The water is a much brighter blue
+      than the Kenney water; worth judging by eye against the ships and hazards.
 - [x] Wind lanes and whirlpools redrawn at the same pixel density
       (`phaser/assets/pixelTerrain.ts`, tested): the whirlpool is 32x32 art pixels
       in 8 frames that turn by swapping frames (rotating smears pixel art), the
@@ -329,7 +363,9 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 
 ## Log
 
-- 2026-10-12: phase 3: pixel-art camera fixed (zoom steps on a big window, dragging every way).
+- 2026-10-12: phase 3: the sea as drifting noise layers instead of a tile, and surf on the rocks; tests: client 152.
+
+- 2026-10-12: phase 3: animated pixel-art sea; tests: client 118.
 
 - 2026-10-12: phase 3: whole-step zoom for the pixel art; tests: client 117.
 

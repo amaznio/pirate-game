@@ -172,15 +172,32 @@ export function stoneScale(index: number): number {
   return STONE_BOXES[index].w >= 9 ? 3 : 2;
 }
 
+/**
+ * The six deep-water tiles (16x16, three across and two down at x 224, y 0).
+ * Each tiles seamlessly with itself; played one after another they make the
+ * sea shimmer.
+ */
+export const WATER_TILES = 6;
+export const WATER_TILE_SIZE = 16;
+export const waterTileFrameName = (index: number): string => `water/${index}`;
+
 /** Every named frame cut from the water sheet. */
 export function waterFrameRects(): FrameRect[] {
-  return STONE_BOXES.map((box, index) => ({
+  const stones = STONE_BOXES.map((box, index) => ({
     name: stoneFrameName(index),
     x: box.x,
     y: box.y,
     w: box.w,
     h: box.h,
   }));
+  const tiles = Array.from({ length: WATER_TILES }, (_, index) => ({
+    name: waterTileFrameName(index),
+    x: 224 + WATER_TILE_SIZE * (index % 3),
+    y: WATER_TILE_SIZE * Math.floor(index / 3),
+    w: WATER_TILE_SIZE,
+    h: WATER_TILE_SIZE,
+  }));
+  return [...stones, ...tiles];
 }
 
 export interface FrameRect {

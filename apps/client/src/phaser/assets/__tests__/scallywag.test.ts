@@ -7,6 +7,7 @@ import {
   STONE_COUNT,
   WAKE_FRAMES,
   WATER_SHEET_SIZE,
+  WATER_TILES,
   cannonFrameName,
   hullFrameName,
   packFrames,
@@ -129,8 +130,32 @@ describe('the Scallywag effects', () => {
   });
 });
 
+describe('the Scallywag water', () => {
+  const tiles = waterFrameRects().filter((rect) => rect.name.startsWith('water/'));
+  const all = waterFrameRects();
+
+  it('has six 16x16 tiles on the sheet that touch no stone', () => {
+    expect(tiles).toHaveLength(WATER_TILES);
+    for (const tile of tiles) {
+      expect(tile.w).toBe(16);
+      expect(tile.h).toBe(16);
+      expect(tile.x + tile.w, tile.name).toBeLessThanOrEqual(WATER_SHEET_SIZE.width);
+      expect(tile.y + tile.h, tile.name).toBeLessThanOrEqual(WATER_SHEET_SIZE.height);
+    }
+    for (let i = 0; i < all.length; i += 1) {
+      for (let j = i + 1; j < all.length; j += 1) {
+        const a = all[i];
+        const b = all[j];
+        const overlap = a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+        expect(overlap, `${a.name} / ${b.name}`).toBe(false);
+      }
+    }
+  });
+});
+
 describe('the Scallywag stones', () => {
-  const rects = waterFrameRects();
+  const rects = waterFrameRects().filter((rect) => rect.name.startsWith('stone/'));
 
   it('are twelve, inside the water sheet, each with its own name', () => {
     expect(rects).toHaveLength(STONE_COUNT);
