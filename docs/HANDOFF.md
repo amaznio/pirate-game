@@ -119,6 +119,17 @@ A finished match now yields a `MatchResult` (outcome, turns, each ship's hull, a
 ### Roadmap phase 6, battle objectives and a token rework (a later session)
 All of slices A to F are in (survive N turns, a salvage race, AI that plays to them, the merchant and the ambush). Reinforcements are ships with no hull and an arrival turn, so the controller needed no change. Along the way the token economy was raised and rebuilt: tokens are made to fit the hold's mix per class and swap at the cap instead of being refused; the class ladder was rebalanced through ammo and reload (hulls stayed 4, 5, 6); the easy AI was weakened; see ROADMAP.md phase 1 "Token economy revisited". Play feedback from the user: too much ammo speeds games up, and a ship with 3 cannonballs per shot regaining 1 a turn feels bad late in a match, but it was kept for now. The cargo race (salvage) mostly ends by sinking; the user said to leave that for later.
 
+### UI redesign: the Harbour theme on shadcn (a later session; commits `62da054`, `f8aa4b6`)
+The user adopted a Claude Design bundle (14 boards: Harbour dark skin, Logbook parchment skin, a components board and a recommendation board). It now lives, untracked, in `.scratch/` (gitignored; it is a nested HTML bundle, unpack its manifest and templates to read it). Decisions: build **Harbour** only; use **shadcn** (Radix, Tailwind 4) for generic primitives on every screen, including the HUD; keep game widgets custom; one token source in `apps/client/src/index.css` (the design's palette, radii and the shadcn role variables mapped onto it); never use raw hex colours or one-off button classes in screens.
+
+- **Setup:** `components.json`, an `@/` alias (`tsconfig.json`, `vite.config.ts`), `src/lib/utils.ts` (`cn`), `src/components/ui/*` (button, badge, card, collapsible, dialog, popover, radio-group, select, switch, toggle, toggle-group, tooltip, restyled to the design), Alegreya SC via `@fontsource`. The shadcn CLI writes `from "cn"` imports; change them to `@/lib/utils`. The Select default position is `popper`, so the list opens below the trigger.
+- **`src/kit/`:** `ScreenFrame`, `Tile`, `Segmented` (ToggleGroup with a check on the chosen item; `compact`), `ChoiceRow` and `ChoiceGroup` (radio plus an info popover for the rule), `Field`, `Stepper`, `Notice`, `Banner`, and `KitBoard`. **`/?kit` (dev only) shows the components**; it does not yet include the HUD widgets or Dialog, Select or Popover.
+- **Menu flow:** Home (title, Play, language dropdown) to Choose a mode (Quick battle, Play with friends, Voyage "coming soon") to the mode's settings (`QuickBattleScreen`, `FriendsScreen`). `MainMenu` holds the step. The player's name is asked for only on the friends screen (a stored name is still used for offline matches). A `?room=` link opens the friends screen. Quick battle shows the "Your battle" summary first on a phone and in the right column on desktop; each objective's rule is behind an info popover. `LobbyScreen` is two columns with a footer bar. Game over and "sunk, keep watching" are shadcn Dialogs in `ui/EndDialogs.tsx`.
+- **Battle HUD:** `TurnTimer` (icon, digits, bar, and a "Hurry" chip when low), hull pips (solid or hollow), `FleetList` with words for sunk, escaped or arriving, `Banner` for the objective and status messages, a pinned Clear and Pass or Lock In row, and a `SeaGuideButton` (phone only) that opens the wind, whirlpool and loot legend. The phone sheet is custom and **non-modal on purpose** (a modal sheet would block the board). Its header row holds "Battle Plan", the Auto token switch and the cannonball chip; with Auto off a captioned row of arrow buttons ("Next turn you get:") appears (`ui/NextTokenControl.tsx`). The sheet is about 36 per cent of the screen.
+- **Kept on purpose:** the user preferred the **old** token buttons, plan slots and round cannonball toggles over the redesign (`MoveTokenTray`, `PlannedMoves`, `CannonGroup`, `CannonToggle` are as before). Do not re-do them in the design's L/R counter style unless asked.
+- **Not done:** HUD widgets and Dialog, Select and Popover on the `?kit` board; a CI check that fails on raw hex colours outside `index.css`; the Voyage preview map; the design's bottom tab bar (waits for Voyage); the design's collapsed phone strip is taller than the mockup (full token chips).
+- **Not seen in a browser:** the Lobby, the game-over and sunk dialogs, the objective banner and "Hurry" chip at phone width, the Friends screen with a real server, the Spanish and Polish layouts (new strings are machine-drafted), and any screenshot of an open dropdown.
+
 ## 3. The sea, and why it ended up this way
 
 Three versions were rejected by the user, which is why the final design is what
@@ -162,8 +173,9 @@ swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 
 ## 4. Git state at the end of the session
 
-On `main`, tracking `origin/main`. Everything is pushed, including the phase 3
-art commits (`cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`,
+On `main`, tracking `origin/main`. The three UI commits (`62da054`, `f8aa4b6`,
+`526c2ab` for the `.scratch/` ignore) are **not pushed**. Everything before them
+is pushed, including the phase 3 art commits (`cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`,
 `2bdd578` docs) and the i18n work (phase 3b, the commit that carries this file).
 Still ask before pushing new work.
 
@@ -183,6 +195,10 @@ CRLF/timestamp artefact, `git add` clears it.
 - When asked to commit part of the work, stage only that part and test the
   staged state alone (`git stash --keep-index`), then restore.
 - State plainly what is unverified (anything about real WebGL rendering).
+- For UI work they send screenshots with short verdicts ("looks crappy", "needs
+  to be more compact") and often prefer the **previous** version of a section;
+  restore it from git rather than defending the new one. They ask "suggest"
+  when they want options first, and answer "Go with A" or "Do all 3".
 
 ## 6. Gotchas for this machine and these tools
 
@@ -205,7 +221,20 @@ CRLF/timestamp artefact, `git add` clears it.
 - Textures cut from one sheet bleed into each other when a sprite sits on a
   fractional pixel or is rotated: use padded copies (`buildPaddedShipSheet`,
   the rock texture) and whole-pixel camera steps.
-- `.claude/launch.json` is created only to start a preview; delete it after.
+- `.claude/launch.json` is created only to start a preview; delete it after
+  (it is untracked and stays out of commits).
+- **The in-app browser did render the WebGL board in the UI session** (a match
+  at `/?ais=3&seed=3` drew the sea and ships), so try it before the Canvas
+  switch above. The hidden-pane animation stall still applies (a turn can stay
+  on "Resolving").
+- **Screenshots at an emulated viewport are often cropped or zoomed**, and a
+  screenshot taken right after an action can time out or show the previous
+  state. Retry, take the pane at its natural size, or read the DOM
+  (`find`, `get_page_text`, element geometry through `javascript_tool`). Reset
+  the viewport with the `desktop` preset afterwards. The panel is about 800 px
+  wide, so it shows the narrow layout; set 1280 to see the desktop layout.
+- Open Radix popups (Select, Popover) are hard to screenshot here; check their
+  position by geometry and their content by text.
 
 ## 7. Next steps (in this order)
 
@@ -224,6 +253,15 @@ CRLF/timestamp artefact, `git add` clears it.
    `LANGUAGES` entry (see the i18n note above); only the menu and one offline
    battle were checked in a browser (the WebGL board cannot run in the in-app
    browser).
+
+## 7b. UI next steps
+
+1. Look at the screens listed under "Not seen in a browser" above, on a real
+   phone if possible.
+2. Add the HUD widgets, Dialog, Select and Popover to `?kit`; add the raw-hex
+   check.
+3. Decide with the user whether to restyle the old token, plan and cannon
+   section after all (they like it as it is), then the Voyage preview.
 
 ## 8. Rules from the roadmap that always apply
 
