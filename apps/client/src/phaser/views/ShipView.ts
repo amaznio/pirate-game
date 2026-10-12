@@ -51,7 +51,7 @@ export function createShipView(
       x,
       y,
       // Your own ship is outlined in white, every other in its team's colour.
-      { outline: options.isViewer ? 0xffffff : style.color },
+      { outline: options.isViewer ? 0xffffff : style.color, showCell: true },
     );
     container.setDepth(20);
     container.setRotation(headingToAngle(ship.heading));

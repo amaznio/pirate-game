@@ -91,10 +91,13 @@ export function createScallywagShip(
   const container = scene.add.container(x, y);
 
   if (options.showCell) {
-    // Four small corner marks, not a box: enough to read the footprint, nothing to mistake for terrain.
+    // A faint tint over the cell and four small corner marks, not a box: enough
+    // to read the footprint, nothing to mistake for terrain.
     const marks = scene.add.graphics();
-    marks.lineStyle(1, 0xffffff, 0.55);
     const half = CELL / 2;
+    marks.fillStyle(0xffffff, 0.1);
+    marks.fillRect(-half, -half, CELL, CELL);
+    marks.lineStyle(2, 0xffffff, 0.6);
     const tick = 7;
     for (const sx of [-1, 1]) {
       for (const sy of [-1, 1]) {
