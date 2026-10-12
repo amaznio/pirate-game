@@ -1,5 +1,6 @@
 import type { GameState, Outcome } from '../domain/GameState';
 import type { TeamId } from '../domain/Entity';
+import type { Objective } from '../domain/Objective';
 import { getLivingShips } from './selectors';
 
 /**
@@ -22,6 +23,42 @@ export function pickupsByTeam(state: GameState): Map<TeamId, number> {
     byTeam.set(player.teamId, (byTeam.get(player.teamId) ?? 0) + taken);
   }
   return byTeam;
+}
+
+/**
+ * The merchant match. In order: the merchant has got away (the opposition
+ * wins), the merchant has been sunk (the hero team wins, or a draw if the hero
+ * team went down with it), the hero team has been sunk, and last, the clock: a
+ * merchant still afloat when its turns run out has got clean away.
+ */
+function evaluateMerchant(
+  state: GameState,
+  objective: Extract<Objective, { kind: 'merchant' }>,
+  endOfTurn: boolean,
+): Outcome | null {
+  const merchant = objective.shipId ? state.ships[objective.shipId] : undefined;
+  if (!merchant) {
+    return null;
+  }
+  const living = getLivingShips(state);
+  const heroes = heroTeams(state);
+  const hero = living.find((ship) => heroes.has(ship.teamId));
+
+  if (merchant.escaped) {
+    return { kind: 'win', teamId: merchant.teamId, reason: 'escaped' };
+  }
+  if (merchant.hp <= 0) {
+    return hero
+      ? { kind: 'win', teamId: hero.teamId, reason: 'intercepted' }
+      : { kind: 'draw' };
+  }
+  if (!hero) {
+    return { kind: 'win', teamId: merchant.teamId, reason: 'objective_failed' };
+  }
+  if (endOfTurn && state.turn >= objective.turns) {
+    return { kind: 'win', teamId: merchant.teamId, reason: 'escaped' };
+  }
+  return null;
 }
 
 /**
@@ -50,6 +87,10 @@ export function evaluateObjective(state: GameState, endOfTurn: boolean): Outcome
       return hero ? { kind: 'win', teamId: hero.teamId, reason: 'survived' } : null;
     }
     return null;
+  }
+
+  if (objective.kind === 'merchant') {
+    return evaluateMerchant(state, objective, endOfTurn);
   }
 
   // salvage

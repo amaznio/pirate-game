@@ -116,6 +116,9 @@ no respawn; the opponent sees them. It was only glanced at in a browser
 ### Roadmap phase 5, match result and carry-over (a later session)
 A finished match now yields a `MatchResult` (outcome, turns, each ship's hull, ammo, tokens and pickups taken), sent on the view only at `game_over` and shown as a small summary on the game-over screen. A match can start ships with a carried hull, ammo and a cannon-damage modifier through an optional `carryOver` on `MatchConfig`. By the user's decision it is **not reachable from a URL, the lobby or the socket**, so it cannot be cheated: keep it that way. See ROADMAP.md phase 5.
 
+### Roadmap phase 6, battle objectives and a token rework (a later session)
+Slices A to D are in (survive N turns, a salvage race, AI that plays to them, and the merchant); slice E (ambush) is open. Along the way the token economy was raised and rebuilt: tokens are made to fit the hold's mix per class and swap at the cap instead of being refused; the class ladder was rebalanced through ammo and reload (hulls stayed 4, 5, 6); the easy AI was weakened; see ROADMAP.md phase 1 "Token economy revisited". Play feedback from the user: too much ammo speeds games up, and a ship with 3 cannonballs per shot regaining 1 a turn feels bad late in a match, but it was kept for now. The cargo race (salvage) mostly ends by sinking; the user said to leave that for later.
+
 ## 3. The sea, and why it ended up this way
 
 Three versions were rejected by the user, which is why the final design is what
@@ -208,7 +211,7 @@ CRLF/timestamp artefact, `git add` clears it.
 
 1. **Optional leftovers:** the grey wreck set (wait until wrecks are real board
    objects), a sea section in the art lab (left out on purpose), spray (off).
-2. **Phase 6** (battle objectives; a full plan with slices A to F and the user's decisions is now in ROADMAP.md, start from slice A) and onward: a client-only solo run (`run-core`), Postgres, monsters. First
+2. **Phase 6** (battle objectives; slices A to D are done, start from slice E, the ambush, in ROADMAP.md) and onward: a client-only solo run (`run-core`), Postgres, monsters. First
    have the user look at Loot in play and tune `PICKUP_EFFECTS`, `PICKUP_COUNT`
    and the sprites.
 3. Known loose ends: the menu's ship choice does not carry into an online lobby

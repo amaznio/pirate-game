@@ -32,6 +32,43 @@ describe('objectiveProgress', () => {
   });
 });
 
+describe('objectiveProgress for a merchant match', () => {
+  const merchantView = (patch: Record<string, unknown> = {}) => {
+    const base = createGame(createDuelConfig({ sea: 'open', objective: { kind: 'merchant', turns: 12 } }));
+    const ships = { ...base.ships, ...(patch.ships as object) };
+    return viewOf({ ...base, turn: (patch.turn as number) ?? 1, ships } as GameState);
+  };
+
+  it('counts the cells the merchant still has to go, and the turns it has', () => {
+    const start = objectiveProgress(merchantView());
+    expect(start).toMatchObject({ kind: 'merchant', turn: 1, turns: 12 });
+    expect(start && start.kind === 'merchant' ? start.cells : -1).toBe(18);
+
+    const base = createGame(createDuelConfig({ sea: 'open', objective: { kind: 'merchant', turns: 12 } }));
+    const moved = merchantView({
+      turn: 20,
+      ships: { 'merchant-ship': { ...base.ships['merchant-ship'], position: { x: 15, y: 10 } } },
+    });
+    expect(objectiveProgress(moved)).toEqual({ kind: 'merchant', turn: 12, turns: 12, cells: 4 });
+  });
+
+  it('has no distance once the merchant is gone', () => {
+    const base = createGame(createDuelConfig({ sea: 'open', objective: { kind: 'merchant', turns: 12 } }));
+    const gone = merchantView({
+      ships: { 'merchant-ship': { ...base.ships['merchant-ship'], hp: 0 } },
+    });
+    expect(objectiveProgress(gone)).toMatchObject({ kind: 'merchant', cells: null });
+  });
+
+  it('explains how it ended', () => {
+    const view = merchantView();
+    expect(endNote(view, 'win', 'intercepted')).toBe('intercepted');
+    expect(endNote(view, 'loss', 'escaped')).toBe('escaped');
+    expect(endNote(view, 'loss', 'objective_failed')).toBe('merchantLost');
+    expect(endNote(view, 'draw', undefined)).toBeNull();
+  });
+});
+
 describe('endNote', () => {
   const survive = viewOf(createGame(createDuelConfig({ sea: 'open', objective: { kind: 'survive', turns: 5 } })));
   const salvage = viewOf(createGame(createDuelConfig({ sea: 'open', objective: { kind: 'salvage', target: 2 } })));

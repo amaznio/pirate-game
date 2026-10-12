@@ -46,8 +46,10 @@
     "objectiveBlurb": {
       "standard": "The last ship afloat wins.",
       "survive": "Stay afloat for {{turns}} turns. If your ship sinks first, you lose.",
-      "salvage": "A race for floating cargo: the first to take {{target}} wins."
-    }
+      "salvage": "A race for floating cargo: the first to take {{target}} wins.",
+      "merchant": "An unarmed cargo ship runs for the east edge and your opponents escort it. Sink it within {{turns}} turns, or it gets away."
+    },
+    "objectiveMerchant": "Merchant"
   },
   "difficulty": {
     "easy": {
@@ -90,6 +92,10 @@
     "galleon": {
       "name": "Galleon",
       "description": "A heavy hull that covers ground fast, but turns less often."
+    },
+    "merchantman": {
+      "name": "Merchantman",
+      "description": "An unarmed cargo ship making a run for the edge of the map."
     }
   },
   "roomVisibility": {
@@ -154,7 +160,8 @@
     "aiSailing": "An AI is sailing this ship",
     "aiSailingLevel": "An AI is sailing this ship ({{level}})",
     "aiTag": "AI",
-    "sunk": "Sunk"
+    "sunk": "Sunk",
+    "escaped": "Away"
   },
   "shipStatus": {
     "hull": "Hull {{hp}} of {{maxHp}}"
@@ -257,11 +264,15 @@
       "objectiveFailed": "Your ship went down before the time was up.",
       "salvageWon": "You took the most cargo.",
       "salvageLost": "A rival took the cargo first.",
-      "salvageDraw": "Nobody pulled ahead in the race for cargo."
+      "salvageDraw": "Nobody pulled ahead in the race for cargo.",
+      "intercepted": "You sank the merchant before it got away.",
+      "escaped": "The merchant got away.",
+      "merchantLost": "Your ship went down before you could stop the merchant."
     },
     "objective": "Objective",
     "objectiveMet": "Met",
-    "objectiveMissed": "Missed"
+    "objectiveMissed": "Missed",
+    "escapedShort": "Escaped"
   },
   "notice": {
     "aiTookOver": "You were away, so an AI sailed for you. You are back in command.",
@@ -295,6 +306,8 @@
   },
   "objective": {
     "surviveProgress": "Survive: turn {{turn}} of {{turns}}",
-    "salvageProgress": "Cargo: you {{yours}} · rivals {{rival}} · first to {{target}}"
+    "salvageProgress": "Cargo: you {{yours}} · rivals {{rival}} · first to {{target}}",
+    "merchantProgress": "Merchant: {{cells}} cells from escaping · turn {{turn}} of {{turns}}",
+    "merchantGone": "The merchant is gone"
   }
 }

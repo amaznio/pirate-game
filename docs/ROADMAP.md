@@ -607,11 +607,51 @@ what makes a node on the voyage map a particular kind of battle.
       ways to win), or should the race decide more (closer or more cargo, a
       target of 1, or no last-ship shortcut with an AI that keeps collecting)?
       Two golden scenarios were refreshed on purpose; the others did not move.
-- [ ] D. **Merchant interception:** a neutral `merchant` team and an unarmed
+- [x] D. **Merchant interception:** a neutral `merchant` team and an unarmed
       ship class, a scripted route planner (its own AI profile, not the fighting
       AI), an exit cell or edge, a `SHIP_ESCAPED` event, win by sinking it
       before it escapes, loss if it gets away or the hero team sinks. New art
       choice for the merchant (grey or white hull from the Scallywag sheet).
+      Built:
+      - **Objective** `merchant { turns }` (default 12); `shipId` and `exit` (the
+        edge it is making for, east) are filled in when the match is built
+        (`withMerchant` in `config/matchConfig.ts`, for both duels and
+        skirmishes). The merchant (`merchant` / `merchant-ship`, class
+        `merchantman`) starts mid west edge, kept clear of rocks and hazards, and
+        **sails for the opposition**: every AI ship and the merchant share the
+        team `escort`, so escorts and merchant never shoot each other (and the
+        hero is the only hostile). Teams: the human's team against `escort`.
+      - **Merchantman** (`config/shipTypes.ts`): hull 3, no guns, slow on purpose
+        (6 tokens to start, +1 a turn, token order forward-heavy), `playable:
+        false`, so it never appears in a ship choice, `?ship=`, `?enemy=` or a
+        lobby message (`isPlayableShipType`, `playableShipTypeIds`).
+      - **Escape and rules:** after movement each phase (before fire) the merchant
+        on the exit edge leaves: `SHIP_ESCAPED`, hull 0, `escaped: true` on the
+        ship. Evaluator order: escaped (escort wins, `escaped`), sunk (hero wins,
+        `intercepted`; draw if the hero went down too), hero sunk
+        (`objective_failed`), then the clock (escapes at the end of turn N).
+        Sinking only the escorts does not settle it.
+      - **AI:** the merchant plans with the fighting AI's search and a goal of
+        reaching the exit edge (a bonus of 200 for any phase it ends there, danger
+        weight 20, never mistakes, never fires). A hero-team AI hunts the merchant
+        (hits on it are worth three times as much).
+      - **Client:** an Objective choice "Merchant" in the offline menu (your
+        opponents become the escorts), a banner "Merchant: 18 cells from
+        escaping, turn 1 of 12", end notes (sank it, it got away, your ship
+        went down), the merchant listed as "Away" once escaped, a gold strip with
+        arrows along the exit edge, the escape drawn as the ship sailing off and
+        fading, a flat-sailed medium hull for the art. English, Spanish, Polish.
+      - **Tuning** (harness, 20 duels a sea, a hero AI that hunts the merchant):
+        a merchant that used every token every turn (8 start, +2) escaped in
+        about 5 turns and the hero won 0 to 10 per cent; at 6 start and +1 the
+        hero wins 45 to 65 per cent, loses to the escort's guns 30 to 40 per
+        cent and the merchant escapes about 10 per cent of the time. A human is
+        likely to do differently: the numbers are constants (`merchantman`).
+      - Tests: `merchant.test.ts` (19), client tests for progress, notes, menu
+        and URL, and two golden scenarios (a duel and a skirmish).
+      - Seen once in a browser: the menu choice, the banner, the fleet list and
+        the whole board with the exit strip. The escape animation and the
+        end-of-match notes were not watched.
 - [ ] E. **Ambush:** scheduled arrivals (`SHIP_ARRIVED`), ships and their AI
       added mid-match, which touches the controller's player handling (the
       riskiest slice, so last). A big enemy wave versus a hero that starts

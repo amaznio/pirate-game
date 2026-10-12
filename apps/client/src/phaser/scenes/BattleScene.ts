@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { vectorFor } from '@pirate/game-core/domain/Direction';
 import type { GameView } from '@pirate/game-core/view/GameView';
 import type { ClientSnapshot, GameClient } from '@pirate/game-core/client/GameClient';
 import type { GameEvent } from '@pirate/game-core/domain/GameEvent';
@@ -88,6 +89,7 @@ export class BattleScene extends Phaser.Scene {
       );
     }
     createTerrainViews(this, state.terrain);
+    this.drawExit(state, worldWidth, worldHeight);
     this.pickups = new PickupField(this);
 
     this.views = new EntityViewRegistry();
@@ -98,6 +100,11 @@ export class BattleScene extends Phaser.Scene {
       },
       onDestroyed: (shipId) => this.removeHud(shipId),
       onPickup: (event) => this.pickups.collect(event),
+      onEscaped: (shipId) => this.removeHud(shipId),
+      exitDirection: () => {
+        const objective = this.client.getView().objective;
+        return objective?.kind === 'merchant' ? objective.exit : undefined;
+      },
     });
     this.cameraController = new BattleCameraController(this, worldWidth, worldHeight, {
       pixelSteps: currentArtStyle() === 'scallywag',
@@ -310,6 +317,39 @@ export class BattleScene extends Phaser.Scene {
     }
     for (let y = 0; y <= state.board.height; y += 1) {
       g.lineBetween(0, y * TILE_SIZE, worldWidth, y * TILE_SIZE);
+    }
+  }
+
+  /**
+   * In a merchant match, marks the edge the merchant is making for: a pale gold
+   * strip along the edge with an arrow in every cell pointing off the board.
+   */
+  private drawExit(state: GameView, worldWidth: number, worldHeight: number): void {
+    const objective = state.objective;
+    if (objective?.kind !== 'merchant' || !objective.exit) {
+      return;
+    }
+    const g = this.add.graphics().setDepth(2);
+    const colour = 0xf2c14e;
+    const way = vectorFor(objective.exit);
+    const horizontal = way.x !== 0;
+    const strip = TILE_SIZE;
+    const x0 = way.x > 0 ? worldWidth - strip : 0;
+    const y0 = way.y > 0 ? worldHeight - strip : 0;
+    g.fillStyle(colour, 0.16);
+    g.fillRect(x0, y0, horizontal ? strip : worldWidth, horizontal ? worldHeight : strip);
+
+    const cells = horizontal ? state.board.height : state.board.width;
+    g.fillStyle(colour, 0.55);
+    for (let i = 0; i < cells; i += 1) {
+      // The middle of this cell of the strip, and an arrow of three points round it.
+      const cx = horizontal ? x0 + strip / 2 : (i + 0.5) * TILE_SIZE;
+      const cy = horizontal ? (i + 0.5) * TILE_SIZE : y0 + strip / 2;
+      const size = 10;
+      const tip = { x: cx + way.x * size, y: cy + way.y * size };
+      const left = { x: cx - way.x * size + way.y * size, y: cy - way.y * size - way.x * size };
+      const right = { x: cx - way.x * size - way.y * size, y: cy - way.y * size + way.x * size };
+      g.fillTriangle(tip.x, tip.y, left.x, left.y, right.x, right.y);
     }
   }
 

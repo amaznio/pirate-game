@@ -17,6 +17,8 @@ export interface ShipResult {
   readonly hull: number;
   readonly maxHull: number;
   readonly afloat: boolean;
+  /** The ship got clean away (a merchant that reached its exit). */
+  readonly escaped?: boolean;
   /** Cannonballs left in the pool. */
   readonly ammo: number;
   /** Movement tokens left (they do not carry over: each battle starts fresh). */

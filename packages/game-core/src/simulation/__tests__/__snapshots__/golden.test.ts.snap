@@ -47,6 +47,24 @@ exports[`golden matches > plays the same way: duel, galleon v brigantine, stormy
 }
 `;
 
+exports[`golden matches > plays the same way: duel, merchant interception, seed 5 1`] = `
+{
+  "events": 60,
+  "hash": "1cc987897d67c7",
+  "hull": {
+    "enemy-ship": 4,
+    "merchant-ship": 0,
+    "player-ship": 4,
+  },
+  "outcome": {
+    "kind": "win",
+    "reason": "intercepted",
+    "teamId": "player",
+  },
+  "turns": 2,
+}
+`;
+
 exports[`golden matches > plays the same way: duel, normal sea, seed 1 1`] = `
 {
   "events": 96,
@@ -155,6 +173,26 @@ exports[`golden matches > plays the same way: free-for-all of 3 classes and a bo
     "teamId": "p4",
   },
   "turns": 9,
+}
+`;
+
+exports[`golden matches > plays the same way: free-for-all of 4 with a merchant, seed 12 1`] = `
+{
+  "events": 139,
+  "hash": "0f06cb5424b126",
+  "hull": {
+    "merchant-ship": 0,
+    "p1-ship": 3,
+    "p2-ship": 4,
+    "p3-ship": 4,
+    "p4-ship": 4,
+  },
+  "outcome": {
+    "kind": "win",
+    "reason": "intercepted",
+    "teamId": "p1",
+  },
+  "turns": 4,
 }
 `;
 

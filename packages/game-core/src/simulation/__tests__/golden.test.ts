@@ -58,6 +58,17 @@ const SCENARIOS: Record<string, () => MatchConfig> = {
     createDuelConfig({ seed: 4, objective: { kind: 'survive', turns: 5 } }),
   'duel, salvage race to 3, seed 6': () =>
     createDuelConfig({ seed: 6, objective: { kind: 'salvage', target: 3 } }),
+  // The merchant (phase 6, slice D).
+  'duel, merchant interception, seed 5': () =>
+    createDuelConfig({ seed: 5, objective: { kind: 'merchant', turns: 12 } }),
+  'free-for-all of 4 with a merchant, seed 12': () =>
+    createSkirmishConfig({
+      humans: 1,
+      ais: 3,
+      teamMode: 'ffa',
+      seed: 12,
+      objective: { kind: 'merchant', turns: 12 },
+    }),
 };
 
 describe('golden matches', () => {

@@ -55,6 +55,8 @@ export interface ShipType {
    */
   readonly supplyUse: number;
   readonly cargoCap: number;
+  /** False for a ship that only the game sails (the merchant): kept out of every ship choice. */
+  readonly playable?: boolean;
 }
 
 /**
@@ -122,9 +124,44 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
     supplyUse: 3,
     cargoCap: 18,
   },
+  merchantman: {
+    id: 'merchantman',
+    name: 'Merchantman',
+    description: 'An unarmed cargo ship making a run for the edge of the map.',
+    maxHp: 3,
+    broadsides: { left: null, right: null },
+    color: 0x9a8f6e,
+    tokens: {
+      // Slow on purpose: about a cell a turn after its first few, so there is a chase.
+      start: { FORWARD: 4, TURN_LEFT: 1, TURN_RIGHT: 1 },
+      perTurn: 1,
+      cap: 10,
+      restBonus: 0,
+      rotation: ['FORWARD', 'FORWARD', 'FORWARD', 'TURN_LEFT', 'FORWARD', 'FORWARD', 'FORWARD', 'TURN_RIGHT'],
+    },
+    cannons: { count: 0, ammo: 0, reload: 0 },
+    supplyUse: 2,
+    cargoCap: 24,
+    playable: false,
+  },
 };
 
 export const DEFAULT_SHIP_TYPE_ID = 'sloop';
+
+/** The class of the unarmed cargo ship in a merchant match. */
+export const MERCHANT_SHIP_TYPE_ID = 'merchantman';
+
+/** Whether players can pick this class (the merchant cannot). */
+export function isPlayableShipType(id: string): boolean {
+  return Object.hasOwn(SHIP_TYPES, id) && SHIP_TYPES[id].playable !== false;
+}
+
+/** The classes players can pick, smallest first. */
+export function playableShipTypeIds(): string[] {
+  return Object.values(SHIP_TYPES)
+    .filter((type) => type.playable !== false)
+    .map((type) => type.id);
+}
 
 /** How many cannons a ship type has on each side (one if unset). */
 export function cannonsPerSideOf(type: ShipType): number {

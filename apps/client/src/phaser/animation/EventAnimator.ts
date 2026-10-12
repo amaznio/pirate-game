@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import type { GameEvent } from '@pirate/game-core/domain/GameEvent';
+import type { Direction } from '@pirate/game-core/domain/Direction';
+import { vectorFor } from '@pirate/game-core/domain/Direction';
+import { TILE_SIZE } from '../Grid';
 import type { EntityViewRegistry } from '../views/EntityViewRegistry';
 import { createProjectileView } from '../views/ProjectileView';
 import { animateBlocked, animateMovement, animateTurn } from './animateMovement';
@@ -21,6 +24,10 @@ type PhaseGroup = GameEvent[];
 export interface AnimatorHooks {
   onDamage?(shipId: string, hp: number): void;
   onDestroyed?(shipId: string): void;
+  /** A ship got clean away (a merchant that reached its exit). */
+  onEscaped?(shipId: string): void;
+  /** The edge a merchant is making for, so its escape can be drawn heading off it. */
+  exitDirection?(): Direction | undefined;
   /** A ship took a pickup (or two ships met on one and it was lost). */
   onPickup?(event: Extract<GameEvent, { type: 'PICKUP_COLLECTED' | 'PICKUP_LOST' }>): void;
 }
@@ -137,6 +144,14 @@ export class EventAnimator {
     for (const event of events) {
       if (event.type === 'PICKUP_COLLECTED' || event.type === 'PICKUP_LOST') {
         this.hooks.onPickup?.(event);
+      }
+    }
+
+    // A merchant that reached its exit sails off the board before anyone fires.
+    for (const event of events) {
+      if (event.type === 'SHIP_ESCAPED') {
+        this.hooks.onEscaped?.(event.shipId);
+        await this.animateEscaped(event);
       }
     }
 
@@ -304,6 +319,28 @@ export class EventAnimator {
     }
     sprite.setTintFill(0xffffff);
     this.scene.time.delayedCall(90, () => sprite.clearTint());
+  }
+
+  private async animateEscaped(
+    event: Extract<GameEvent, { type: 'SHIP_ESCAPED' }>,
+  ): Promise<void> {
+    const view = this.registry.get(event.shipId) as Phaser.GameObjects.Container | undefined;
+    if (!view) {
+      return;
+    }
+    const way = vectorFor(this.hooks.exitDirection?.() ?? 'EAST');
+    await new Promise<void>((resolve) => {
+      this.scene.tweens.add({
+        targets: view,
+        x: view.x + way.x * TILE_SIZE,
+        y: view.y + way.y * TILE_SIZE,
+        alpha: 0,
+        duration: 800,
+        ease: 'Sine.easeIn',
+        onComplete: () => resolve(),
+      });
+    });
+    this.registry.remove(event.shipId);
   }
 
   private async animateDestroyed(

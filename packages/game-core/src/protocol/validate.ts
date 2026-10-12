@@ -1,5 +1,5 @@
 import { MAP_STYLES, type MapStyle } from '../board/generateBoard';
-import { SHIP_TYPES } from '../config/shipTypes';
+import { isPlayableShipType } from '../config/shipTypes';
 import {
   ACTIONS_PER_TURN,
   MOVEMENT_ACTIONS,
@@ -264,7 +264,7 @@ export function parseRoomOptions(
 
 /** A ship class the game knows, or null. */
 export function parseShipTypeId(value: unknown): string | null {
-  return typeof value === 'string' && Object.hasOwn(SHIP_TYPES, value) ? value : null;
+  return typeof value === 'string' && isPlayableShipType(value) ? value : null;
 }
 
 const TEAM_MODES = ['ffa', 'teams'] as const;

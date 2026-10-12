@@ -46,8 +46,10 @@
     "objectiveBlurb": {
       "standard": "Gana el último barco a flote.",
       "survive": "Mantente a flote durante {{turns}} turnos. Si tu barco se hunde antes, pierdes.",
-      "salvage": "Una carrera por la carga flotante: gana quien recoja {{target}} primero."
-    }
+      "salvage": "Una carrera por la carga flotante: gana quien recoja {{target}} primero.",
+      "merchant": "Un barco de carga sin armas huye hacia el borde este y tus oponentes lo escoltan. Hunde al mercante en {{turns}} turnos o escapará."
+    },
+    "objectiveMerchant": "Mercante"
   },
   "difficulty": {
     "easy": {
@@ -90,6 +92,10 @@
     "galleon": {
       "name": "Galeón",
       "description": "Un casco pesado que avanza deprisa, pero gira con menos frecuencia."
+    },
+    "merchantman": {
+      "name": "Mercante",
+      "description": "Un barco de carga sin armas que corre hacia el borde del mapa."
     }
   },
   "roomVisibility": {
@@ -154,7 +160,8 @@
     "aiSailing": "Una IA pilota este barco",
     "aiSailingLevel": "Una IA pilota este barco ({{level}})",
     "aiTag": "IA",
-    "sunk": "Hundido"
+    "sunk": "Hundido",
+    "escaped": "Fuera"
   },
   "shipStatus": {
     "hull": "Casco {{hp}} de {{maxHp}}"
@@ -257,11 +264,15 @@
       "objectiveFailed": "Tu barco se hundió antes de que acabara el tiempo.",
       "salvageWon": "Te llevaste más carga.",
       "salvageLost": "Un rival se llevó la carga primero.",
-      "salvageDraw": "Nadie se adelantó en la carrera por la carga."
+      "salvageDraw": "Nadie se adelantó en la carrera por la carga.",
+      "intercepted": "Hundiste al mercante antes de que escapara.",
+      "escaped": "El mercante escapó.",
+      "merchantLost": "Tu barco se hundió antes de que pudieras detener al mercante."
     },
     "objective": "Objetivo",
     "objectiveMet": "Cumplido",
-    "objectiveMissed": "Fallado"
+    "objectiveMissed": "Fallado",
+    "escapedShort": "Escapó"
   },
   "notice": {
     "aiTookOver": "Estabas ausente, así que una IA navegó por ti. Vuelves al mando.",
@@ -295,6 +306,8 @@
   },
   "objective": {
     "surviveProgress": "Sobrevive: turno {{turn}} de {{turns}}",
-    "salvageProgress": "Carga: tú {{yours}} · rivales {{rival}} · el primero en {{target}}"
+    "salvageProgress": "Carga: tú {{yours}} · rivales {{rival}} · el primero en {{target}}",
+    "merchantProgress": "Mercante: a {{cells}} casillas de escapar · turno {{turn}} de {{turns}}",
+    "merchantGone": "El mercante ya no está"
   }
 }

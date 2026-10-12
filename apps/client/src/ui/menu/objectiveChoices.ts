@@ -8,7 +8,12 @@ import {
 /** What the menu offers: an ordinary battle, or one of the objectives. */
 export type ObjectiveChoice = 'standard' | ObjectiveKind;
 
-export const OBJECTIVE_CHOICES: readonly ObjectiveChoice[] = ['standard', 'survive', 'salvage'];
+export const OBJECTIVE_CHOICES: readonly ObjectiveChoice[] = [
+  'standard',
+  'survive',
+  'salvage',
+  'merchant',
+];
 
 /** The objective a menu choice stands for (none for a standard battle). */
 export function objectiveFor(choice: ObjectiveChoice): Objective | undefined {
@@ -23,6 +28,8 @@ export function objectiveLabel(t: TFunction, choice: ObjectiveChoice): string {
       return t('menu.objectiveSurvive');
     case 'salvage':
       return t('menu.objectiveSalvage');
+    case 'merchant':
+      return t('menu.objectiveMerchant');
   }
 }
 
@@ -38,6 +45,10 @@ export function objectiveBlurb(t: TFunction, choice: ObjectiveChoice): string {
     case 'salvage':
       return t('menu.objectiveBlurb.salvage', {
         target: objective?.kind === 'salvage' ? objective.target : 0,
+      });
+    case 'merchant':
+      return t('menu.objectiveBlurb.merchant', {
+        turns: objective?.kind === 'merchant' ? objective.turns : 0,
       });
   }
 }

@@ -28,6 +28,8 @@ export interface ShipSummary {
   ally: boolean;
   /** Still afloat. */
   alive: boolean;
+  /** Got clean away (a merchant that reached its exit). */
+  escaped: boolean;
   /** An AI is sailing it (a computer opponent, or a player who is away). */
   bot: boolean;
   /** How well that AI plays, when one is sailing it. */
@@ -129,6 +131,7 @@ function snapshot({
         maxHull: other?.maxHp ?? 0,
         ally: player.teamId === self.teamId,
         alive: (other?.hp ?? 0) > 0,
+        escaped: other?.escaped === true,
         bot: player.controller === 'ai',
         difficulty: player.aiDifficulty,
       };

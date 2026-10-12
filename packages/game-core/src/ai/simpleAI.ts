@@ -18,6 +18,7 @@ import { positionsEqual, translate } from '../domain/Position';
 import { isShip, mountsOnSide } from '../domain/Ship';
 import { cellKey } from '../domain/Terrain';
 import { heroTeams } from '../simulation/objectives';
+import { onExitEdge } from '../simulation/escapes';
 import { totalTokens } from '../domain/Action';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import { blockingEntityAt, getHostiles, getShipByOwner } from '../simulation/selectors';
@@ -79,6 +80,10 @@ interface Planning {
    * would head for its target. Zero otherwise.
    */
   readonly salvageSlope: number;
+  /** The merchant this ship is hunting (a hero team in a merchant match): hits on it count for more. */
+  readonly preyId?: string;
+  /** The edge a merchant is making for; its "goal" is reaching that edge, not a firing position. */
+  readonly exit?: Direction;
   /** Moves still needed from each (cell, heading) to fire at the target; built on first use. */
   goalSteps: Map<string, number> | null;
 }
@@ -224,13 +229,14 @@ function goalStepsOf(plan: Planning): Map<string, number> {
       }
       for (const heading of DIRECTIONS) {
         const here = stateKey(position, heading);
-        if (
-          CANNON_SIDES.some((side) =>
-            volleyOf(plan, position, heading, side).some(
-              (shot) => shot.victim?.id === plan.target.id,
-            ),
-          )
-        ) {
+        const atGoal = plan.exit
+          ? onExitEdge(board, plan.exit, position)
+          : CANNON_SIDES.some((side) =>
+              volleyOf(plan, position, heading, side).some(
+                (shot) => shot.victim?.id === plan.target.id,
+              ),
+            );
+        if (atGoal) {
           firing.push(here);
         }
         for (const action of OPTIONS) {
@@ -317,6 +323,10 @@ function lootValue(state: GameState, me: Ship, playerId: PlayerId, kind: string,
 const LOOT_PULL_RANGE = 10;
 /** A salvage race pulls with this share of the pickup's value per cell. */
 const SALVAGE_SLOPE = 0.12;
+/** What reaching its exit is worth to a merchant: more than anything else on the board. */
+const EXIT_BONUS = 200;
+/** How much more a hit on the merchant is worth to the hero team than any other hit. */
+const PREY_WEIGHT = 3;
 
 /**
  * Landing on a pickup collects it (the best score a plan can have from loot).
@@ -440,6 +450,8 @@ function search(
       const used = Math.min(shots.length, ammo, victim.hp);
       fires[side] = used;
       let dealt = 0;
+      // Hits on the merchant are what the match is about.
+      const weight = victim.id === plan.preyId ? PREY_WEIGHT : 1;
       for (const shot of shots.slice(0, used)) {
         ammo -= 1;
         if (shot.victim) {
@@ -447,10 +459,16 @@ function search(
           const before = dealt;
           dealt += shot.damage;
           value +=
-            plan.profile.hitValue +
-            (before < shot.victim.hp && dealt >= shot.victim.hp ? plan.profile.killBonus : 0);
+            weight *
+            (plan.profile.hitValue +
+              (before < shot.victim.hp && dealt >= shot.victim.hp ? plan.profile.killBonus : 0));
         }
       }
+    }
+
+    // A merchant that ends a phase on its exit edge is away: nothing is worth more.
+    if (plan.exit && onExitEdge(plan.state.board, plan.exit, nextPosition)) {
+      value += EXIT_BONUS;
     }
 
     // Ending the phase on a pickup that is still afloat collects it.
@@ -505,6 +523,46 @@ function lootFor(
   return { loot, lootAt };
 }
 
+/** The merchant a hero-team ship should be hunting, while it is afloat. */
+function merchantPrey(state: GameState, me: Ship): Ship | undefined {
+  const objective = state.objective;
+  if (objective?.kind !== 'merchant' || !objective.shipId || objective.shipId === me.id) {
+    return undefined;
+  }
+  const merchant = state.ships[objective.shipId];
+  return merchant && merchant.hp > 0 && heroTeams(state).has(me.teamId) ? merchant : undefined;
+}
+
+/** The edge this ship is making for, when it is the merchant of a merchant match. */
+function merchantExit(state: GameState, me: Ship): Direction | undefined {
+  const objective = state.objective;
+  return objective?.kind === 'merchant' && objective.shipId === me.id ? objective.exit : undefined;
+}
+
+/**
+ * How a merchant sails: it wants its exit above everything, keeps out of the
+ * hero's lines of fire where it can, never wastes a thought on shooting (it has
+ * no guns) and never makes a mistake, whatever difficulty the match is set to.
+ */
+function merchantProfile(profile: AiProfile): AiProfile {
+  return {
+    ...profile,
+    hitValue: 0,
+    killBonus: 0,
+    approachWeight: 10,
+    distanceWeight: 0,
+    tokenCost: 0,
+    dangerWeight: 20,
+    edgeWeight: 0,
+    lootWeight: 0,
+    salvageWeight: 0,
+    maxMoves: 4,
+    mistakeRate: 0,
+    mistakePool: 1,
+    fireChance: 0,
+  };
+}
+
 /**
  * In a survive match the hero team is not out to win the fight, only to still
  * be afloat when time runs out: it stops closing in on its target, keeps out of
@@ -550,12 +608,16 @@ export function planAiActions(
 ): PlayerActions {
   const player = state.players[playerId];
   const me = getShipByOwner(state, playerId);
-  const target = me ? chooseTarget(state, me) : undefined;
+  const prey = me ? merchantPrey(state, me) : undefined;
+  const target = prey ?? (me ? chooseTarget(state, me) : undefined);
   if (!player || !me || !target || me.hp <= 0) {
     return { movement: [], cannons: [] };
   }
 
-  const profile = forObjective(profileFor(difficulty ?? player.aiDifficulty), state, me);
+  const exit = merchantExit(state, me);
+  const profile = exit
+    ? merchantProfile(profileFor(difficulty ?? player.aiDifficulty))
+    : forObjective(profileFor(difficulty ?? player.aiDifficulty), state, me);
 
   const plan: Planning = {
     state,
@@ -573,6 +635,8 @@ export function planAiActions(
       state.objective?.kind === 'salvage' ? profile.salvageWeight : profile.lootWeight,
     ),
     salvageSlope: state.objective?.kind === 'salvage' ? SALVAGE_SLOPE * profile.salvageWeight : 0,
+    ...(exit ? { exit } : {}),
+    ...(prey ? { preyId: prey.id } : {}),
     goalSteps: null,
   };
 

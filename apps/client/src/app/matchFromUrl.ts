@@ -5,7 +5,7 @@ import {
 } from '@pirate/game-core/config/matchConfig';
 import { MAP_STYLES, type MapStyle } from '@pirate/game-core/board/generateBoard';
 import { randomSeed } from '@pirate/game-core/config/seed';
-import { DEFAULT_SHIP_TYPE_ID, SHIP_TYPES } from '@pirate/game-core/config/shipTypes';
+import { DEFAULT_SHIP_TYPE_ID, isPlayableShipType } from '@pirate/game-core/config/shipTypes';
 import {
   AI_DIFFICULTIES,
   DEFAULT_AI_DIFFICULTY,
@@ -17,7 +17,7 @@ const MAX_SHIPS = 16;
 /** A ship class named in the URL, or null if it is missing or not a real class. */
 function shipParam(params: URLSearchParams, name: string): string | null {
   const raw = params.get(name);
-  return raw !== null && raw in SHIP_TYPES ? raw : null;
+  return raw !== null && isPlayableShipType(raw) ? raw : null;
 }
 
 function intParam(params: URLSearchParams, name: string): number | null {

@@ -16,7 +16,7 @@
  * roadmap aims for 15 to 25 per cent once ship classes exist.
  */
 import { createDuelConfig, type SeaChoice } from '../src/config/matchConfig';
-import { SHIP_TYPES, getShipType } from '../src/config/shipTypes';
+import { getShipType, playableShipTypeIds } from '../src/config/shipTypes';
 import {
   AI_DIFFICULTIES,
   type AiDifficulty,
@@ -188,7 +188,7 @@ function main(): void {
   const rows: Array<{ label: string; a: AiDifficulty; b: AiDifficulty; shipA: string; shipB: string }> = [];
 
   if (options.classes) {
-    const ids = Object.keys(SHIP_TYPES);
+    const ids = playableShipTypeIds();
     const level = options.a ?? 'normal';
     for (const shipA of ids) {
       for (const shipB of ids) {

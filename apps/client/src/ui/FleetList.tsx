@@ -27,6 +27,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       hull,
       maxHull,
       alive: hull > 0,
+      escaped: false,
       you: true,
       bot: false,
       difficulty: null,
@@ -38,6 +39,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       hull: other.hull,
       maxHull: other.maxHull,
       alive: other.alive,
+      escaped: other.escaped,
       you: false,
       bot: other.bot,
       difficulty: other.difficulty,
@@ -79,7 +81,11 @@ export function FleetList({ compact = false }: FleetListProps) {
           )}
           <HullBar hp={row.hull} maxHp={row.maxHull} />
           <span className="ml-auto text-xs font-semibold tabular-nums text-parchment">
-            {row.alive ? `${row.hull}/${row.maxHull}` : t('fleet.sunk')}
+            {row.alive
+              ? `${row.hull}/${row.maxHull}`
+              : row.escaped
+                ? t('fleet.escaped')
+                : t('fleet.sunk')}
           </span>
         </li>
       ))}

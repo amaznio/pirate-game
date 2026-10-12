@@ -11,14 +11,21 @@ import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
-import { salvagePickupCount, type Objective } from '../domain/Objective';
+import {
+  ESCORT_TEAM_ID,
+  MERCHANT_PLAYER_ID,
+  MERCHANT_SHIP_ID,
+  merchantRoute,
+  salvagePickupCount,
+  type Objective,
+} from '../domain/Objective';
 import {
   DEFAULT_MAP_STYLE,
   generateBoard,
   type SeaChoice,
 } from '../board/generateBoard';
 import { generatePickups } from '../board/generatePickups';
-import { DEFAULT_SHIP_TYPE_ID } from './shipTypes';
+import { DEFAULT_SHIP_TYPE_ID, MERCHANT_SHIP_TYPE_ID } from './shipTypes';
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -141,6 +148,43 @@ function seaFor(
   return { ...water, ...chosen, pickups };
 }
 
+/** The merchant's start, when the match has a merchant objective (kept clear of rocks and hazards). */
+function merchantSpawns(height: number, objective: Objective | undefined): Position[] {
+  return objective?.kind === 'merchant' ? [merchantRoute(height).spawn] : [];
+}
+
+/**
+ * For a merchant match: adds the merchant (an unarmed AI ship) and puts every AI
+ * ship on its side, the escorts, so nobody on that side shoots at another. The
+ * objective learns which ship is the merchant and which edge it is making for.
+ * Any other match is returned as it is.
+ */
+export function withMerchant(config: MatchConfig): MatchConfig {
+  const objective = config.objective;
+  if (objective?.kind !== 'merchant') {
+    return config;
+  }
+  const route = merchantRoute(config.board.height);
+  const merchant: ParticipantConfig = {
+    playerId: MERCHANT_PLAYER_ID,
+    name: 'Merchant',
+    teamId: ESCORT_TEAM_ID,
+    shipTypeId: MERCHANT_SHIP_TYPE_ID,
+    spawn: { position: route.spawn, heading: route.heading },
+    controller: 'ai',
+  };
+  return {
+    ...config,
+    objective: { ...objective, shipId: MERCHANT_SHIP_ID, exit: route.exit },
+    participants: [
+      ...config.participants.map((participant) =>
+        participant.controller === 'ai' ? { ...participant, teamId: ESCORT_TEAM_ID } : participant,
+      ),
+      merchant,
+    ],
+  };
+}
+
 /** The ship type a participant sails: the one listed for their seat, else the sloop. */
 function shipTypeFor(shipTypeIds: readonly string[] | undefined, index: number): string {
   return shipTypeIds?.[index] ?? DEFAULT_SHIP_TYPE_ID;
@@ -167,7 +211,15 @@ export function createDuelConfig(
   const config: MatchConfig = {
     seed,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
-    ...seaFor(BOARD_WIDTH, BOARD_HEIGHT, seed, duelSpawns, overrides.sea, overrides.loot, overrides.objective),
+    ...seaFor(
+      BOARD_WIDTH,
+      BOARD_HEIGHT,
+      seed,
+      [...duelSpawns, ...merchantSpawns(BOARD_HEIGHT, overrides.objective)],
+      overrides.sea,
+      overrides.loot,
+      overrides.objective,
+    ),
     ...(overrides.objective === undefined ? {} : { objective: overrides.objective }),
     participants: [
       {
@@ -191,7 +243,7 @@ export function createDuelConfig(
     startingTokens: INITIAL_TOKEN_POOL,
     startingAmmo: CANNON_STARTING_AMMO,
   };
-  return withAiDifficulty(config, overrides.aiDifficulty ?? DEFAULT_AI_DIFFICULTY);
+  return withAiDifficulty(withMerchant(config), overrides.aiDifficulty ?? DEFAULT_AI_DIFFICULTY);
 }
 
 export interface SkirmishOptions {
@@ -332,14 +384,14 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
     width,
     height,
     seed,
-    spawns.map((spawn) => spawn.position),
+    [...spawns.map((spawn) => spawn.position), ...merchantSpawns(height, options.objective)],
     options.sea,
     options.loot,
     options.objective,
   );
 
   return withAiDifficulty(
-    {
+    withMerchant({
       seed,
       board: { width, height },
       ...sea,
@@ -348,7 +400,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
       rules: options.rules ?? DEFAULT_RULES,
       startingTokens: INITIAL_TOKEN_POOL,
       startingAmmo: CANNON_STARTING_AMMO,
-    },
+    }),
     options.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
   );
 }

@@ -31,6 +31,7 @@ export function buildMatchResult(state: GameState): MatchResult | null {
         hull: Math.max(0, ship?.hp ?? 0),
         maxHull: ship?.maxHp ?? 0,
         afloat: (ship?.hp ?? 0) > 0,
+        ...(ship?.escaped ? { escaped: true } : {}),
         ammo: player.ammo,
         tokens: totalTokens(player.tokens),
         pickups: state.pickupsTaken?.[player.id] ?? EMPTY_PICKUP_TALLY,

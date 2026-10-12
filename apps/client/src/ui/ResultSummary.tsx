@@ -52,7 +52,11 @@ export function ResultSummary() {
               <li key={ship.playerId} className="flex justify-between gap-3">
                 <span className="truncate">{ship.name}</span>
                 <span className="font-bold text-parchment">
-                  {ship.afloat ? `${ship.hull}/${ship.maxHull}` : t('result.sunkShort')}
+                  {ship.afloat
+                    ? `${ship.hull}/${ship.maxHull}`
+                    : ship.escaped
+                      ? t('result.escapedShort')
+                      : t('result.sunkShort')}
                 </span>
               </li>
             ))}

@@ -14,6 +14,11 @@ describe('matchConfigFromSearch', () => {
     expect(cheat).toEqual(plain);
   });
 
+  it('does not let the merchant be picked as a ship class', () => {
+    const config = matchConfigFromSearch('?seed=4&ship=merchantman&enemy=merchantman');
+    expect(config.participants.map((p) => p.shipTypeId)).toEqual(['sloop', 'sloop']);
+  });
+
   it('floats pickups only with ?loot=on', () => {
     expect(matchConfigFromSearch('?seed=4').pickups).toBeUndefined();
     expect(Object.keys(matchConfigFromSearch('?seed=4&loot=on').pickups ?? {}).length).toBeGreaterThan(0);

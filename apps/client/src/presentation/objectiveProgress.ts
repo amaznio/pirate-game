@@ -1,5 +1,6 @@
 import type { GameView } from '@pirate/game-core/view/GameView';
 import type { OutcomeReason } from '@pirate/game-core/domain/Objective';
+import type { Direction } from '@pirate/game-core/domain/Direction';
 
 /** How the match's objective stands, from the viewing player's side. */
 export type ObjectiveProgress =
@@ -11,6 +12,13 @@ export type ObjectiveProgress =
       /** Pickups taken by the best other team. */
       readonly rival: number;
       readonly target: number;
+    }
+  | {
+      readonly kind: 'merchant';
+      readonly turn: number;
+      readonly turns: number;
+      /** Cells between the merchant and the edge it is making for; null once it is gone. */
+      readonly cells: number | null;
     };
 
 /** The objective's progress, or null when the match has none. */
@@ -21,6 +29,20 @@ export function objectiveProgress(view: GameView): ObjectiveProgress | null {
   }
   if (objective.kind === 'survive') {
     return { kind: 'survive', turn: Math.min(view.turn, objective.turns), turns: objective.turns };
+  }
+
+  if (objective.kind === 'merchant') {
+    const merchant = objective.shipId ? view.ships[objective.shipId] : undefined;
+    const away =
+      merchant && merchant.hp > 0 && objective.exit
+        ? cellsToEdge(view.board, objective.exit, merchant.position)
+        : null;
+    return {
+      kind: 'merchant',
+      turn: Math.min(view.turn, objective.turns),
+      turns: objective.turns,
+      cells: away,
+    };
   }
 
   const byTeam = new Map<string, number>();
@@ -34,6 +56,24 @@ export function objectiveProgress(view: GameView): ObjectiveProgress | null {
   return { kind: 'salvage', yours: byTeam.get(mine) ?? 0, rival, target: objective.target };
 }
 
+/** How many cells a ship at `position` has to go to reach the given edge of the board. */
+export function cellsToEdge(
+  board: GameView['board'],
+  edge: Direction,
+  position: { x: number; y: number },
+): number {
+  switch (edge) {
+    case 'EAST':
+      return board.width - 1 - position.x;
+    case 'WEST':
+      return position.x;
+    case 'NORTH':
+      return position.y;
+    case 'SOUTH':
+      return board.height - 1 - position.y;
+  }
+}
+
 /** Which text to show under the title of a finished match. */
 export type EndNote =
   | 'survived'
@@ -41,6 +81,9 @@ export type EndNote =
   | 'salvageWon'
   | 'salvageLost'
   | 'salvageDraw'
+  | 'intercepted'
+  | 'escaped'
+  | 'merchantLost'
   | null;
 
 export function endNote(
@@ -49,6 +92,18 @@ export function endNote(
   reason: OutcomeReason | undefined,
 ): EndNote {
   if (result === null || !view.objective) {
+    return null;
+  }
+  if (view.objective.kind === 'merchant') {
+    if (reason === 'intercepted' && result === 'win') {
+      return 'intercepted';
+    }
+    if (reason === 'escaped' && result === 'loss') {
+      return 'escaped';
+    }
+    if (reason === 'objective_failed' && result === 'loss') {
+      return 'merchantLost';
+    }
     return null;
   }
   if (view.objective.kind === 'salvage') {

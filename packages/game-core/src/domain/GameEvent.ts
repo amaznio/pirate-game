@@ -116,6 +116,13 @@ export type GameEvent =
     }
   | { type: 'SHIP_DESTROYED'; shipId: EntityId; phase: number }
   | {
+      /** A ship reached the edge it was making for and left the match. */
+      type: 'SHIP_ESCAPED';
+      shipId: EntityId;
+      at: Position;
+      phase: number;
+    }
+  | {
       /** A ship ended the phase on a pickup and took it. `gained` is how much of it fitted. */
       type: 'PICKUP_COLLECTED';
       shipId: EntityId;

@@ -67,6 +67,8 @@ export interface Ship extends Entity {
   readonly weapons: readonly WeaponMount[];
   /** Extra damage each cannon does, brought in from earlier battles. None when absent. */
   readonly bonusDamage?: number;
+  /** The ship got clean away (it is out of the match with no hull left). None when absent. */
+  readonly escaped?: boolean;
 }
 
 export function isShip(entity: Entity): entity is Ship {

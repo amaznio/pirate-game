@@ -15,11 +15,19 @@ export function ObjectiveBanner({ className = '' }: { className?: string }) {
     >
       {progress.kind === 'survive'
         ? t('objective.surviveProgress', { turn: progress.turn, turns: progress.turns })
-        : t('objective.salvageProgress', {
-            yours: progress.yours,
-            rival: progress.rival,
-            target: progress.target,
-          })}
+        : progress.kind === 'merchant'
+          ? progress.cells === null
+            ? t('objective.merchantGone')
+            : t('objective.merchantProgress', {
+                cells: progress.cells,
+                turn: progress.turn,
+                turns: progress.turns,
+              })
+          : t('objective.salvageProgress', {
+              yours: progress.yours,
+              rival: progress.rival,
+              target: progress.target,
+            })}
     </div>
   );
 }

@@ -28,6 +28,8 @@ export interface ShipLook {
 }
 
 export const SHIP_LOOKS: Readonly<Record<string, ShipLook>> = {
+  // The unarmed cargo ship of a merchant match: a medium hull under a flat sail.
+  merchantman: { size: 'medium', sails: [{ kind: 'flatLarge', y: -6 }], cannonType: 1 },
   sloop: { size: 'small', sails: [{ kind: 'billowLarge', y: -2 }], cannonType: 1 },
   brigantine: { size: 'medium', sails: [{ kind: 'billowLarge', y: -8 }], cannonType: 2 },
   galleon: {

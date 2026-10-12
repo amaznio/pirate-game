@@ -46,8 +46,10 @@
     "objectiveBlurb": {
       "standard": "Wygrywa ostatni statek na wodzie.",
       "survive": "Utrzymaj się na wodzie przez {{turns}} tur. Jeśli twój statek zatonie wcześniej, przegrywasz.",
-      "salvage": "Wyścig po pływający ładunek: wygrywa ten, kto pierwszy zbierze {{target}}."
-    }
+      "salvage": "Wyścig po pływający ładunek: wygrywa ten, kto pierwszy zbierze {{target}}.",
+      "merchant": "Nieuzbrojony statek towarowy ucieka ku wschodniej krawędzi, a twoi przeciwnicy go eskortują. Zatop kupca w ciągu {{turns}} tur, inaczej ucieknie."
+    },
+    "objectiveMerchant": "Kupiec"
   },
   "difficulty": {
     "easy": {
@@ -90,6 +92,10 @@
     "galleon": {
       "name": "Galeon",
       "description": "Ciężki kadłub, który szybko pokonuje dystans, ale rzadziej skręca."
+    },
+    "merchantman": {
+      "name": "Kupiec",
+      "description": "Nieuzbrojony statek towarowy zmierzający ku krawędzi mapy."
     }
   },
   "roomVisibility": {
@@ -160,7 +166,8 @@
     "aiSailing": "Ten statek prowadzi AI",
     "aiSailingLevel": "Ten statek prowadzi AI ({{level}})",
     "aiTag": "AI",
-    "sunk": "Zatopiony"
+    "sunk": "Zatopiony",
+    "escaped": "Poza grą"
   },
   "shipStatus": {
     "hull": "Kadłub {{hp}} z {{maxHp}}"
@@ -265,11 +272,15 @@
       "objectiveFailed": "Twój statek zatonął przed upływem czasu.",
       "salvageWon": "Zebrałeś najwięcej ładunku.",
       "salvageLost": "Rywal zebrał ładunek pierwszy.",
-      "salvageDraw": "Nikt nie wysunął się na prowadzenie w wyścigu po ładunek."
+      "salvageDraw": "Nikt nie wysunął się na prowadzenie w wyścigu po ładunek.",
+      "intercepted": "Zatopiłeś kupca, zanim uciekł.",
+      "escaped": "Kupiec uciekł.",
+      "merchantLost": "Twój statek zatonął, zanim zdążyłeś zatrzymać kupca."
     },
     "objective": "Cel",
     "objectiveMet": "Osiągnięty",
-    "objectiveMissed": "Nieosiągnięty"
+    "objectiveMissed": "Nieosiągnięty",
+    "escapedShort": "Uciekł"
   },
   "notice": {
     "aiTookOver": "Byłeś nieobecny, więc AI prowadziło twój statek. Znów masz ster.",
@@ -303,6 +314,8 @@
   },
   "objective": {
     "surviveProgress": "Przetrwaj: tura {{turn}} z {{turns}}",
-    "salvageProgress": "Ładunek: ty {{yours}} · rywale {{rival}} · pierwszy do {{target}}"
+    "salvageProgress": "Ładunek: ty {{yours}} · rywale {{rival}} · pierwszy do {{target}}",
+    "merchantProgress": "Kupiec: {{cells}} pól od ucieczki · tura {{turn}} z {{turns}}",
+    "merchantGone": "Kupiec zniknął"
   }
 }
