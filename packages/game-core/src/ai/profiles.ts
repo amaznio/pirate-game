@@ -37,6 +37,11 @@ export interface AiProfile {
    * needs less). 0 ignores loot altogether.
    */
   readonly lootWeight: number;
+  /**
+   * Score for taking any pickup in a salvage race, whatever it holds: the race
+   * is the match, so every one counts the same.
+   */
+  readonly salvageWeight: number;
 
   // How well it plays.
   /** Most movement tokens it will spend in a turn. */
@@ -61,6 +66,7 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     dangerWeight: 0,
     edgeWeight: 0,
     lootWeight: 10,
+    salvageWeight: 40,
     maxMoves: 2,
     mistakeRate: 0.5,
     mistakePool: 6,
@@ -77,6 +83,7 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     dangerWeight: 0,
     edgeWeight: 0,
     lootWeight: 20,
+    salvageWeight: 70,
     maxMoves: 4,
     mistakeRate: 0.1,
     mistakePool: 3,
@@ -93,6 +100,7 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     dangerWeight: 25,
     edgeWeight: 5,
     lootWeight: 25,
+    salvageWeight: 90,
     maxMoves: 4,
     mistakeRate: 0,
     mistakePool: 1,

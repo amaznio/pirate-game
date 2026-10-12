@@ -113,6 +113,9 @@ interface Tally {
   starved: number;
   shipPhases: number;
   planningMs: number;
+  /** Matches the hero (the player seat) won, and matches an objective decided. */
+  heroWins: number;
+  byObjective: number;
 }
 
 /** `a` plays `player` on odd passes and `enemy` on even ones, so sides cancel out. */
@@ -132,9 +135,12 @@ function play(
     starved: 0,
     shipPhases: 0,
     planningMs: 0,
+    heroWins: 0,
+    byObjective: 0,
   };
   for (let seed = 1; seed <= options.seeds; seed += 1) {
-    for (const aIsPlayer of [true, false]) {
+    // With an objective, A always sails the hero seat (the player) so its wins are the hero's.
+    for (const aIsPlayer of options.objective ? [true] : [true, false]) {
       const base = createDuelConfig({
         seed,
         sea: options.sea,
@@ -160,6 +166,12 @@ function play(
         }
       } else {
         tally.mutual += 1;
+      }
+      if (record.outcome?.kind === 'win' && record.outcome.teamId === 'player') {
+        tally.heroWins += 1;
+      }
+      if (record.outcome && 'reason' in record.outcome && record.outcome.reason) {
+        tally.byObjective += 1;
       }
       tally.turns += record.turns;
       tally.matches += 1;
@@ -206,7 +218,16 @@ function main(): void {
 `,
   );
   console.log(
-    ['pairing'.padEnd(22), 'A wins', 'B wins', 'draws', 'avg turns', 'starved', 'ms/turn']
+    [
+      'pairing'.padEnd(22),
+      'A wins',
+      'B wins',
+      'draws',
+      'avg turns',
+      'starved',
+      'ms/turn',
+      ...(options.objective ? ['hero wins', 'by goal'] : []),
+    ]
       .map((cell, index) => (index === 0 ? cell : cell.padStart(9)))
       .join(' '),
   );
@@ -220,6 +241,12 @@ function main(): void {
       (t.turns / t.matches).toFixed(1).padStart(9),
       `${((100 * t.starved) / t.shipPhases).toFixed(1)}%`.padStart(9),
       (t.planningMs / t.turns).toFixed(1).padStart(9),
+      ...(options.objective
+        ? [
+            `${((100 * t.heroWins) / t.matches).toFixed(0)}%`.padStart(9),
+            `${((100 * t.byObjective) / t.matches).toFixed(0)}%`.padStart(9),
+          ]
+        : []),
     ];
     console.log(cells.join(' '));
   }

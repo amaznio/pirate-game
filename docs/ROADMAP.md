@@ -483,7 +483,7 @@ what makes a node on the voyage map a particular kind of battle.
       first, built on the phase 4 loot; ties are a draw). Tests, a golden
       scenario each, harness support.
       Built: `domain/Objective.ts` (`survive { turns }`, `salvage { target }`,
-      `DEFAULT_OBJECTIVES` survive 8 turns and salvage 3, `OutcomeReason`),
+      `DEFAULT_OBJECTIVES` survive 8 turns and salvage 2 (first changed from 3 in slice C), `OutcomeReason`),
       `simulation/objectives.ts` (`heroTeams`, `evaluateObjective`), called first
       by `evaluateOutcome(state, endOfTurn)`. The hero team is the humans' team,
       or the first player's with no human. Survive: hero sunk is a win for the
@@ -506,12 +506,35 @@ what makes a node on the voyage map a particular kind of battle.
       rivals 0 · first to 3"), a note under the game-over title (survived, sunk
       before time, took the most cargo, a rival took it, a draw), an Objective
       row (Met or Missed) in the result summary, and an Objective selector in
-      the offline menu (Standard by default; survive 8 turns, salvage 3). Not
+      the offline menu (Standard by default; survive 8 turns, salvage 2). Not
       in the online lobby, and no URL switch. The survive banner and the menu
       were seen in a browser; the game-over notes were only unit-tested.
-- [ ] C. AI awareness: hunters value what the objective asks (salvage raises the
+- [x] C. AI awareness: hunters value what the objective asks (salvage raises the
       AI's loot weight, survive keeps them closing in); a harness check that the
       objectives are winnable and not trivial on every sea.
+      Built: in a **salvage** race every pickup is worth a profile's
+      `salvageWeight` (40, 70, 90 for easy, normal, hard) whatever it holds and
+      whatever the ship's hull, and the nearest pickup afloat pulls at 0.12 of
+      that per cell (about as hard as the ship heads for its target). In a
+      **survive** match the hero team's AI stops closing in, keeps out of lines
+      of fire and off the edge (`forObjective`); the hunters play as before.
+      Salvage boards now put one pickup 3 to 4 cells from each ship's start
+      (`fair` in `generatePickups`), the rest anywhere, and the default target
+      is 2 of 3. A salvage tie is a draw with reason `salvaged`. The harness has
+      `--objective`, with A always the hero seat, and prints hero wins and the
+      share of matches the objective itself decided ("by goal").
+      **What the harness showed (30 seeds, normal AI)**: survive 8 turns, hero
+      wins about 77-87% when the hero is as strong as the hunters, 37-43% when
+      the hero is easy against hard or normal ones (so it spans from fair to
+      hard by skill). Salvage to 2: hero 30-43% on every sea, **but the race
+      itself decides only about 3-17% of matches**: fights end in 2 to 6 turns,
+      and ships start with about six movement tokens so they cannot reach
+      far cargo first. A stronger pull made it worse (ships sailed into fire),
+      and a "keep playing after one side is sunk" rule left a lone AI idle.
+      **Open design point for the user:** is that mix right (cargo is one of two
+      ways to win), or should the race decide more (closer or more cargo, a
+      target of 1, or no last-ship shortcut with an AI that keeps collecting)?
+      Two golden scenarios were refreshed on purpose; the others did not move.
 - [ ] D. **Merchant interception:** a neutral `merchant` team and an unarmed
       ship class, a scripted route planner (its own AI profile, not the fighting
       AI), an exit cell or edge, a `SHIP_ESCAPED` event, win by sinking it

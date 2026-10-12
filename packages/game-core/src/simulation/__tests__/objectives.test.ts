@@ -109,8 +109,12 @@ describe('salvage race', () => {
   it('is a draw on a tie, or when nobody took anything', () => {
     expect(evaluateOutcome(withTaken(duel(salvage), { player: one, enemy: one }, {}))).toEqual({
       kind: 'draw',
+      reason: 'salvaged',
     });
-    expect(evaluateOutcome(withTaken(duel(salvage), {}, {}))).toEqual({ kind: 'draw' });
+    expect(evaluateOutcome(withTaken(duel(salvage), {}, {}))).toEqual({
+      kind: 'draw',
+      reason: 'salvaged',
+    });
   });
 
   it('ends the match in the phase the target is reached', () => {

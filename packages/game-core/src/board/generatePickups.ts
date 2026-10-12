@@ -15,13 +15,23 @@ export interface GeneratePickupsOptions {
   readonly terrain: TerrainMap;
   /** How many to place; a few, scaled with the board, when left out. */
   readonly count?: number;
+  /**
+   * Give every ship one pickup close to its start (when there are more
+   * pickups than ships), so a race for cargo is not decided by who happens to
+   * start beside the cargo. Ships move only a cell or two a turn at first, so
+   * cargo scattered across the board would never be reached before a fight
+   * ends.
+   */
+  readonly fair?: boolean;
 }
 
 /** Cells around a spawn (Chebyshev distance) that hold no pickup. */
 const SPAWN_CLEARANCE = 2;
 /** Closest two pickups may sit (Chebyshev distance). */
 const SPACING = 3;
-const TRIES = 200;
+const TRIES = 400;
+/** How far from its ship a fair pickup lies (Chebyshev distance). */
+const NEAR: readonly [number, number] = [3, 4];
 
 function between(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
@@ -50,7 +60,9 @@ export function generatePickups(options: GeneratePickupsOptions): PickupMap {
 
   const placed: Position[] = [];
   const pickups: Record<string, Pickup> = {};
+  const fair = options.fair === true && wanted > spawns.length;
   for (let n = 0; n < wanted; n += 1) {
+    const anchor = fair && n < spawns.length ? spawns[n] : null;
     // The first three are one of each kind; after that it is a free choice.
     const kind: PickupKind =
       n < PICKUP_KINDS.length ? PICKUP_KINDS[n] : PICKUP_KINDS[between(rng, 0, PICKUP_KINDS.length - 1)];
@@ -62,7 +74,9 @@ export function generatePickups(options: GeneratePickupsOptions): PickupMap {
         rocks.has(key) ||
         options.terrain[key] ||
         spawns.some((spawn) => distance(spawn, position) <= SPAWN_CLEARANCE) ||
-        placed.some((other) => distance(other, position) < SPACING)
+        placed.some((other) => distance(other, position) < SPACING) ||
+        (anchor !== null &&
+          (distance(anchor, position) < NEAR[0] || distance(anchor, position) > NEAR[1]))
       ) {
         continue;
       }

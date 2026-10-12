@@ -22,7 +22,7 @@ export const OBJECTIVE_KINDS: readonly ObjectiveKind[] = ['survive', 'salvage'];
 /** Default numbers when an objective is chosen from a menu (a solo run sets its own). */
 export const DEFAULT_OBJECTIVES: Readonly<Record<ObjectiveKind, Objective>> = {
   survive: { kind: 'survive', turns: 8 },
-  salvage: { kind: 'salvage', target: 3 },
+  salvage: { kind: 'salvage', target: 2 },
 };
 
 /** How many pickups a salvage board holds. */

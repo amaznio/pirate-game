@@ -17,6 +17,7 @@ import { DIRECTIONS, leftBroadside, rightBroadside, vectorFor } from '../domain/
 import { positionsEqual, translate } from '../domain/Position';
 import { isShip, mountsOnSide } from '../domain/Ship';
 import { cellKey } from '../domain/Terrain';
+import { heroTeams } from '../simulation/objectives';
 import { totalTokens } from '../domain/Action';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import { blockingEntityAt, getHostiles, getShipByOwner } from '../simulation/selectors';
@@ -72,6 +73,12 @@ interface Planning {
   /** The pickups worth having, and the index of the one on each cell (by `"x,y"`). */
   readonly loot: readonly Loot[];
   readonly lootAt: ReadonlyMap<string, number>;
+  /**
+   * In a salvage race, the score lost per cell between the ship and the
+   * nearest pickup still afloat, so the ship heads for cargo as hard as it
+   * would head for its target. Zero otherwise.
+   */
+  readonly salvageSlope: number;
   /** Moves still needed from each (cell, heading) to fire at the target; built on first use. */
   goalSteps: Map<string, number> | null;
 }
@@ -283,6 +290,9 @@ function lootValue(state: GameState, me: Ship, playerId: PlayerId, kind: string,
   if (!player || weight <= 0) {
     return 0;
   }
+  if (state.objective?.kind === 'salvage') {
+    return weight; // in a race every pickup counts the same, full hold or not
+  }
   switch (kind) {
     case 'barrel':
       return weight * (player.ammo <= 1 ? 2 : player.ammo <= 3 ? 1.2 : player.ammo <= 6 ? 0.6 : 0.3);
@@ -305,6 +315,8 @@ function lootValue(state: GameState, me: Ship, playerId: PlayerId, kind: string,
 
 /** How far away a pickup still draws the ship, in cells. */
 const LOOT_PULL_RANGE = 10;
+/** A salvage race pulls with this share of the pickup's value per cell. */
+const SALVAGE_SLOPE = 0.12;
 
 /**
  * Landing on a pickup collects it (the best score a plan can have from loot).
@@ -312,6 +324,15 @@ const LOOT_PULL_RANGE = 10;
  * loot it cannot yet reach, but never as hard as it heads for its target.
  */
 function lootPull(plan: Planning, position: Position, taken: number): number {
+  if (plan.salvageSlope > 0) {
+    let nearest = Infinity;
+    plan.loot.forEach((loot, index) => {
+      if (!(taken & (1 << index))) {
+        nearest = Math.min(nearest, manhattan(position, loot.position));
+      }
+    });
+    return nearest === Infinity ? 0 : -plan.salvageSlope * nearest;
+  }
   let best = 0;
   plan.loot.forEach((loot, index) => {
     if (taken & (1 << index)) {
@@ -484,6 +505,27 @@ function lootFor(
   return { loot, lootAt };
 }
 
+/**
+ * In a survive match the hero team is not out to win the fight, only to still
+ * be afloat when time runs out: it stops closing in on its target, keeps out of
+ * enemy lines of fire and off the edge, and still takes the shots it is given.
+ * Everyone else plays as usual (they are the hunters).
+ */
+function forObjective(profile: AiProfile, state: GameState, me: Ship): AiProfile {
+  if (state.objective?.kind !== 'survive' || !heroTeams(state).has(me.teamId)) {
+    return profile;
+  }
+  return {
+    ...profile,
+    approachWeight: profile.approachWeight * 0.25,
+    distanceWeight: 0,
+    dangerWeight: Math.max(profile.dangerWeight, SURVIVE_DANGER),
+    edgeWeight: Math.max(profile.edgeWeight, 5),
+  };
+}
+
+const SURVIVE_DANGER = 25;
+
 /** The nearest living hostile ship (ties broken by id for determinism). */
 function chooseTarget(state: GameState, me: Ship): Ship | undefined {
   return getHostiles(state, me).sort(
@@ -513,7 +555,7 @@ export function planAiActions(
     return { movement: [], cannons: [] };
   }
 
-  const profile = profileFor(difficulty ?? player.aiDifficulty);
+  const profile = forObjective(profileFor(difficulty ?? player.aiDifficulty), state, me);
 
   const plan: Planning = {
     state,
@@ -524,7 +566,13 @@ export function planAiActions(
     outcomes: new Map(),
     volleys: new Map(),
     threats: new Map(),
-    ...lootFor(state, me, playerId, profile.lootWeight),
+    ...lootFor(
+      state,
+      me,
+      playerId,
+      state.objective?.kind === 'salvage' ? profile.salvageWeight : profile.lootWeight,
+    ),
+    salvageSlope: state.objective?.kind === 'salvage' ? SALVAGE_SLOPE * profile.salvageWeight : 0,
     goalSteps: null,
   };
 

@@ -61,7 +61,7 @@ export function evaluateObjective(state: GameState, endOfTurn: boolean): Outcome
     return null;
   }
   if (best[1] === 0 || (ranked[1] && ranked[1][1] === best[1])) {
-    return { kind: 'draw' };
+    return { kind: 'draw', reason: 'salvaged' };
   }
   return { kind: 'win', teamId: best[0], reason: 'salvaged' };
 }
