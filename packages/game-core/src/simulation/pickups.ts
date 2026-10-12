@@ -2,12 +2,11 @@ import type { GameEvent } from '../domain/GameEvent';
 import type { Pickup, PickupMap } from '../domain/Pickup';
 import type { Ship } from '../domain/Ship';
 import { cellKey } from '../domain/Terrain';
-import { cloneInventory, totalTokens } from '../domain/Action';
 import { EMPTY_PICKUP_TALLY } from '../domain/MatchResult';
 import { PICKUP_EFFECTS } from '../config/gameRules';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import type { MutableGameState } from './internal';
-import { selectNextToken } from './tokens';
+import { produceTokens } from './tokens';
 
 /**
  * What a ship gets from a pickup, written into the state. Returns how much of
@@ -38,22 +37,19 @@ function applyPickup(
       if (!player) {
         return 0;
       }
-      const shipType = getShipType(ship.shipTypeId);
-      const economy = tokenEconomyOf(shipType);
-      const tokens = cloneInventory(player.tokens);
-      let generation = player.tokenGeneration;
-      let gained = 0;
-      for (let i = 0; i < PICKUP_EFFECTS.crate.tokens; i += 1) {
-        if (economy.cap !== null && totalTokens(tokens) >= economy.cap) {
-          break;
-        }
-        const selection = selectNextToken(generation, economy.rotation);
-        generation = selection.tokenGeneration;
-        tokens[selection.token] += 1;
-        gained += 1;
-      }
-      state.players[ship.ownerId] = { ...player, tokens, tokenGeneration: generation };
-      return gained;
+      const economy = tokenEconomyOf(getShipType(ship.shipTypeId));
+      const production = produceTokens(
+        player.tokens,
+        player.tokenGeneration,
+        economy,
+        PICKUP_EFFECTS.crate.tokens,
+      );
+      state.players[ship.ownerId] = {
+        ...player,
+        tokens: production.tokens,
+        tokenGeneration: production.tokenGeneration,
+      };
+      return production.made.length;
     }
   }
 }

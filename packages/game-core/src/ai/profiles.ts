@@ -68,9 +68,9 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     lootWeight: 10,
     salvageWeight: 40,
     maxMoves: 2,
-    mistakeRate: 0.5,
+    mistakeRate: 0.6,
     mistakePool: 6,
-    fireChance: 0.6,
+    fireChance: 0.4,
   },
   /** Plans well and hunts you down, with the odd slip. */
   normal: {

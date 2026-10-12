@@ -192,16 +192,44 @@ up with it (table above); a crate pickup gives 3 tokens instead of 2.
   the brigantine the all-rounder (10, +3, cap 12, +1), the galleon covers ground
   fast (12, **+4**, cap 14, no rest bonus, token order F F F L F F F R: three
   forward to each turn token, so it swings round slowly).
-- **Class balance changed, and needs its own pass.** Class harness with these
-  numbers (normal sea, 40 seeds, 80 duels each; A is the first-named class):
-  sloop v sloop 21-21 (38 draws); sloop v brigantine 4-73; sloop v galleon
-  4-73; brigantine v brigantine 24-24; brigantine v galleon 34-25 (21 draws);
-  galleon v galleon 28-28. Ships almost never run short of tokens now (starved
-  about 0 per cent), so tokens no longer decide fights: guns and hull do. A
-  sloop loses to a bigger class about 90 per cent of the time (it was about
-  80), and the galleon has no edge over the brigantine (it used to win about 80
-  per cent). To fix later, in the same harness: hull, cannon counts and ammo per
-  class, or give the sloop a bit more punch. Not done in this change.
+- **Token production rewritten (balanced, and never refused at the cap).**
+  `produceTokens` in `simulation/tokens.ts` replaces the fixed token order.
+  Auto mode makes the type the hold is most short of, measured against the
+  class's own mix (the share of each type in its token order: a sloop is 2 parts
+  forward to 1 left to 1 right, a galleon 6:1:1), the order breaking ties. At the
+  cap a new token swaps for the type held in the biggest surplus, so nobody has
+  to spend tokens to make room; in auto it stops once the swap would overshoot
+  (a balanced hold is left alone), with auto off the token you chose always
+  replaces your biggest surplus. Crates use the same function. (Found when a
+  galleon sat at 11 forward, 3 left and 0 right with the hold full, so no new
+  rights could be made.)
+- **Cannons rebalanced (the real lever).** With tokens plentiful, the classes
+  were separated by guns: a sloop lost to a brigantine 55 to 2 whatever the
+  hull, because the brigantine fires two cannons a volley and reloaded twice as
+  fast. Sustained fire is now the same for all three (reload 1 a turn); the
+  bigger ships keep a bigger burst. Brigantine: 2 cannons a side, start ammo 4,
+  reload 1 (was 5 and 2); galleon: 3 cannons a side, start ammo 5, reload 1 (was
+  7 and 2). A galleon can fire a whole side and two cannons of the other, but
+  not both sides in full. Hulls stay 4, 5, 6: raising them only added mutual
+  destruction (42 of 60 brigantine mirror duels ended in a draw at hull 7) and
+  did nothing for the ladder.
+- **Class harness now** (normal sea, 30 seeds, 60 duels each; A is the first
+  named class): sloop v sloop 16-16 (28 draws, 9.6 turns); sloop v brigantine
+  14-32; sloop v galleon 13-28; brigantine v brigantine 13-13; **brigantine v
+  galleon 24-30** (the galleon's edge is slim, about 56 per cent); galleon v
+  galleon 12-12. A bigger class now wins about 65 to 70 per cent against the
+  next one down, and duels last about 10 turns (they were about 5). Starved is
+  0 per cent. The galleon over the brigantine could still use a little more.
+- **Objectives under the new numbers** (sloop mirror, 30 seeds): salvage to 2
+  decided by the cargo 20 per cent of the time (was 3), hero 37 per cent; survive
+  8 turns decided by the clock 73 per cent, AI hero 77 per cent. The cargo race
+  is still mostly settled by sinking; a design change is open (see phase 6).
+- **AI skill ladder.** Easy had been held back by token scarcity, so it was
+  nearly as good as normal; it now fires 40 per cent of the time it could (was
+  60) and slips 60 per cent of the time (was 50). Harness (80 duels each, normal
+  sea): hard v easy 57-21, normal v easy 53-25, hard v normal 39-22. The ladder
+  test now runs on generated boards with 16 seeds (the old open benchmark board
+  ends in mutual destruction under the new economy).
 
 ### 2. Multi-cannon broadsides: `done` (reworked)
 Rules only; the cannon sprites arrive with phase 3. **Every cannon fires from the
@@ -212,8 +240,8 @@ made it unclear which cell a ship occupies).
 | Class | Cannons per side | Start ammo | Reload per turn |
 | --- | --- | --- | --- |
 | Sloop | 1 | 3 | +1 (unchanged) |
-| Brigantine | 2 | 5 | +2 |
-| Galleon | 3 | 7 | +2 |
+| Brigantine | 2 | 4 | +1 (was 5 and +2) |
+| Galleon | 3 | 5 | +1 (was 7 and +2) |
 
 - [x] `ShipType.cannons` (`count`, `ammo`, `reload`); `createShip` builds one
       mount per cannon on each side

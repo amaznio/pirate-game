@@ -90,26 +90,20 @@ describe('token income', () => {
     expect(beginNextTurn(holding(duelOf('brigantine'), empty)).produced.player).toHaveLength(3);
   });
 
-  it('follows the class rotation, so a galleon turns less often', () => {
-    let state = holding(duelOf('galleon'), empty);
-    const made: string[] = [];
-    // A galleon makes 4 a turn, so 2 turns is one full pass of its 8-token rotation.
-    for (let i = 0; i < 2; i += 1) {
-      const next = beginNextTurn(state);
-      made.push(...next.produced.player);
-      state = next.state;
-    }
+  it('follows the class mix, so a galleon turns less often than a sloop', () => {
+    const grown = (type: string) => {
+      let state = holding(duelOf(type), empty);
+      for (let i = 0; i < 3; i += 1) {
+        state = beginNextTurn(state).state;
+      }
+      return state.players.player.tokens;
+    };
+    const share = (tokens: { FORWARD: number; TURN_LEFT: number; TURN_RIGHT: number }) =>
+      tokens.FORWARD / totalTokens(tokens);
 
-    expect(made).toEqual([
-      'FORWARD',
-      'FORWARD',
-      'FORWARD',
-      'TURN_LEFT',
-      'FORWARD',
-      'FORWARD',
-      'FORWARD',
-      'TURN_RIGHT',
-    ]);
+    expect(share(grown('galleon'))).toBeGreaterThan(share(grown('sloop')));
+    expect(grown('galleon').TURN_LEFT).toBeGreaterThanOrEqual(1);
+    expect(grown('galleon').TURN_RIGHT).toBeGreaterThanOrEqual(1);
   });
 
   it('stops producing once the hold is full', () => {

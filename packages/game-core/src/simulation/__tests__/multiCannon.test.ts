@@ -189,8 +189,8 @@ describe('ship classes', () => {
       return beginNextTurn(state).state.players.player.ammo - state.players.player.ammo;
     };
 
-    expect([start('sloop'), start('brigantine'), start('galleon')]).toEqual([3, 5, 7]);
-    expect([reload('sloop'), reload('brigantine'), reload('galleon')]).toEqual([1, 2, 2]);
+    expect([start('sloop'), start('brigantine'), start('galleon')]).toEqual([3, 4, 5]);
+    expect([reload('sloop'), reload('brigantine'), reload('galleon')]).toEqual([1, 1, 1]);
   });
 });
 
@@ -199,14 +199,15 @@ describe('planning a volley', () => {
   const idle = [null, null, null, null] as const;
 
   it('rejects a plan that costs more cannonballs than the ship holds', () => {
-    // 7 cannonballs: two three-cannon sides cost 6, a third costs 3 more.
+    // 5 cannonballs: a whole three-cannon side and two of the other cost 5, a full
+    // second side would cost 6.
     const fits = applyPlayerPlan(galleon(), 'player', {
       movement: [...idle],
-      cannons: [cannon(3, 3), cannon(0, 0), cannon(0, 0), cannon(0, 0)],
+      cannons: [cannon(3, 2), cannon(0, 0), cannon(0, 0), cannon(0, 0)],
     });
     const tooMuch = applyPlayerPlan(galleon(), 'player', {
       movement: [...idle],
-      cannons: [cannon(3, 3), cannon(3, 0), cannon(0, 0), cannon(0, 0)],
+      cannons: [cannon(3, 3), cannon(0, 0), cannon(0, 0), cannon(0, 0)],
     });
 
     expect(fits.ok).toBe(true);
@@ -351,7 +352,7 @@ describe('the plan preview', () => {
     const state = createGame(createDuelConfig({ sea: 'open', shipTypeIds: ['galleon', 'sloop'] }));
     const planned = applyPlayerPlan(state, 'player', {
       movement: [null, null, null, null],
-      cannons: [cannon(3, 3), cannon(0, 0), cannon(0, 0), cannon(0, 0)],
+      cannons: [cannon(3, 2), cannon(0, 0), cannon(0, 0), cannon(0, 0)],
     });
     expect(planned.ok).toBe(true);
     if (!planned.ok) return;

@@ -12,7 +12,7 @@ import {
 } from '../../config/gameRules';
 
 describe('token generation', () => {
-  it('auto mode follows the deterministic rotation', () => {
+  it('auto mode makes the type it is most short of, in a deterministic order', () => {
     // From an empty hold, so every token made shows (the cap would stop them otherwise).
     const base = createGame();
     let state: ReturnType<typeof createGame> = {
@@ -30,12 +30,13 @@ describe('token generation', () => {
       state = result.state;
     }
 
-    // The sloop makes two a turn, in the order F L F R.
+    // The sloop makes two a turn. Each is the type it is most short of, the class
+    // order breaking ties: forward, then left, then right, then forward again.
     expect(produced).toEqual([
       'FORWARD',
       'TURN_LEFT',
-      'FORWARD',
       'TURN_RIGHT',
+      'FORWARD',
     ]);
   });
 
