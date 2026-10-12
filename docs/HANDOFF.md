@@ -21,7 +21,7 @@ Commands: `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm dev` (client on
 5173, server on 3001; set `CLIENT_ORIGIN='*'` to use two origins), `pnpm
 harness` (AI balance), `pnpm smoke --server URL [--client URL]` (checks a
 deployment). All three test suites and both builds were green at the end:
-game-core 354, client 181, server 174.
+game-core 356, client 189, server 174.
 
 ## 2. What was built, in order, and why
 
@@ -77,7 +77,15 @@ tested; all look-and-feel was judged by eye. Done: ships (padded sheet so no
 neighbouring frame shows), stones for rocks (3x, 2x for the smallest, never
 rotated), pixel wind and whirlpools (animated by swapping frames), cannon
 fire, impacts and a wake (flipped so the flare trails behind the stern), a
-whole-step pixel camera (free dragging, 40 tiles of sea), and the sea (below).
+whole-step pixel camera (free dragging, 40 tiles of sea), the sea (below), and
+in the latest stretch: a sinking explosion, plan-preview ghosts in pixel style,
+a faint footprint under every ship (the large hull is two cells long and drawn
+at native size, so the footprint shows which cell it holds), yards and sail
+emblems (your ship wears the skull), and the Calm/Normal/Stormy look.
+
+Cell size question, settled: tiles stay 64 px and ships stay at native size;
+scaling the tiles up to the largest ship would double the board on screen and
+need every other sprite redone, and fractional ship scales blur pixel art.
 
 ## 3. The sea, and why it ended up this way
 
@@ -104,6 +112,16 @@ Final (default): `SeaView` + `RippleField` + `SurfView`.
   arriving in the swell direction, a cell a second.
 - The swell direction is one of **four straight** directions chosen from a hash
   of the board, so all players see the same sea.
+- **The look follows the Seas setting.** The choice is an optional `sea` on the
+  match config, the game state and the view (so online players get it too;
+  absent means normal). `assets/seaLook.ts` turns it into a palette, ripple
+  count and wait, white-caps (stormy only) and surf speed. Open water looks
+  calm. Texture names carry a palette tag so a second match cannot reuse the
+  first one colours.
+- **A slow tide** (48 s) fades the shallows round rocks and drops the outer foam
+  ring at low water.
+- **Spray is built but off** (`spray: 0` in `seaLook.ts`): the user found it
+  distracting and too busy, even with short hops. Do not turn it on unasked.
 
 Switches: `?art=kenney` (old art), `?sea=lines` (older line sea), `?bands=on` (soft
 swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
@@ -112,8 +130,11 @@ swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 
 ## 4. Git state at the end of the session
 
-On `main`, **everything is pushed** and the working tree is clean (as of commit
-`c09cbb1`, the handoff itself). The phase 3 work is `49c9fa4` (sea and depth),
+On `main`. Everything up to `9da7b0f` is pushed. **Six commits after it are not
+pushed** (ask first): `cc93317` sinking explosion, `dc8389b` plan-preview
+ghosts, `c63477e` Scallywag the default art, `e149fc1` ship footprints,
+`a3a3a7b` yards and emblems, `a46f575` sea look and tide, plus the docs commit
+that follows them. The earlier phase 3 work is `49c9fa4` (sea and depth),
 `06ba35b` (camera and zoom), `72d6579`, `71d7923`, `37270d4`, `4624fc0`.
 `PhaserGame.ts` sometimes shows as modified with no real change; it is a
 CRLF/timestamp artefact, `git add` clears it. Still ask before pushing new
@@ -158,17 +179,12 @@ work.
 
 ## 7. Next steps (in this order)
 
-1. **Phase 3 extras (optional):** yards, flag symbols, grey wreck set. The
-   sinking explosion, plan-preview ghosts and the default switch to
-   `scallywag` are done.
-2. **Water plan, remaining:** a Calm/Normal/Stormy look (palette, ripple
-   density and speed, whitecaps; needs the sea style added to `GameView`, an
-   additive protocol change), spray when a swell crashes on a rock, a slow tide
-   that makes the halo and foam breathe, and a sea section in the art lab.
-3. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
+1. **Optional leftovers:** the grey wreck set (wait until wrecks are real board
+   objects), a sea section in the art lab (left out on purpose), spray (off).
+2. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
    planks as a default-off "Loot" sea option; then match results and carry-over,
    objectives, a client-only solo run (`run-core`), Postgres, monsters.
-4. Known loose ends: the menu's ship choice does not carry into an online lobby
+3. Known loose ends: the menu's ship choice does not carry into an online lobby
    (it starts on Sloop); the token tray's held/cap figure was not seen; the
    canvas is not sized to the device pixel ratio (blur on sharp screens); the
    smallest zoom step on a small window may not show the whole board; Hard AI

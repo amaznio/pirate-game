@@ -2,7 +2,8 @@
 
 > **Picking this up fresh? Read `docs/HANDOFF.md` first.** It records what was
 > built and why, the user's way of working, tool gotchas on this machine, the
-> git state (all pushed) and the ordered next steps.
+> git state (commits after `9da7b0f` are not pushed) and the ordered next
+> steps.
 
 Where Battle Navigation is going: from the current tactical skirmish to a solo
 roguelite voyage. This file is the source of truth for the plan; update the
@@ -218,7 +219,7 @@ a galleon beats a brigantine about 63 per cent of the time). Mirror matches stay
 and the sloop mirror is identical to the phase 0 baseline. If the tiers need softening,
 tune hull and ammunition (a galleon volley is 3 damage a side).
 
-### 3. Scallywag art swap: `doing`
+### 3. Scallywag art swap: `done` (a few extras left, see below)
 Replaces the Kenney art, behind a switch (`?art=kenney` stays available) until
 approved. Needs the cell-size decision under "Art".
 - [x] Art lab (`?lab=art`, `src/phaser/lab/`): the three classes assembled from
@@ -292,8 +293,8 @@ approved. Needs the cell-size decision under "Art".
       and gives a halo of pale shallows and four steps of foam washing out from
       the stone and fading, every 6 s. The wave arrives at each rock in the
       swell's direction, a cell a second, so one wave rolls over the rocks in turn.
-      Still to do from the plan: spray when a crest crashes on a rock, a slow tide
-      that makes the halo and foam breathe, and the Calm/Normal/Stormy look
+      Added later (see the Calm/Normal/Stormy item below): the tide, and spray
+      (built, switched off).
       (palette, swell speed, whitecaps), which needs the sea style to reach the
       client (it is not in the view yet).
 - [x] (first try) Animated deep water: the sheet's six 16x16 water tiles
@@ -317,16 +318,41 @@ approved. Needs the cell-size decision under "Art".
       Side effect: on a small screen the board may no longer fit, because the
       smallest step that fills the screen can be bigger than the old smooth fit.
 - [x] Cannon explosions and splashes in the new style (see above)
-- [ ] **The sinking explosion** (a destroyed ship still sinks with the old
-      tween) and the **plan preview ghosts** in the new style
-- [ ] Yards, flag symbols and the grey wreck set (optional extras)
-- [ ] **Make `scallywag` the default art** (`presentation/artStyle.ts`), once
-      the two items above are done; keep `?art=kenney`
-- [ ] Water plan, remaining: a Calm/Normal/Stormy look (palette, ripple
-      density and speed, whitecaps; needs the sea style added to `GameView`,
-      an additive protocol change), spray when a swell crashes on a rock, a
-      slow tide that makes the halo and foam breathe, a sea section in the
-      art lab
+- [x] The sinking explosion: a destroyed ship goes up in a big explosion and two
+      smaller blasts (`animation/animateDestroyed.ts`), then sinks; pixel art only
+- [x] Plan preview ghosts in the new style (`views/PlanPreviewView.ts`): dotted
+      paths on a 4 px grid, ghosts tinted pale blue (red when blocked), a
+      monospace step number, square shot markers
+- [x] **`scallywag` is the default art** (`presentation/artStyle.ts`);
+      `?art=kenney` brings the old art back
+- [x] A faint footprint under every ship (a tint over its 64 px cell plus corner
+      marks, `showCell` in `scallywagShip.ts`), because the galleon hull is two
+      cells long and its cell was hard to read. Ships are drawn at native size,
+      not scaled (a small hull is 32x64, medium 48x80, large 48x128)
+- [x] Yards and sail emblems (`assets/scallywag.ts`, `views/scallywagShip.ts`,
+      `emblemFor` in `ShipView.ts`): each sail hangs from a yard in a colour
+      that stands out from the hull (`YARD_FOR_HULL`); the big billowing sail
+      carries an emblem, dark on pale sails and light on dark ones. The
+      viewer ship wears the skull, others one picked from their id. The
+      sheet flag symbols are used as sail emblems. Seen on the galleon only.
+- [ ] Grey wreck set: the frames are cut (`grey` hull colour) but not used. A
+      wreck left on the board would look like an obstacle, so wait until
+      wrecks exist as real objects (phase 4 loot)
+- [x] The Calm/Normal/Stormy look: the sea choice of the match is now an optional
+      `sea` on `MatchConfig`, `GameState` and `GameView` (absent changes
+      nothing, golden snapshots unchanged; `SeaChoice` lives in
+      `board/generateBoard.ts`). `assets/seaLook.ts` maps it to a palette, ripple
+      count and wait, white-caps (stormy only, `views/WhitecapField.ts`), and
+      surf period and speed. Open water looks calm. Water textures are keyed by
+      palette (`paletteTag`) so a later match cannot reuse another look.
+- [x] A slow tide (48 s): the shallows round each rock fade between 70% and full,
+      and the outer foam ring is lost at low water (`tideAt`, `haloAlphaAt`,
+      `foamStepShows` in `surfPixels.ts`)
+- [x] Spray where a wave breaks on a rock is built (`SurfView`,
+      `sprayVelocities`) but **off** (`spray: 0` in `seaLook.ts`): it looked
+      distracting and busy, even after shortening its flight and cutting the
+      count. Raise `spray` to bring it back
+- [ ] A sea section in the art lab (left out on purpose for now)
 
 Findings from the lab: hull states are three (whole, cracked, broken into 2 to 3
 pieces), not four, so hull points map to them by fraction (more than half = whole,
@@ -375,6 +401,8 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: phase 3 finished apart from the extras: sinking explosion, plan preview ghosts, `scallywag` the default art (`c63477e`), ship footprints, yards and emblems, and the Calm/Normal/Stormy look with a slow tide (spray built but off). Commits `cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`, not pushed. Tests: game-core 356, client 189, server 174.
 
 - 2026-10-12: phase 3: the sea's depth is worked out from the board (shelves round
   rocks, deeper by whirlpools, open sea past the edge, four levels, about 10 ms), ripples
