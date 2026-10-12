@@ -173,9 +173,9 @@ swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 
 ## 4. Git state at the end of the session
 
-On `main`, tracking `origin/main`. The three UI commits (`62da054`, `f8aa4b6`,
-`526c2ab` for the `.scratch/` ignore) are **not pushed**. Everything before them
-is pushed, including the phase 3 art commits (`cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`,
+On `main`, tracking `origin/main`. Everything is pushed, including the UI
+commits (`62da054`, `f8aa4b6`, `526c2ab` for the `.scratch/` ignore, `6cf65f3`
+for this file) and the phase 3 art commits (`cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`,
 `2bdd578` docs) and the i18n work (phase 3b, the commit that carries this file).
 Still ask before pushing new work.
 
