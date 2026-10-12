@@ -59,7 +59,7 @@ export function PlannedMoves() {
                   setActiveSlot(armed ? null : index);
                 }
               }}
-              className={`flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition active:scale-[0.99] disabled:cursor-not-allowed ${
+              className={`flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-1 text-left transition active:scale-[0.99] disabled:cursor-not-allowed ${
                 meta
                   ? `${meta.bgClass} border-white/20 text-white`
                   : armed

@@ -64,7 +64,10 @@
     "advanced": "Advanced",
     "yourBattle": "Your battle",
     "opponentsCount_one": "{{count}} opponent",
-    "opponentsCount_other": "{{count}} opponents"
+    "opponentsCount_other": "{{count}} opponents",
+    "play": "Play",
+    "chooseMode": "Choose a mode",
+    "details": "About {{name}}"
   },
   "difficulty": {
     "easy": {
@@ -221,7 +224,9 @@
       "clear": "Clear plan",
       "lockIn": "Lock in",
       "preview": "Plan preview"
-    }
+    },
+    "hurry": "Hurry",
+    "seaGuide": "Sea guide"
   },
   "plan": {
     "nextToken": "Next turn token",
@@ -240,7 +245,9 @@
     "cannonFire": "Fire {{side}} cannon {{cannon}} in phase {{phase}}",
     "cannonballs": "cannonballs",
     "holdFull": "Your hold is full at this many tokens; new ones are lost",
-    "planned": "{{queued}}/{{total}} planned"
+    "planned": "{{queued}}/{{total}} planned",
+    "autoToken": "Auto token",
+    "nextTurnYouGet": "Next turn you get:"
   },
   "legend": {
     "windTitle": "Wind",

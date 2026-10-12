@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ACTIONS_PER_TURN } from '@pirate/game-core/domain/Action';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { TOKEN_META, TOKEN_ORDER, tokenLabel } from './tokenMeta';
 import { CannonballChip } from './CannonballChip';
@@ -23,29 +25,25 @@ export function ResourceChips() {
       {TOKEN_ORDER.map((action) => {
         const meta = TOKEN_META[action];
         return (
-          <span
-            key={action}
-            className={`${meta.bgClass} flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white`}
-          >
+          <Badge key={action} className={cn(meta.bgClass, 'gap-1 text-ocean-deep')}>
             <span aria-hidden>{meta.arrow}</span>
             {tokenLabel(t, action)}
-            <span className="tabular-nums opacity-90">×{tokens[action]}</span>
-          </span>
+            <span className="tabular-nums">×{tokens[action]}</span>
+          </Badge>
         );
       })}
       {tokenCap !== null && (
-        <span
+        <Badge
           title={t('plan.holdFull')}
-          className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${
-            held >= tokenCap ? 'bg-amber-600 text-white' : 'bg-black/25 text-parchment/80'
-          }`}
+          variant={held >= tokenCap ? 'default' : 'secondary'}
+          className={cn('tabular-nums', held >= tokenCap && 'bg-gold text-ink')}
         >
           {held}/{tokenCap}
-        </span>
+        </Badge>
       )}
       <CannonballChip />
       {queuedMoves > 0 && (
-        <span className="text-xs font-semibold text-parchment/70">
+        <span className="text-xs font-bold text-muted-foreground">
           {t('plan.planned', { queued: queuedMoves, total: ACTIONS_PER_TURN })}
         </span>
       )}

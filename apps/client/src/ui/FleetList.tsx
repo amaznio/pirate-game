@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { HullBar } from './ShipStatus';
 import { aiLevelLabel } from './menu/aiLevels';
@@ -10,7 +12,8 @@ interface FleetListProps {
 
 /**
  * Every ship in the match: the player first, then the others, each with their
- * team colour, name and hull. Sunk ships stay listed but dimmed.
+ * team colour, name and hull pips. Ships out of the fight say so in words
+ * (sunk, escaped, due on a turn), never by dimming alone.
  */
 export function FleetList({ compact = false }: FleetListProps) {
   const { t } = useTranslation();
@@ -49,50 +52,54 @@ export function FleetList({ compact = false }: FleetListProps) {
   ];
 
   return (
-    <ul className={`flex flex-col ${compact ? 'gap-1' : 'gap-2'}`}>
-      {rows.map((row) => (
-        <li
-          key={row.id}
-          className={`flex items-center gap-2 ${row.alive || row.arrivesOnTurn !== null ? '' : 'opacity-40'}`}
-        >
-          <span
-            className={`h-3 w-3 shrink-0 rounded-full ring-2 ${
-              row.you ? 'ring-white/90' : 'ring-black/40'
-            }`}
-            style={{ backgroundColor: row.color }}
-            aria-hidden
-          />
-          <span
-            className={`truncate font-bold ${
-              compact ? 'w-14 text-[11px]' : 'w-20 text-xs uppercase tracking-wide'
-            } ${row.alive || row.arrivesOnTurn !== null ? 'text-parchment' : 'text-parchment/70 line-through'}`}
-          >
-            {row.name}
-          </span>
-          {row.bot && (
+    <ul className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-2')}>
+      {rows.map((row) => {
+        const inPlay = row.alive || row.arrivesOnTurn !== null;
+        return (
+          <li key={row.id} className={cn('flex items-center gap-2', !inPlay && 'opacity-60')}>
             <span
-              className="rounded bg-parchment/15 px-1 text-[9px] font-bold uppercase tracking-wide text-parchment/70"
-              title={
-                row.difficulty
-                  ? t('fleet.aiSailingLevel', { level: aiLevelLabel(t, row.difficulty) })
-                  : t('fleet.aiSailing')
-              }
+              className={cn(
+                'size-3.5 shrink-0 rounded-full ring-2',
+                row.you ? 'ring-white/90' : 'ring-black/40',
+              )}
+              style={{ backgroundColor: row.color }}
+              aria-hidden
+            />
+            <span
+              className={cn(
+                'truncate font-bold',
+                compact ? 'w-[4.5rem] text-xs' : 'w-24 text-sm',
+                !inPlay && 'line-through',
+              )}
             >
-              {t('fleet.aiTag')}
+              {row.name}
             </span>
-          )}
-          <HullBar hp={row.hull} maxHp={row.maxHull} />
-          <span className="ml-auto text-xs font-semibold tabular-nums text-parchment">
-            {row.alive
-              ? `${row.hull}/${row.maxHull}`
-              : row.arrivesOnTurn !== null
-                ? t('fleet.arrives', { turn: row.arrivesOnTurn })
-                : row.escaped
-                  ? t('fleet.escaped')
-                  : t('fleet.sunk')}
-          </span>
-        </li>
-      ))}
+            {row.bot && !compact && (
+              <Badge
+                variant="secondary"
+                className="px-1.5 py-0 text-[10px] uppercase"
+                title={
+                  row.difficulty
+                    ? t('fleet.aiSailingLevel', { level: aiLevelLabel(t, row.difficulty) })
+                    : t('fleet.aiSailing')
+                }
+              >
+                {t('fleet.aiTag')}
+              </Badge>
+            )}
+            {row.alive && <HullBar hp={row.hull} maxHp={row.maxHull} small={compact} />}
+            <span className="ml-auto text-xs font-bold tabular-nums">
+              {row.alive
+                ? `${row.hull}/${row.maxHull}`
+                : row.arrivesOnTurn !== null
+                  ? t('fleet.arrives', { turn: row.arrivesOnTurn })
+                  : row.escaped
+                    ? t('fleet.escaped')
+                    : t('fleet.sunk')}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

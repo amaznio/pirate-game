@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { useGameUIStore } from '../store/useGameUIStore';
+import { CannonballChip } from './CannonballChip';
+import { AutoTokenSwitch, NextTokenChoice } from './NextTokenControl';
 import { PlanningControls } from './PlanningControls';
-import { SeaLegend } from './SeaLegend';
 import { ResourceChips } from './ResourceChips';
-import { TimerBar } from './TimerBar';
 
 interface MobilePlanningSheetProps {
   /** Reports the sheet's height so the camera can centre above it. */
@@ -53,34 +55,33 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
     return (
       <section
         ref={ref}
-        className="absolute inset-x-0 bottom-0 z-30 border-t border-parchment/20 bg-ocean/90 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur"
+        className="absolute inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-card-foreground backdrop-blur"
       >
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           {spectating ? (
-            <p className="flex-1 text-center text-sm font-semibold text-parchment">
-              {t('hud.sunkWatching')}
-            </p>
+            <p className="flex-1 text-center text-sm font-bold">{t('hud.sunkWatching')}</p>
           ) : (
             <ResourceChips />
           )}
           {!spectating && (
             <>
-            <button
-              type="button"
-              disabled={!canPlan}
-              onClick={lockIn}
-              className="ml-auto shrink-0 rounded-xl bg-parchment/15 px-3 py-2 text-sm font-bold text-parchment active:scale-95 disabled:opacity-40"
-            >
-              {lockedIn ? t('hud.locked') : hasPlan ? t('hud.lockIn') : t('hud.pass')}
-            </button>
-            <button
-              type="button"
-              disabled={!planning}
-              onClick={() => setPanelOpen(true)}
-              className="shrink-0 rounded-xl bg-parchment px-3 py-2 text-sm font-bold text-ink shadow active:scale-95 disabled:opacity-40"
-            >
-              {t('hud.plan')} <span aria-hidden>▴</span>
-            </button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="ml-auto shrink-0"
+                disabled={!canPlan}
+                onClick={lockIn}
+              >
+                {lockedIn ? t('hud.locked') : hasPlan ? t('hud.lockIn') : t('hud.pass')}
+              </Button>
+              <Button
+                size="sm"
+                className="shrink-0"
+                disabled={!planning}
+                onClick={() => setPanelOpen(true)}
+              >
+                {t('hud.plan')} <ChevronUp aria-hidden />
+              </Button>
             </>
           )}
         </div>
@@ -91,24 +92,26 @@ export function MobilePlanningSheet({ onHeightChange }: MobilePlanningSheetProps
   return (
     <section
       ref={ref}
-      className="absolute inset-x-0 bottom-0 z-30 max-h-[60vh] overflow-y-auto rounded-t-2xl border-t border-parchment/25 bg-ocean/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur"
+      className="absolute inset-x-0 bottom-0 z-30 max-h-[70vh] overflow-y-auto rounded-t-tile border-t-2 border-border bg-card px-4 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-card-foreground shadow-2xl backdrop-blur"
     >
       <div className="mx-auto max-w-xl">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-parchment">
-            {t('hud.battlePlan')}
-          </h2>
-          <TimerBar className="flex-1" />
+        <div className="mb-1 flex items-center gap-2">
           <button
             type="button"
             onClick={() => setPanelOpen(false)}
-            className="rounded-lg bg-parchment/15 px-3 py-1 text-sm font-bold text-parchment active:scale-95"
+            aria-label={t('hud.hide')}
+            className="flex min-h-11 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
           >
-            {t('hud.hide')} <span aria-hidden>▾</span>
+            <ChevronDown className="size-5 text-muted-foreground" aria-hidden />
+            <h2 className="font-head text-lg font-bold">{t('hud.battlePlan')}</h2>
           </button>
+          <AutoTokenSwitch />
+          <CannonballChip />
         </div>
-        <PlanningControls />
-        <SeaLegend className="mt-3 border-t border-parchment/10 pt-2" />
+        <div className="mb-2 empty:hidden">
+          <NextTokenChoice />
+        </div>
+        <PlanningControls compact />
       </div>
     </section>
   );

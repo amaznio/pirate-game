@@ -1,13 +1,16 @@
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Banner } from '@/kit/Banner';
+import { Segmented } from '@/kit/Segmented';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { MoveTokenTray } from './MoveTokenTray';
 import { PlannedMoves } from './PlannedMoves';
 import { CannonballChip } from './CannonballChip';
-import { TOKEN_META, TOKEN_ORDER, tokenLabel } from './tokenMeta';
+import { TOKEN_ORDER, tokenLabel } from './tokenMeta';
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <h3 className="text-xs font-bold uppercase tracking-wide text-parchment/80">
+    <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
       {children}
     </h3>
   );
@@ -15,10 +18,10 @@ function SectionTitle({ children }: { children: string }) {
 
 /**
  * Everything needed to plan a turn: next-token choice, token tray, the four
- * phase rows with cannon toggles, and Clear / Lock In. Shared by the mobile
+ * plan slots with cannon buttons, and Clear / Lock In. Shared by the mobile
  * sheet and the desktop sidebar so both behave identically.
  */
-export function PlanningControls() {
+export function PlanningControls({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   const status = useGameUIStore((state) => state.status);
   const hasPlan = useGameUIStore(
@@ -40,86 +43,66 @@ export function PlanningControls() {
   const spectating = useGameUIStore((state) => state.spectating);
 
   return (
-    <div className="flex flex-col gap-3">
-      {spectating && (
-        <p className="rounded-xl bg-hull/25 px-3 py-2 text-center text-sm font-semibold text-parchment">
-          {t('hud.sunkWatching')}
-        </p>
-      )}
+    <div className={compact ? 'flex flex-col gap-3' : 'flex flex-col gap-4'}>
+      {spectating && <Banner tone="bad">{t('hud.sunkWatching')}</Banner>}
       {lockedIn && planning && !spectating && (
-        <p className="rounded-xl bg-token-forward/20 px-3 py-2 text-center text-sm font-semibold text-parchment">
+        <Banner tone="info">
           {waitingFor > 0 ? t('hud.waitingFor', { count: waitingFor }) : t('hud.lockedIn')}
-        </p>
+        </Banner>
       )}
-      <div className="rounded-xl bg-black/20 px-3 py-2">
-        <div className="flex items-center justify-between">
+
+      {!compact && (
+        <div className="flex flex-col gap-1.5">
           <SectionTitle>{t('plan.nextToken')}</SectionTitle>
-          <button
-            type="button"
+          <Segmented
+            label={t('plan.nextToken')}
+            compact
             disabled={!planning}
-            onClick={() => setAuto(!auto)}
-            className={`rounded-lg px-3 py-1 text-xs font-bold shadow transition hover:brightness-110 active:scale-95 disabled:opacity-50 ${
-              auto ? 'bg-token-forward text-white' : 'bg-parchment text-ink'
-            }`}
-          >
-            {t('plan.auto')} {auto ? t('plan.on') : t('plan.off')}
-          </button>
+            value={auto ? 'auto' : requested}
+            onChange={(choice) => {
+              if (choice === 'auto') {
+                setAuto(true);
+              } else {
+                setAuto(false);
+                setRequested(choice);
+              }
+            }}
+            choices={[
+              { label: t('plan.auto'), value: 'auto' as const },
+              ...TOKEN_ORDER.map((action) => ({ label: tokenLabel(t, action), value: action })),
+            ]}
+          />
         </div>
-        {!auto && (
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {TOKEN_ORDER.map((action) => {
-              const meta = TOKEN_META[action];
-              const selected = requested === action;
-              return (
-                <button
-                  key={action}
-                  type="button"
-                  disabled={!planning}
-                  onClick={() => setRequested(action)}
-                  className={`rounded-lg px-2 py-1.5 text-xs font-bold shadow transition hover:brightness-110 active:scale-95 disabled:opacity-50 ${
-                    selected
-                      ? `${meta.bgClass} text-white`
-                      : 'bg-parchment/15 text-parchment'
-                  }`}
-                >
-                  {tokenLabel(t, action)}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
-        <SectionTitle>{t('plan.moveTokens')}</SectionTitle>
+        {!compact && <SectionTitle>{t('plan.moveTokens')}</SectionTitle>}
         <MoveTokenTray />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <SectionTitle>{t('plan.plan')}</SectionTitle>
-          <CannonballChip />
-        </div>
+        {!compact && (
+          <div className="flex items-center justify-between">
+            <SectionTitle>{t('plan.plan')}</SectionTitle>
+            <CannonballChip />
+          </div>
+        )}
         <PlannedMoves />
       </div>
 
-      <div className="flex gap-2">
-        <button
-          type="button"
+      {/* Pinned, so Lock In stays reachable when the plan is taller than the panel. */}
+      <div className="sticky bottom-0 flex gap-2 bg-card pt-2 pb-1">
+        <Button
+          variant="secondary"
+          size={compact ? 'sm' : 'default'}
           disabled={!canPlan || !hasPlan}
           onClick={clearPlayerActions}
-          className="rounded-xl bg-parchment/15 px-4 py-2.5 text-sm font-bold text-parchment transition hover:bg-parchment/25 active:scale-95 disabled:opacity-40"
         >
           {t('plan.clear')}
-        </button>
-        <button
-          type="button"
-          disabled={!canPlan}
-          onClick={lockIn}
-          className="flex-1 rounded-xl bg-parchment px-4 py-2.5 text-base font-black uppercase tracking-wide text-ink shadow-lg transition hover:brightness-105 active:scale-95 disabled:opacity-40"
-        >
+        </Button>
+        <Button size={compact ? 'sm' : 'lg'} className="flex-1" disabled={!canPlan} onClick={lockIn}>
           {lockedIn ? t('hud.lockedIn') : hasPlan ? t('hud.lockIn') : t('hud.passTurn')}
-        </button>
+        </Button>
       </div>
     </div>
   );

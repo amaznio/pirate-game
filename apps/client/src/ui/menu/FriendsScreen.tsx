@@ -20,13 +20,19 @@ import {
 
 interface FriendsScreenProps {
   name: string;
+  onNameChange: (name: string) => void;
   onBack: () => void;
   /** A room code from the page link (?room=ABCDE), to prefill the join box. */
   initialRoomCode?: string;
 }
 
 /** Create a room, join one with a code, or pick a public room. */
-export function FriendsScreen({ name, onBack, initialRoomCode = '' }: FriendsScreenProps) {
+export function FriendsScreen({
+  name,
+  onNameChange,
+  onBack,
+  initialRoomCode = '',
+}: FriendsScreenProps) {
   const { t } = useTranslation();
   const session = useOnlineSession();
   const [code, setCode] = useState(initialRoomCode.toUpperCase());
@@ -57,8 +63,21 @@ export function FriendsScreen({ name, onBack, initialRoomCode = '' }: FriendsScr
       {online ? (
         <>
           <Card>
+            <Field label={t('menu.yourName')} hint={!cleanName ? t('menu.enterNameOnline') : undefined}>
+              <input
+                value={name}
+                onChange={(event) => onNameChange(event.target.value)}
+                maxLength={20}
+                placeholder={t('menu.namePlaceholder')}
+                aria-label={t('menu.yourName')}
+                className="min-h-12 rounded-btn border-2 border-border bg-secondary/40 px-3 text-base font-bold text-foreground outline-none placeholder:font-semibold placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring"
+              />
+            </Field>
+          </Card>
+
+          <Card>
             <CardTitle>{t('menu.newRoom')}</CardTitle>
-            <Field label={t('menu.newRoom')} hint={visibilityBlurb(t, visibility)}>
+            <div className="flex flex-col gap-2">
               <Segmented
                 label={t('menu.newRoom')}
                 value={visibility}
@@ -68,7 +87,8 @@ export function FriendsScreen({ name, onBack, initialRoomCode = '' }: FriendsScr
                   value,
                 }))}
               />
-            </Field>
+              <p className="text-sm text-muted-foreground">{visibilityBlurb(t, visibility)}</p>
+            </div>
             <Button
               size="lg"
               disabled={working || !cleanName}
@@ -99,9 +119,6 @@ export function FriendsScreen({ name, onBack, initialRoomCode = '' }: FriendsScr
                 {t('menu.join')}
               </Button>
             </div>
-            {!cleanName && (
-              <p className="text-sm text-muted-foreground">{t('menu.enterNameOnline')}</p>
-            )}
           </Card>
 
           {serverUrl && (

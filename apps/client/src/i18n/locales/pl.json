@@ -66,7 +66,10 @@
     "opponentsCount_one": "{{count}} przeciwnik",
     "opponentsCount_few": "{{count}} przeciwników",
     "opponentsCount_many": "{{count}} przeciwników",
-    "opponentsCount_other": "{{count}} przeciwnika"
+    "opponentsCount_other": "{{count}} przeciwnika",
+    "play": "Graj",
+    "chooseMode": "Wybierz tryb",
+    "details": "Informacje: {{name}}"
   },
   "difficulty": {
     "easy": {
@@ -231,7 +234,9 @@
       "clear": "Wyczyść plan",
       "lockIn": "Zablokuj plan",
       "preview": "Podgląd planu"
-    }
+    },
+    "hurry": "Pośpiesz się",
+    "seaGuide": "Przewodnik po morzu"
   },
   "plan": {
     "nextToken": "Żeton na następną turę",
@@ -250,7 +255,9 @@
     "cannonFire": "Ognia z działa {{side}} {{cannon}} w fazie {{phase}}",
     "cannonballs": "kule armatnie",
     "holdFull": "Twój magazyn jest pełny przy tej liczbie żetonów; nowe przepadają",
-    "planned": "{{queued}}/{{total}} zaplanowane"
+    "planned": "{{queued}}/{{total}} zaplanowane",
+    "autoToken": "Żeton auto",
+    "nextTurnYouGet": "W następnej turze dostajesz:"
   },
   "legend": {
     "windTitle": "Wiatr",

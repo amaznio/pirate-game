@@ -1,12 +1,15 @@
+import { LocateFixed } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameClient } from '@pirate/game-core/client/GameClient';
+import { Button } from '@/components/ui/button';
 import { createPhaserGame, type PhaserHandle } from '../phaser/PhaserGame';
 import { bindGameClient, useGameUIStore } from '../store/useGameUIStore';
 import { BattleHUD } from '../ui/BattleHUD';
 import { MobilePlanningSheet } from '../ui/MobilePlanningSheet';
 import { DesktopSidebar } from '../ui/DesktopSidebar';
 import { PreviewToggle } from '../ui/PreviewToggle';
+import { SeaGuideButton } from '../ui/SeaGuideDialog';
 import { useIsDesktop } from '../ui/useIsDesktop';
 import { useDesktopShortcuts } from '../ui/useDesktopShortcuts';
 import { GameOverDialog, SunkDialog } from '../ui/EndDialogs';
@@ -109,15 +112,17 @@ export function GameScreen({
           style={{ bottom: desktop ? 12 : sheetHeight + 12 }}
         >
           <PreviewToggle />
-          <button
-            type="button"
+          {!desktop && <SeaGuideButton />}
+          <Button
+            variant="secondary"
+            size="icon"
             onClick={() => handleRef.current?.recenterOnPlayer()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-ocean/80 text-lg text-parchment shadow-lg backdrop-blur transition hover:bg-ocean active:scale-95"
+            className="rounded-full bg-card/90 shadow-lg backdrop-blur hover:bg-card"
             aria-label={t('board.recenter')}
             title={t('board.recenter')}
           >
-            ◎
-          </button>
+            <LocateFixed />
+          </Button>
         </div>
 
         {!desktop && <MobilePlanningSheet onHeightChange={onSheetHeight} />}
@@ -130,7 +135,7 @@ export function GameScreen({
             {disconnected && (
               <span
                 role="status"
-                className="rounded-full bg-hull/90 px-3 py-1 text-xs font-bold text-white"
+                className="rounded-full bg-destructive px-3 py-1 text-xs font-bold text-white"
               >
                 {t('board.reconnecting')}
               </span>
@@ -138,13 +143,13 @@ export function GameScreen({
             {notice && (
               <span
                 role="status"
-                className="rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-parchment"
+                className="rounded-full bg-card/90 px-3 py-1 text-xs font-bold text-foreground"
               >
                 {t(noticeKey)}
               </span>
             )}
             {busy && !disconnected && (
-              <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-parchment">
+              <span className="rounded-full bg-card/80 px-3 py-1 text-xs font-bold text-foreground">
                 {t('board.resolving')}
               </span>
             )}

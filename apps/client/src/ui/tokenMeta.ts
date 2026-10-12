@@ -8,6 +8,8 @@ export interface TokenMeta {
   readonly key: string;
   readonly bgClass: string;
   readonly ringClass: string;
+  readonly borderClass: string;
+  readonly textClass: string;
 }
 
 export const TOKEN_META: Record<MovementAction, TokenMeta> = {
@@ -17,6 +19,8 @@ export const TOKEN_META: Record<MovementAction, TokenMeta> = {
     key: '1',
     bgClass: 'bg-token-left',
     ringClass: 'ring-token-left',
+    borderClass: 'border-token-left',
+    textClass: 'text-token-left',
   },
   FORWARD: {
     short: 'FORWARD',
@@ -24,6 +28,8 @@ export const TOKEN_META: Record<MovementAction, TokenMeta> = {
     key: '2',
     bgClass: 'bg-token-forward',
     ringClass: 'ring-token-forward',
+    borderClass: 'border-token-forward',
+    textClass: 'text-token-forward',
   },
   TURN_RIGHT: {
     short: 'RIGHT',
@@ -31,6 +37,8 @@ export const TOKEN_META: Record<MovementAction, TokenMeta> = {
     key: '3',
     bgClass: 'bg-token-right',
     ringClass: 'ring-token-right',
+    borderClass: 'border-token-right',
+    textClass: 'text-token-right',
   },
 };
 

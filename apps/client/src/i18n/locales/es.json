@@ -64,7 +64,10 @@
     "advanced": "Avanzado",
     "yourBattle": "Tu batalla",
     "opponentsCount_one": "{{count}} rival",
-    "opponentsCount_other": "{{count}} rivales"
+    "opponentsCount_other": "{{count}} rivales",
+    "play": "Jugar",
+    "chooseMode": "Elige un modo",
+    "details": "Acerca de {{name}}"
   },
   "difficulty": {
     "easy": {
@@ -221,7 +224,9 @@
       "clear": "Borrar el plan",
       "lockIn": "Bloquear",
       "preview": "Vista previa del plan"
-    }
+    },
+    "hurry": "¡Date prisa!",
+    "seaGuide": "Guía del mar"
   },
   "plan": {
     "nextToken": "Ficha del próximo turno",
@@ -240,7 +245,9 @@
     "cannonFire": "Disparar el cañón {{cannon}} de {{side}} en la fase {{phase}}",
     "cannonballs": "balas de cañón",
     "holdFull": "Tu bodega se llena con esta cantidad de fichas; las nuevas se pierden",
-    "planned": "{{queued}}/{{total}} planeados"
+    "planned": "{{queued}}/{{total}} planeados",
+    "autoToken": "Ficha auto",
+    "nextTurnYouGet": "El próximo turno recibes:"
   },
   "legend": {
     "windTitle": "Viento",

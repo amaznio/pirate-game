@@ -76,8 +76,31 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
         </Button>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[1fr_24rem] lg:items-start">
-        <section className="flex flex-col gap-3">
+      {/* On a phone the summary comes first, then the choices, then Advanced. */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-x-6">
+        <Card className="lg:col-start-2 lg:row-start-1">
+          <CardTitle>{t('menu.yourBattle')}</CardTitle>
+          <p className="font-head text-2xl font-bold">{objectiveLabel(t, objective)}</p>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{t('menu.opponentsCount', { count: opponents })}</Badge>
+            <Badge variant="secondary">
+              {t('menu.skill')}: {aiLevelLabel(t, difficulty)}
+            </Badge>
+            <Badge variant="secondary">
+              {t('menu.seas')}: {mapStyleLabel(t, mapStyle)}
+            </Badge>
+            <Badge variant="secondary">
+              {t('common.loot')}: {loot ? t('common.lootOn') : t('common.lootOff')}
+            </Badge>
+            <Badge variant="secondary">
+              {t('menu.yourShip')}: {shipLabel(t, yourShip)}
+            </Badge>
+            <Badge variant="secondary">
+              {t('menu.theirShips')}: {shipLabel(t, theirShip)}
+            </Badge>
+          </div>
+        </Card>
+        <section className="flex flex-col gap-3 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <CardTitle>{t('menu.objective')}</CardTitle>
           <ChoiceGroup value={objective} onChange={setObjective} label={t('menu.objective')}>
             {OBJECTIVE_CHOICES.map((choice) => (
@@ -90,101 +113,78 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
             ))}
           </ChoiceGroup>
         </section>
-
-        <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-          <Card>
-            <CardTitle>{t('menu.yourBattle')}</CardTitle>
-            <p className="font-head text-2xl font-bold">{objectiveLabel(t, objective)}</p>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{t('menu.opponentsCount', { count: opponents })}</Badge>
-              <Badge variant="secondary">
-                {t('menu.skill')}: {aiLevelLabel(t, difficulty)}
-              </Badge>
-              <Badge variant="secondary">
-                {t('menu.seas')}: {mapStyleLabel(t, mapStyle)}
-              </Badge>
-              <Badge variant="secondary">
-                {t('common.loot')}: {loot ? t('common.lootOn') : t('common.lootOff')}
-              </Badge>
-              <Badge variant="secondary">
-                {t('menu.yourShip')}: {shipLabel(t, yourShip)}
-              </Badge>
-              <Badge variant="secondary">
-                {t('menu.theirShips')}: {shipLabel(t, theirShip)}
-              </Badge>
-            </div>
-          </Card>
-
-          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <Card className="gap-0 p-0">
-              <CollapsibleTrigger className="flex min-h-14 w-full items-center justify-between rounded-card px-4 text-left text-base font-bold outline-none focus-visible:ring-[3px] focus-visible:ring-ring">
-                {t('menu.advanced')}
-                <ChevronDown
-                  className={`size-5 transition ${advancedOpen ? 'rotate-180' : ''}`}
-                  aria-hidden
+        <Collapsible
+          open={advancedOpen}
+          onOpenChange={setAdvancedOpen}
+          className="lg:col-start-2 lg:row-start-2"
+        >
+          <Card className="gap-0 p-0">
+            <CollapsibleTrigger className="flex min-h-14 w-full items-center justify-between rounded-card px-4 text-left text-base font-bold outline-none focus-visible:ring-[3px] focus-visible:ring-ring">
+              {t('menu.advanced')}
+              <ChevronDown
+                className={`size-5 transition ${advancedOpen ? 'rotate-180' : ''}`}
+                aria-hidden
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="flex flex-col gap-5 border-t border-border p-4">
+              <Field label={t('menu.skill')} hint={aiLevelBlurb(t, difficulty)}>
+                <Segmented
+                  label={t('menu.skill')}
+                  value={difficulty}
+                  onChange={setDifficulty}
+                  choices={AI_LEVELS.map((level) => ({
+                    label: aiLevelLabel(t, level),
+                    value: level,
+                  }))}
                 />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="flex flex-col gap-5 border-t border-border p-4">
-                <Field label={t('menu.skill')} hint={aiLevelBlurb(t, difficulty)}>
-                  <Segmented
-                    label={t('menu.skill')}
-                    value={difficulty}
-                    onChange={setDifficulty}
-                    choices={AI_LEVELS.map((level) => ({
-                      label: aiLevelLabel(t, level),
-                      value: level,
-                    }))}
-                  />
-                </Field>
-                <Field label={t('menu.seas')} hint={mapStyleBlurb(t, mapStyle)}>
-                  <Segmented
-                    label={t('menu.seas')}
-                    value={mapStyle}
-                    onChange={setMapStyle}
-                    choices={MAP_STYLE_CHOICES.map((style) => ({
-                      label: mapStyleLabel(t, style),
-                      value: style,
-                    }))}
-                  />
-                </Field>
-                <Field label={t('menu.yourShip')} hint={shipBlurb(t, yourShip)}>
-                  <Segmented
-                    label={t('menu.yourShip')}
-                    value={yourShip}
-                    onChange={setYourShip}
-                    choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
-                  />
-                </Field>
-                <Field label={t('menu.theirShips')} hint={t('common.biggerShipStronger')}>
-                  <Segmented
-                    label={t('menu.theirShips')}
-                    value={theirShip}
-                    onChange={setTheirShip}
-                    choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
-                  />
-                </Field>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold">{t('menu.opponents')}</span>
-                  <Stepper
-                    label={t('menu.opponents')}
-                    value={opponents}
-                    min={1}
-                    max={7}
-                    onChange={setOpponents}
-                  />
-                </div>
-                <Field label={t('common.loot')} hint={t('common.lootBlurb')}>
-                  <Switch
-                    checked={loot}
-                    onCheckedChange={setLoot}
-                    aria-label={t('common.loot')}
-                  />
-                </Field>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-        </div>
+              </Field>
+              <Field label={t('menu.seas')} hint={mapStyleBlurb(t, mapStyle)}>
+                <Segmented
+                  label={t('menu.seas')}
+                  value={mapStyle}
+                  onChange={setMapStyle}
+                  choices={MAP_STYLE_CHOICES.map((style) => ({
+                    label: mapStyleLabel(t, style),
+                    value: style,
+                  }))}
+                />
+              </Field>
+              <Field label={t('menu.yourShip')} hint={shipBlurb(t, yourShip)}>
+                <Segmented
+                  label={t('menu.yourShip')}
+                  value={yourShip}
+                  onChange={setYourShip}
+                  choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
+                />
+              </Field>
+              <Field label={t('menu.theirShips')} hint={t('common.biggerShipStronger')}>
+                <Segmented
+                  label={t('menu.theirShips')}
+                  value={theirShip}
+                  onChange={setTheirShip}
+                  choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
+                />
+              </Field>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-bold">{t('menu.opponents')}</span>
+                <Stepper
+                  label={t('menu.opponents')}
+                  value={opponents}
+                  min={1}
+                  max={7}
+                  onChange={setOpponents}
+                />
+              </div>
+              <Field label={t('common.loot')} hint={t('common.lootBlurb')}>
+                <Switch
+                  checked={loot}
+                  onCheckedChange={setLoot}
+                  aria-label={t('common.loot')}
+                />
+              </Field>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </div>
     </ScreenFrame>
   );

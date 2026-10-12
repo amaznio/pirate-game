@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FleetList } from './FleetList';
-import { TimerBar } from './TimerBar';
 import { ObjectiveBanner } from './ObjectiveBanner';
-import { formatSeconds, statusLabel, useTurnClock } from './useTurnClock';
+import { TurnTimer } from './TurnTimer';
+import { statusLabel, useTurnClock } from './useTurnClock';
 
 interface BattleHUDProps {
   /** Reports the HUD's height so off-screen indicators stay clear of it. */
@@ -13,7 +13,7 @@ interface BattleHUDProps {
 /** Compact mobile HUD: every ship's hull on the left, turn and countdown on the right. */
 export function BattleHUD({ onHeightChange }: BattleHUDProps) {
   const { t } = useTranslation();
-  const { turn, status, planning, timed, remaining, low } = useTurnClock();
+  const { turn, status, planning, timed } = useTurnClock();
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -31,32 +31,29 @@ export function BattleHUD({ onHeightChange }: BattleHUDProps) {
   return (
     <header
       ref={ref}
-      className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-1 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2"
+      className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-1.5 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2"
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="pointer-events-auto rounded-2xl bg-ocean/80 px-3 py-1.5 shadow-lg backdrop-blur">
+        <div className="pointer-events-auto rounded-card bg-card/90 px-3 py-1.5 text-card-foreground shadow-lg backdrop-blur">
           <FleetList compact />
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-ocean/80 px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur">
-          <span className="text-parchment">{t('hud.turn', { turn })}</span>
-          <span className="text-parchment/50">·</span>
+        <div className="pointer-events-auto flex min-w-28 flex-col gap-1 rounded-card bg-card/90 px-3 py-1.5 text-card-foreground shadow-lg backdrop-blur">
           {planning && timed ? (
-            <span
-              className={`tabular-nums ${low ? 'text-hull' : 'text-parchment/80'}`}
-            >
-              ⏱ {formatSeconds(remaining)}
-            </span>
-          ) : planning ? (
-            <span className="text-parchment/80">{t('status.planning')}</span>
+            <TurnTimer lead={<span className="text-sm font-bold">{t('hud.turn', { turn })}</span>} />
           ) : (
-            <span className="text-parchment/80">{statusLabel(t, status)}</span>
+            <span className="text-sm font-bold">
+              {t('hud.turn', { turn })}
+              <span className="text-muted-foreground">
+                {' \u00b7 '}
+                {planning ? t('status.planning') : statusLabel(t, status)}
+              </span>
+            </span>
           )}
         </div>
       </div>
 
-      <TimerBar className="mx-auto w-40" />
-      <ObjectiveBanner className="pointer-events-auto mx-auto bg-ocean/80 backdrop-blur" />
+      <ObjectiveBanner className="pointer-events-auto mx-auto bg-card/90 py-1 text-xs backdrop-blur" />
     </header>
   );
 }

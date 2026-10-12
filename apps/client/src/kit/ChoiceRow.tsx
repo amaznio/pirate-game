@@ -1,8 +1,10 @@
-import { Check } from 'lucide-react';
+import { Check, Info } from 'lucide-react';
 import { RadioGroup } from 'radix-ui';
+import { useTranslation } from 'react-i18next';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-/** A list of mutually exclusive rows, each with a title and a one-line rule. */
+/** A list of mutually exclusive rows, each with a title and its rules behind an info button. */
 export function ChoiceGroup<T extends string>({
   value,
   onChange,
@@ -28,6 +30,12 @@ export function ChoiceGroup<T extends string>({
   );
 }
 
+/**
+ * One choice: a radio and its title, and an info button that opens the rule on
+ * tap. The rule stays out of the row so a list of choices stays short. The
+ * info button sits beside the radio, not inside it, because a button cannot
+ * hold a button.
+ */
 export function ChoiceRow({
   value,
   title,
@@ -37,21 +45,36 @@ export function ChoiceRow({
   title: string;
   rule: string;
 }) {
+  const { t } = useTranslation();
   return (
-    <RadioGroup.Item
-      value={value}
-      className="group flex min-h-14 items-center gap-3 rounded-card border-2 border-border bg-card px-4 py-3 text-left outline-none transition hover:bg-secondary/60 focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:border-primary data-[state=checked]:bg-secondary"
-    >
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-base font-bold text-foreground">{title}</span>
-        <span className="text-sm text-muted-foreground">{rule}</span>
-      </span>
-      <span
-        aria-hidden
-        className="flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-border group-data-[state=checked]:border-primary group-data-[state=checked]:bg-primary group-data-[state=checked]:text-primary-foreground"
+    <div className="flex items-stretch rounded-card border-2 border-border bg-card transition has-[[role=radio][data-state=checked]]:border-primary has-[[role=radio][data-state=checked]]:bg-secondary">
+      <RadioGroup.Item
+        value={value}
+        className="group flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-l-card py-3 pr-2 pl-4 text-left outline-none transition hover:bg-secondary/60 focus-visible:ring-[3px] focus-visible:ring-ring"
       >
-        <Check className="size-4 opacity-0 group-data-[state=checked]:opacity-100" />
-      </span>
-    </RadioGroup.Item>
+        <span
+          aria-hidden
+          className="flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-border group-data-[state=checked]:border-primary group-data-[state=checked]:bg-primary group-data-[state=checked]:text-primary-foreground"
+        >
+          <Check className="size-4 opacity-0 group-data-[state=checked]:opacity-100" />
+        </span>
+        <span className="min-w-0 text-base font-bold text-foreground">{title}</span>
+      </RadioGroup.Item>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={t('menu.details', { name: title })}
+            className="flex w-12 shrink-0 items-center justify-center rounded-r-card text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring"
+          >
+            <Info className="size-5" aria-hidden />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="rounded-btn border-2 border-border text-sm">
+          <p className="font-bold text-foreground">{title}</p>
+          <p className="mt-1 text-muted-foreground">{rule}</p>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }

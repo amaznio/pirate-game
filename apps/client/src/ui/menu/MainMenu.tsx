@@ -4,6 +4,7 @@ import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import type { OfflineShips } from '../../app/offlineMatch';
 import { FriendsScreen } from './FriendsScreen';
 import { HomeScreen } from './HomeScreen';
+import { ModeSelectScreen } from './ModeSelectScreen';
 import type { ObjectiveChoice } from './objectiveChoices';
 import { QuickBattleScreen } from './QuickBattleScreen';
 import { useStoredName } from './useStoredName';
@@ -22,19 +23,19 @@ interface MainMenuProps {
   ) => void;
 }
 
-type Screen = 'home' | 'quick' | 'friends';
+type Screen = 'home' | 'modes' | 'quick' | 'friends';
 
-/** The screens before a match: the home hub, Quick battle, and Play with friends. */
+/** The screens before a match: Home, Choose a mode, then the mode's own settings. */
 export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps) {
   const [name, setName] = useStoredName();
   // A link to a room goes straight to the join screen.
   const [screen, setScreen] = useState<Screen>(initialRoomCode ? 'friends' : 'home');
-  const goHome = () => setScreen('home');
+  const goModes = () => setScreen('modes');
 
   if (screen === 'quick') {
     return (
       <QuickBattleScreen
-        onBack={goHome}
+        onBack={goModes}
         onPlay={(s) =>
           onPlayOffline(
             s.opponents,
@@ -51,15 +52,25 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
   }
 
   if (screen === 'friends') {
-    return <FriendsScreen name={name} onBack={goHome} initialRoomCode={initialRoomCode} />;
+    return (
+      <FriendsScreen
+        name={name}
+        onNameChange={setName}
+        onBack={goModes}
+        initialRoomCode={initialRoomCode}
+      />
+    );
   }
 
-  return (
-    <HomeScreen
-      name={name}
-      onNameChange={setName}
-      onQuickBattle={() => setScreen('quick')}
-      onFriends={() => setScreen('friends')}
-    />
-  );
+  if (screen === 'modes') {
+    return (
+      <ModeSelectScreen
+        onBack={() => setScreen('home')}
+        onQuickBattle={() => setScreen('quick')}
+        onFriends={() => setScreen('friends')}
+      />
+    );
+  }
+
+  return <HomeScreen onPlay={goModes} />;
 }

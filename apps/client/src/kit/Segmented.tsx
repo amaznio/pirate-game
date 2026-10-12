@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 /**
@@ -11,12 +12,15 @@ export function Segmented<T extends string | number | null>({
   onChange,
   disabled = false,
   label,
+  compact = false,
 }: {
   value: T;
   choices: ReadonlyArray<{ label: string; value: T; ariaLabel?: string }>;
   onChange: (value: T) => void;
   disabled?: boolean;
   label?: string;
+  /** Tighter padding, for narrow columns such as the battle sidebar. */
+  compact?: boolean;
 }) {
   const selected = choices.findIndex((choice) => choice.value === value);
   return (
@@ -40,7 +44,11 @@ export function Segmented<T extends string | number | null>({
           key={choice.label}
           value={String(index)}
           aria-label={choice.ariaLabel}
-          className="min-h-11 rounded-btn border-2 border-border bg-secondary/40 px-4 text-sm font-bold text-foreground hover:bg-secondary data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground disabled:opacity-60"
+          className={cn(
+            'rounded-btn border-2 border-border bg-secondary/40 text-sm',
+            compact ? 'min-h-10 px-2.5' : 'min-h-11 px-4',
+            ' font-bold text-foreground hover:bg-secondary data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground disabled:opacity-60',
+          )}
         >
           {choice.value === value && <Check className="size-4" aria-hidden />}
           {choice.label}

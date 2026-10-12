@@ -1,4 +1,6 @@
+import { Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { usePreviewSettings } from '../store/previewSettings';
 
 /** Switches the on-board ghost preview of the queued plan. */
@@ -8,17 +10,16 @@ export function PreviewToggle({ className = '' }: { className?: string }) {
   const setShow = usePreviewSettings((state) => state.setShowPlanPreview);
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="icon"
       onClick={() => setShow(!show)}
       aria-pressed={show}
       aria-label={t('preview.toggle')}
       title={show ? t('preview.hide') : t('preview.show')}
-      className={`flex h-10 w-10 items-center justify-center rounded-full bg-ocean/80 text-lg shadow-lg backdrop-blur transition hover:bg-ocean active:scale-95 ${
-        show ? 'text-parchment' : 'text-parchment/40'
-      } ${className}`}
+      className={`rounded-full bg-card/90 shadow-lg backdrop-blur hover:bg-card ${className}`}
     >
-      {show ? '👁' : '⊘'}
-    </button>
+      {show ? <Eye /> : <EyeOff />}
+    </Button>
   );
 }
