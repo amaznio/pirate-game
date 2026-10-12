@@ -259,7 +259,16 @@ approved. Needs the cell-size decision under "Art".
       (`phaser/assets/pixelTerrain.ts`, tested): the whirlpool is 32x32 art pixels
       in 8 frames that turn by swapping frames (rotating smears pixel art), the
       wind chevrons are 16x16 and step a whole art pixel at a time
-- [ ] Pixel-art camera: zoom steps that keep whole device pixels per art pixel
+- [x] Pixel-art camera (`?art=scallywag`): zoom moves in whole steps (1/4, 1/3,
+      1/2, 1, 2 and 3 screen pixels per world pixel, divided by the pixel ratio),
+      never smaller than the board needs to fill the screen; a wheel notch or a
+      burst of trackpad movement is one step, a pinch follows the fingers and
+      shows the nearest step, and the camera rounds to whole pixels
+      (`camera/zoomSteps.ts`, `BattleCameraController`; pure part tested).
+      Limit: the game canvas is not sized to the device's pixel ratio, so on a
+      sharper screen the browser still scales it; a separate job.
+      Side effect: on a small screen the board may no longer fit, because the
+      smallest step that fills the screen can be bigger than the old smooth fit.
 - [ ] Explosions, splashes and the plan preview ghosts in the new style
 - [ ] Yards, flag symbols and the grey wreck set (optional extras)
 
@@ -310,6 +319,8 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: phase 3: whole-step zoom for the pixel art; tests: client 117.
 
 - 2026-10-12: stray horizontal lines under a ship's bow: the hull frames touch on the sheet, so a sprite on a fractional pixel shows a sliver of the frame below. The game now copies every ship frame onto its own sheet with a 2 px margin (`buildPaddedShipSheet`, `packFrames`). Not confirmed in WebGL.
 

@@ -1,7 +1,19 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../Grid';
+import { allowedSteps, snapToStep, stepFrom, zoomSteps } from './zoomSteps';
 
 const MAX_ZOOM = 2.5;
+
+/** Wheel movement that counts as one step when zooming in whole steps. */
+const WHEEL_PER_STEP = 60;
+
+export interface CameraOptions {
+  /**
+   * Zoom only in whole-pixel steps (see zoomSteps.ts), and keep the camera on
+   * whole pixels, so pixel art stays crisp. Off for the smooth Kenney art.
+   */
+  readonly pixelSteps?: boolean;
+}
 
 /** How far past the board edge the camera may pan (world pixels). */
 export const CAMERA_PAD = TILE_SIZE * 2;
@@ -19,13 +31,20 @@ export class BattleCameraController {
   private insets = { top: 0, bottom: 0 };
   /** True once the player has panned or zoomed themselves. */
   userMoved = false;
+  /** Where a pinch has taken the zoom, before it is snapped to a step. */
+  private rawZoom = 1;
+  private wheelTravel = 0;
+  private readonly pixelSteps: boolean;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly worldWidth: number,
     private readonly worldHeight: number,
+    options: CameraOptions = {},
   ) {
+    this.pixelSteps = options.pixelSteps ?? false;
     this.camera = scene.cameras.main;
+    this.camera.roundPixels = this.pixelSteps;
     this.applyBounds();
     scene.scale.on('resize', this.refit, this);
     this.refit();
@@ -65,7 +84,8 @@ export class BattleCameraController {
         active[1].y,
       );
       if (this.pinchDistance > 0) {
-        this.setZoom(this.camera.zoom * (distance / this.pinchDistance));
+        // Follow the fingers smoothly underneath and show the nearest step.
+        this.setZoom(this.rawZoom * (distance / this.pinchDistance));
       }
       this.pinchDistance = distance;
       return;
@@ -82,16 +102,35 @@ export class BattleCameraController {
     deltaY: number,
   ): void {
     this.userMoved = true;
+    if (this.pixelSteps) {
+      // A wheel notch (or a burst of trackpad movement) is a step, not a slide.
+      this.wheelTravel += deltaY;
+      if (Math.abs(this.wheelTravel) >= WHEEL_PER_STEP) {
+        const direction = this.wheelTravel > 0 ? -1 : 1;
+        this.wheelTravel = 0;
+        this.setZoom(stepFrom(this.camera.zoom, this.steps(), direction));
+      }
+      return;
+    }
     this.setZoom(this.camera.zoom * (deltaY > 0 ? 0.9 : 1.1));
   }
 
   /** Zoom at which the padded board exactly covers the viewport. */
-  private minZoom(): number {
-    const fit = Math.max(
+  private fitZoom(): number {
+    return Math.max(
       this.camera.width / (this.worldWidth + CAMERA_PAD * 2),
       this.camera.height / (this.worldHeight + CAMERA_PAD * 2),
     );
-    return Math.min(fit, MAX_ZOOM);
+  }
+
+  /** The zoom steps the board still fills the screen at (pixel-art mode). */
+  private steps(): number[] {
+    return allowedSteps(zoomSteps(), this.fitZoom(), MAX_ZOOM);
+  }
+
+  /** The smallest zoom allowed: the board must fill the viewport. */
+  private minZoom(): number {
+    return this.pixelSteps ? this.steps()[0] : Math.min(this.fitZoom(), MAX_ZOOM);
   }
 
   /** Re-applies the zoom floor after the viewport changes size. */
@@ -100,7 +139,9 @@ export class BattleCameraController {
   }
 
   setZoom(zoom: number): void {
-    this.camera.setZoom(Phaser.Math.Clamp(zoom, this.minZoom(), MAX_ZOOM));
+    const clamped = Phaser.Math.Clamp(zoom, this.minZoom(), MAX_ZOOM);
+    this.rawZoom = clamped;
+    this.camera.setZoom(this.pixelSteps ? snapToStep(clamped, this.steps()) : clamped);
     this.applyBounds();
   }
 

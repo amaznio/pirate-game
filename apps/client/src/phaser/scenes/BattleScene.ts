@@ -7,6 +7,7 @@ import { AssetKeys, TileFrames } from '../assets/AssetKeys';
 import { TILE_SIZE, WORLD_MARGIN_TILES, gridToWorld } from '../Grid';
 import { EntityViewRegistry } from '../views/EntityViewRegistry';
 import { createShipView, headingToAngle, hudLift, setShipHull } from '../views/ShipView';
+import { currentArtStyle } from '../../presentation/artStyle';
 import { createObstacleView } from '../views/ObstacleView';
 import { createTerrainViews } from '../views/TerrainView';
 import { ShipHudView } from '../views/ShipHudView';
@@ -71,11 +72,9 @@ export class BattleScene extends Phaser.Scene {
       },
       onDestroyed: (shipId) => this.removeHud(shipId),
     });
-    this.cameraController = new BattleCameraController(
-      this,
-      worldWidth,
-      worldHeight,
-    );
+    this.cameraController = new BattleCameraController(this, worldWidth, worldHeight, {
+      pixelSteps: currentArtStyle() === 'scallywag',
+    });
     this.indicators = new OffscreenIndicators(this, (shipId) =>
       this.panToShip(shipId),
     );
