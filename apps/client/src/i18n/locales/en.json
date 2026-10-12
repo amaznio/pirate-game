@@ -51,7 +51,20 @@
       "ambush": "Raiders close in on you from the start, and more arrive from the corners on later turns. You have a veteran captain’s guns (+1 damage). Sink every raider within {{turns}} turns."
     },
     "objectiveMerchant": "Merchant",
-    "objectiveAmbush": "Ambush"
+    "objectiveAmbush": "Ambush",
+    "back": "Back",
+    "quickTitle": "Quick battle",
+    "quickBlurb": "Pick a scenario and sail against the computer.",
+    "chooseScenario": "Choose a scenario",
+    "friendsBlurb": "Create a room or join one with a code.",
+    "openLobby": "Open lobby",
+    "voyage": "Voyage",
+    "voyageBlurb": "A map of battles and ports, with a boss at the end.",
+    "comingSoon": "Coming soon",
+    "advanced": "Advanced",
+    "yourBattle": "Your battle",
+    "opponentsCount_one": "{{count}} opponent",
+    "opponentsCount_other": "{{count}} opponents"
   },
   "difficulty": {
     "easy": {

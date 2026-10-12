@@ -12,6 +12,7 @@ import {
 } from './offlineMatch';
 import { onlineSession, useOnlineSession } from './onlineSession';
 import { LobbyScreen } from '../ui/menu/LobbyScreen';
+import { KitBoard } from '../kit/KitBoard';
 import { MainMenu } from '../ui/menu/MainMenu';
 
 /** `?ais=3` and friends start an offline match straight away (handy for testing). */
@@ -34,6 +35,7 @@ function roomFromUrl(): string {
  */
 export default function App() {
   const session = useOnlineSession();
+  const showKit = import.meta.env.DEV && new URLSearchParams(window.location.search).has('kit');
   const [offline, setOffline] = useState<OfflineMatch | null>(offlineFromUrl);
   const offlineRef = useRef<OfflineMatch | null>(offline);
   offlineRef.current = offline;
@@ -80,6 +82,10 @@ export default function App() {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
+
+  if (showKit) {
+    return <KitBoard />;
+  }
 
   if (offline) {
     return (

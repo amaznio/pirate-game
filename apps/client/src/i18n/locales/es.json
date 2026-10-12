@@ -51,7 +51,20 @@
       "ambush": "Los asaltantes te rodean desde el principio y llegan más desde las esquinas en turnos posteriores. Tus cañones son los de un capitán veterano (+1 de daño). Hunde a todos en {{turns}} turnos."
     },
     "objectiveMerchant": "Mercante",
-    "objectiveAmbush": "Emboscada"
+    "objectiveAmbush": "Emboscada",
+    "back": "Volver",
+    "quickTitle": "Batalla rápida",
+    "quickBlurb": "Elige un escenario y navega contra el ordenador.",
+    "chooseScenario": "Elige un escenario",
+    "friendsBlurb": "Crea una sala o únete a una con un código.",
+    "openLobby": "Abrir sala",
+    "voyage": "Travesía",
+    "voyageBlurb": "Un mapa de batallas y puertos, con un jefe al final.",
+    "comingSoon": "Próximamente",
+    "advanced": "Avanzado",
+    "yourBattle": "Tu batalla",
+    "opponentsCount_one": "{{count}} rival",
+    "opponentsCount_other": "{{count}} rivales"
   },
   "difficulty": {
     "easy": {

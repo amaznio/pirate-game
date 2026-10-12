@@ -9,7 +9,7 @@ import { DesktopSidebar } from '../ui/DesktopSidebar';
 import { PreviewToggle } from '../ui/PreviewToggle';
 import { useIsDesktop } from '../ui/useIsDesktop';
 import { useDesktopShortcuts } from '../ui/useDesktopShortcuts';
-import { ResultSummary } from '../ui/ResultSummary';
+import { GameOverDialog, SunkDialog } from '../ui/EndDialogs';
 
 interface GameScreenProps {
   client: GameClient;
@@ -157,70 +157,17 @@ export function GameScreen({
       {/* Sunk while others are still fighting: say so, and let them stay or leave.
           It waits for the turn that sank them to finish animating. */}
       {spectating && status === 'planning' && !sunkDismissed && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-parchment/25 bg-ocean p-6 text-center shadow-2xl">
-            <h2 className="text-2xl font-black text-parchment">{t('result.sunkTitle')}</h2>
-            <p className="mt-2 text-sm text-parchment/70">{t('result.sunkBody')}</p>
-            <button
-              type="button"
-              onClick={() => setSunkDismissed(true)}
-              className="mt-5 w-full rounded-xl bg-parchment px-4 py-3 text-base font-black uppercase tracking-wide text-ink shadow-lg active:scale-95"
-            >
-              {t('result.keepWatching')}
-            </button>
-            <button
-              type="button"
-              onClick={onExit}
-              className="mt-2 w-full rounded-xl bg-parchment/15 px-4 py-3 text-base font-black uppercase tracking-wide text-parchment shadow-lg active:scale-95"
-            >
-              {t('result.leave')}
-            </button>
-          </div>
-        </div>
+        <SunkDialog onKeepWatching={() => setSunkDismissed(true)} onExit={onExit} />
       )}
 
       {status === 'game_over' && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-parchment/25 bg-ocean p-6 text-center shadow-2xl">
-            <h2 className="text-2xl font-black text-parchment">
-              {result === 'win'
-                ? t('result.victoryTitle')
-                : result === 'draw'
-                  ? t('result.drawTitle')
-                  : t('result.sunkTitle')}
-            </h2>
-            <p className="mt-2 text-sm text-parchment/70">
-              {note
-                ? t(`result.note.${note}`)
-                : result === 'win'
-                ? t('result.victoryBody')
-                : result === 'draw'
-                  ? t('result.drawBody')
-                  : t('result.sunkBodyAlt')}
-            </p>
-            <ResultSummary />
-            {canRestart && (
-              <button
-                type="button"
-                onClick={restart}
-                className="mt-5 w-full rounded-xl bg-parchment px-4 py-3 text-base font-black uppercase tracking-wide text-ink shadow-lg active:scale-95"
-              >
-                {t('result.sailAgain')}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onExit}
-              className={`w-full rounded-xl px-4 py-3 text-base font-black uppercase tracking-wide shadow-lg active:scale-95 ${
-                canRestart
-                  ? 'mt-2 bg-parchment/15 text-parchment'
-                  : 'mt-5 bg-parchment text-ink'
-              }`}
-            >
-              {canRestart ? t('result.mainMenu') : t('result.backToMenu')}
-            </button>
-          </div>
-        </div>
+        <GameOverDialog
+          result={result}
+          note={note}
+          canRestart={canRestart}
+          onRestart={restart}
+          onExit={onExit}
+        />
       )}
     </div>
   );

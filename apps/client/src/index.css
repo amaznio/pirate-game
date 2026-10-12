@@ -11,6 +11,38 @@
   --color-token-left: #4a7fb5;
   --color-token-right: #c07a3e;
   --color-hull: #c94f4f;
+  --color-hull-deep: #a63a3a;
+  --color-paper: #f3e9cd;
+  --color-mist: #a9c0c7;
+  --color-bark: #5f4d38;
+  --color-gold: #f2c14e;
+
+  /* shadcn roles, mapped onto the Harbour skin (ocean surfaces, parchment highlight) */
+  --color-background: var(--color-ocean-deep);
+  --color-foreground: var(--color-parchment);
+  --color-card: var(--color-ocean);
+  --color-card-foreground: var(--color-parchment);
+  --color-popover: var(--color-ocean);
+  --color-popover-foreground: var(--color-parchment);
+  --color-primary: var(--color-parchment);
+  --color-primary-foreground: var(--color-ink);
+  --color-secondary: var(--color-ocean-light);
+  --color-secondary-foreground: var(--color-parchment);
+  --color-muted: var(--color-ocean-light);
+  --color-muted-foreground: var(--color-mist);
+  --color-accent: var(--color-ocean-light);
+  --color-accent-foreground: var(--color-parchment);
+  --color-destructive: var(--color-hull-deep);
+  --color-border: var(--color-ocean-light);
+  --color-input: var(--color-ocean-light);
+  --color-ring: var(--color-gold);
+
+  --radius-chip: 10px;
+  --radius-btn: 12px;
+  --radius-card: 16px;
+  --radius-tile: 22px;
+
+  --font-head: 'Alegreya SC', Georgia, serif;
 }
 
 html,

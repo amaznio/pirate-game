@@ -1,22 +1,23 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Segmented } from './MenuLayout';
+import { Segmented } from '@/kit/Segmented';
 import { LANGUAGES } from '../../i18n/languages';
 import { changeLanguage, currentLanguage } from '../../i18n';
 
-/** Lets the player pick the language; the choice is remembered. */
+/** Lets the player pick the language (EN / ES / PL); the choice is remembered. */
 export function LanguageSwitcher() {
   const { t } = useTranslation();
   return (
-    <Card title={t('language.title')}>
+    <div className="w-auto">
       <Segmented
+        label={t('language.title')}
         value={currentLanguage()}
-        disabled={false}
         onChange={changeLanguage}
         choices={LANGUAGES.map((language) => ({
-          label: language.label,
+          label: language.code.toUpperCase(),
+          ariaLabel: language.label,
           value: language.code,
         }))}
       />
-    </Card>
+    </div>
   );
 }

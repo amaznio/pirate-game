@@ -51,7 +51,22 @@
       "ambush": "Najeźdźcy otaczają cię od początku, a w kolejnych turach pojawiają się następni z rogów mapy. Masz działa doświadczonego kapitana (+1 obrażeń). Zatop wszystkich w ciągu {{turns}} tur."
     },
     "objectiveMerchant": "Kupiec",
-    "objectiveAmbush": "Zasadzka"
+    "objectiveAmbush": "Zasadzka",
+    "back": "Wstecz",
+    "quickTitle": "Szybka bitwa",
+    "quickBlurb": "Wybierz scenariusz i zmierz się z komputerem.",
+    "chooseScenario": "Wybierz scenariusz",
+    "friendsBlurb": "Utwórz pokój albo dołącz do niego za pomocą kodu.",
+    "openLobby": "Otwórz poczekalnię",
+    "voyage": "Wyprawa",
+    "voyageBlurb": "Mapa bitew i portów, a na końcu boss.",
+    "comingSoon": "Wkrótce",
+    "advanced": "Zaawansowane",
+    "yourBattle": "Twoja bitwa",
+    "opponentsCount_one": "{{count}} przeciwnik",
+    "opponentsCount_few": "{{count}} przeciwników",
+    "opponentsCount_many": "{{count}} przeciwników",
+    "opponentsCount_other": "{{count}} przeciwnika"
   },
   "difficulty": {
     "easy": {
