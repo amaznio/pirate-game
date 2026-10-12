@@ -448,13 +448,78 @@ battle.
       ending was not played through. The first reader of a real result will be
       phase 7 (`run-core`).
 
-### 6. Battle objectives: `todo`
-Merchant interception, survive N turns, salvage race, ambush.
+### 6. Battle objectives: `todo` (planned, agreed with the user)
+Merchant interception, survive N turns, salvage race, ambush. An objective is a
+way for a battle to end other than "last team standing", and in phase 7 it is
+what makes a node on the voyage map a particular kind of battle.
+
+**Rules that always apply (decided).**
+- An objective is optional on the match config, state and view; absent changes
+  nothing and the golden snapshots stay green.
+- Order of building: survive N, salvage race, merchant, ambush (easiest first).
+- A merchant can only be **sunk**, not boarded (boarding is a new mechanic).
+- Objectives are not a head start, so there is an **offline menu choice**
+  ("Objective": Standard by default), but no URL switch and no online lobby
+  option for now. Carry-over stays code-only (phase 5 rule, unchanged).
+
+**Design.**
+- `Objective` (`domain/Objective.ts`), a typed union: `survive { turns }`,
+  `salvage { target }`, `merchant { ... }`, `ambush { arrivals }`. Objectives are
+  written from the side of the **hero team** (the humans' team); everyone else is
+  the opposition. The evaluator is a pure function in `simulation/objectives.ts`
+  that `evaluateOutcome` (`resolveTurn.ts`) calls when a match has one.
+- `Outcome` gains an optional `reason` (`objective_met`, `objective_failed`,
+  `survived`, `escaped`) on the existing win/draw variants, so the game-over
+  screen can say why. A failed objective is a win for the opposing team.
+- `MatchResult` gets an optional `objective` (its kind and whether it was met),
+  which is what `run-core` will read.
+- The view carries the objective and its live progress (turns left, pickups
+  taken, merchant distance to the exit) so the HUD can show it. Public to all.
+
+**Slices.**
+- [ ] A. Core and the two simple objectives: the type, evaluator, outcome
+      reasons, **survive N** (win by being afloat after turn N; a loss if the
+      hero team is sunk) and **salvage race** (a target count of pickups taken
+      first, built on the phase 4 loot; ties are a draw). Tests, a golden
+      scenario each, harness support.
+- [ ] B. HUD and screens: an objective banner ("Turn 4 of 10", "Salvage 3/5"),
+      the reason on the game-over dialog, an offline menu selector, en/es/pl text.
+- [ ] C. AI awareness: hunters value what the objective asks (salvage raises the
+      AI's loot weight, survive keeps them closing in); a harness check that the
+      objectives are winnable and not trivial on every sea.
+- [ ] D. **Merchant interception:** a neutral `merchant` team and an unarmed
+      ship class, a scripted route planner (its own AI profile, not the fighting
+      AI), an exit cell or edge, a `SHIP_ESCAPED` event, win by sinking it
+      before it escapes, loss if it gets away or the hero team sinks. New art
+      choice for the merchant (grey or white hull from the Scallywag sheet).
+- [ ] E. **Ambush:** scheduled arrivals (`SHIP_ARRIVED`), ships and their AI
+      added mid-match, which touches the controller's player handling (the
+      riskiest slice, so last). A big enemy wave versus a hero that starts
+      hemmed in.
+- [ ] F. Docs and handoff.
+
+**Open (decide while building):** exact numbers (turn counts, salvage targets,
+merchant speed and route length); whether a salvage target should scale with the
+number of players; how the merchant picks its route on a board with rocks.
 
 ### 7. Solo run, client only: `todo`
 Map art: islands, shallow water, docks for ports, fort pieces for fortress nodes.
 New pure `packages/run-core`: seeded node graph, supplies, ports, 1-of-3
 upgrades, boss, starvation at zero. Progress kept in `localStorage`.
+
+**Node types (proposal, to settle when planning this phase).** Each battle node
+carries a phase 6 objective; `run-core` builds the battle's `MatchConfig` from
+the node and reads the `MatchResult` afterwards.
+- Skirmish: the classic fight. Merchant: sink the cargo ship for supplies.
+  Salvage: a race for cargo, suited to a supply-starved run. Survive: hold out N
+  turns on dangerous water. Ambush: harder, with a better reward.
+- Port: no battle; repair, restock, pick 1 of 3 upgrades. Fortress, boss and hunt
+  nodes arrive with the fort art and the phase 9 monsters.
+- Carry-over (phase 5) is what makes it a run: hull, cannonballs and upgrades
+  (such as the cannon damage modifier) go from battle to battle; tokens reset.
+- Open design questions: what each objective pays out (supplies, an upgrade
+  choice, repairs) and what losing a battle costs (ends the run, or costs
+  supplies and hull and carries on).
 
 ### 8. Postgres persistence: `todo`
 Profile, run history, unlocks, hub shop. Anonymous accounts with a secret token.

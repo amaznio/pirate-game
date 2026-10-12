@@ -208,7 +208,7 @@ CRLF/timestamp artefact, `git add` clears it.
 
 1. **Optional leftovers:** the grey wreck set (wait until wrecks are real board
    objects), a sea section in the art lab (left out on purpose), spray (off).
-2. **Phase 6** and onward, per `docs/ROADMAP.md`: battle objectives, a client-only solo run (`run-core`), Postgres, monsters. First
+2. **Phase 6** (battle objectives; a full plan with slices A to F and the user's decisions is now in ROADMAP.md, start from slice A) and onward: a client-only solo run (`run-core`), Postgres, monsters. First
    have the user look at Loot in play and tune `PICKUP_EFFECTS`, `PICKUP_COUNT`
    and the sprites.
 3. Known loose ends: the menu's ship choice does not carry into an online lobby
