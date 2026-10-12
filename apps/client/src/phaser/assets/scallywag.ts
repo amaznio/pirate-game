@@ -121,6 +121,52 @@ export const cannonFrameName = (type: number): string => `cannon/${type}`;
 export const CANNON_TYPES = CANNON_BOXES.length;
 
 export const SHIPS_SHEET_SIZE = { width: 720, height: 672 } as const;
+export const WATER_SHEET_SIZE = { width: 384, height: 144 } as const;
+
+/**
+ * The twelve stones of the water sheet (three rows of four, 8 to 14 px across),
+ * measured from the pixels. Rocks are drawn from these, a different one in each
+ * cell, at 2x or 3x: the ships are drawn at their own size (a sloop is about 30
+ * px wide), so a stone has to stay smaller than a ship's length to look in scale.
+ */
+const STONE_BOXES: readonly Box[] = [
+  { x: 2, y: 99, w: 13, h: 10 },
+  { x: 17, y: 99, w: 14, h: 12 },
+  { x: 36, y: 101, w: 8, h: 6 },
+  { x: 50, y: 99, w: 13, h: 10 },
+  { x: 3, y: 115, w: 10, h: 10 },
+  { x: 20, y: 117, w: 8, h: 6 },
+  { x: 33, y: 115, w: 14, h: 12 },
+  { x: 51, y: 115, w: 10, h: 10 },
+  { x: 1, y: 130, w: 14, h: 13 },
+  { x: 20, y: 133, w: 9, h: 7 },
+  { x: 36, y: 133, w: 9, h: 7 },
+  { x: 49, y: 130, w: 14, h: 13 },
+];
+
+export const STONE_COUNT = STONE_BOXES.length;
+export const stoneFrameName = (index: number): string => `stone/${index}`;
+
+/** Size in sheet pixels of a stone, for choosing how far to scale it up. */
+export function stoneSize(index: number): { readonly w: number; readonly h: number } {
+  return { w: STONE_BOXES[index].w, h: STONE_BOXES[index].h };
+}
+
+/** How many times a stone is magnified: 3x, or 2x for the smallest. */
+export function stoneScale(index: number): number {
+  return STONE_BOXES[index].w >= 9 ? 3 : 2;
+}
+
+/** Every named frame cut from the water sheet. */
+export function waterFrameRects(): FrameRect[] {
+  return STONE_BOXES.map((box, index) => ({
+    name: stoneFrameName(index),
+    x: box.x,
+    y: box.y,
+    w: box.w,
+    h: box.h,
+  }));
+}
 
 export interface FrameRect {
   readonly name: string;
@@ -170,6 +216,16 @@ export function shipFrameRects(): FrameRect[] {
   });
 
   return rects;
+}
+
+/** Registers the stones on the loaded water sheet. Safe to call more than once. */
+export function registerWaterFrames(textures: Phaser.Textures.TextureManager): void {
+  const texture = textures.get(ScallywagKeys.water);
+  for (const rect of waterFrameRects()) {
+    if (!texture.has(rect.name)) {
+      texture.add(rect.name, 0, rect.x, rect.y, rect.w, rect.h);
+    }
+  }
 }
 
 /** Registers every frame on the loaded ships sheet. Safe to call more than once. */

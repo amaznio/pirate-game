@@ -239,9 +239,17 @@ approved. Needs the cell-size decision under "Art".
       Chrome (desktop and phone widths); the sinking tween itself has only been
       exercised in the lab.
 - [ ] Cannon fire animation (3 frames per type) and the wake (64x64, 6 frames)
-- [ ] Terrain: rocks as sand-and-stone islets built from 16 px tiles, merging
-      with neighbours; animated deep water and shallow ring
-- [ ] Wind lanes and whirlpools redrawn in code at the same pixel density
+- [x] Rocks from the sheet's twelve stones (`?art=scallywag`): one per cell
+      chosen by position, never rotated, 3x (2x for the smallest) so a stone is
+      about a ship's beam wide (ships are drawn at native size; first tried 4x
+      and 5x, which was too big), nudged by whole art pixels. Not sand islets: the sea has no islands,
+      only stones, singles, clumps and ridges. Frames measured from the pixels
+      (`STONE_BOXES`) and tested.
+- [ ] Animated deep water and shallow ring
+- [x] Wind lanes and whirlpools redrawn at the same pixel density
+      (`phaser/assets/pixelTerrain.ts`, tested): the whirlpool is 32x32 art pixels
+      in 8 frames that turn by swapping frames (rotating smears pixel art), the
+      wind chevrons are 16x16 and step a whole art pixel at a time
 - [ ] Pixel-art camera: zoom steps that keep whole device pixels per art pixel
 - [ ] Explosions, splashes and the plan preview ghosts in the new style
 - [ ] Yards, flag symbols and the grey wreck set (optional extras)
@@ -293,6 +301,8 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-12: phase 3: rocks drawn as stones and wind and whirlpools redrawn in pixel art behind `?art=scallywag`; phase 1 menu and lobby checked in a browser (a galleon and a brigantine in one online room: hulls, tokens, cannonballs and what each player sees all right). tests: client 105.
 
 - 2026-10-10: the number of cannons fired per move is now chosen by the player (one toggle per cannon); 625 tests (game-core 354, client 97, server 174).
 - 2026-10-10: phase 2 reworked: all cannons fire from the ship's own cell along one line, in sequence; 611 tests (game-core 341, client 97, server 174).

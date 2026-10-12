@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { AssetKeys, TileFrames } from '../assets/AssetKeys';
-import { generateTerrainTextures } from '../assets/terrainTextures';
-import { ScallywagKeys, registerShipFrames } from '../assets/scallywag';
+import { generatePixelTerrainTextures, generateTerrainTextures } from '../assets/terrainTextures';
+import {
+  ScallywagKeys,
+  registerShipFrames,
+  registerWaterFrames,
+} from '../assets/scallywag';
 import { useCrispFiltering } from '../assets/crispTextures';
 import { currentArtStyle } from '../../presentation/artStyle';
 import { TILE_SIZE } from '../Grid';
@@ -36,6 +40,8 @@ export class BootScene extends Phaser.Scene {
     this.makeRockTexture();
     if (currentArtStyle() === 'scallywag') {
       registerShipFrames(this.textures);
+      registerWaterFrames(this.textures);
+      generatePixelTerrainTextures(this);
       useCrispFiltering(this.textures);
     }
     this.scene.start('BattleScene');

@@ -3,10 +3,15 @@ import { SHIP_TYPES } from '@pirate/game-core/config/shipTypes';
 import {
   HULL_LAYOUT,
   SHIPS_SHEET_SIZE,
+  STONE_COUNT,
+  WATER_SHEET_SIZE,
   cannonFrameName,
   hullFrameName,
   hullStateFor,
   shipFrameRects,
+  stoneScale,
+  stoneSize,
+  waterFrameRects,
   type HullSize,
 } from '../scallywag';
 import { SHIP_LOOKS } from '../../views/scallywagShip';
@@ -50,6 +55,47 @@ describe('the Scallywag ship frames', () => {
           expect(overlap, `${a.name} / ${b.name}`).toBe(false);
         }
       }
+    }
+  });
+});
+
+describe('the Scallywag stones', () => {
+  const rects = waterFrameRects();
+
+  it('are twelve, inside the water sheet, each with its own name', () => {
+    expect(rects).toHaveLength(STONE_COUNT);
+    expect(STONE_COUNT).toBe(12);
+    expect(new Set(rects.map((rect) => rect.name)).size).toBe(rects.length);
+    for (const rect of rects) {
+      expect(rect.x, rect.name).toBeGreaterThanOrEqual(0);
+      expect(rect.y, rect.name).toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.w, rect.name).toBeLessThanOrEqual(WATER_SHEET_SIZE.width);
+      expect(rect.y + rect.h, rect.name).toBeLessThanOrEqual(WATER_SHEET_SIZE.height);
+    }
+  });
+
+  it('do not overlap each other', () => {
+    for (let i = 0; i < rects.length; i += 1) {
+      for (let j = i + 1; j < rects.length; j += 1) {
+        const a = rects[i];
+        const b = rects[j];
+        const overlap = a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+        expect(overlap, `${a.name} / ${b.name}`).toBe(false);
+      }
+    }
+  });
+
+  it('are drawn at a whole-number scale and stay smaller than a ship', () => {
+    // A sloop is 30 px wide and 64 long on the board.
+    for (let index = 0; index < STONE_COUNT; index += 1) {
+      const scale = stoneScale(index);
+      const drawn = stoneSize(index).w * scale;
+
+      expect(Number.isInteger(scale), `stone ${index}`).toBe(true);
+      expect(drawn, `stone ${index}`).toBeGreaterThanOrEqual(16);
+      expect(drawn, `stone ${index}`).toBeLessThanOrEqual(48);
+      expect(stoneSize(index).h * scale, `stone ${index}`).toBeLessThan(64);
     }
   });
 });

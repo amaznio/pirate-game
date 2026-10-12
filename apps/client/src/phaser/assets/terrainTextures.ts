@@ -1,4 +1,15 @@
 import Phaser from 'phaser';
+import { DIRECTIONS } from '@pirate/game-core/domain/Direction';
+import {
+  PIXEL_WHIRLPOOL_SIZE,
+  WHIRLPOOL_FRAMES,
+  WIND_SIZE,
+  pixelWhirlpoolKey,
+  pixelWindKey,
+  whirlpoolPixel,
+  windPixel,
+  type Pixel,
+} from './pixelTerrain';
 
 /** Texture keys for the wind and whirlpool art, drawn in code (no image files). */
 export const TerrainTextures = {
@@ -76,5 +87,49 @@ export function generateTerrainTextures(scene: Phaser.Scene): void {
   }
   if (!scene.textures.exists(TerrainTextures.whirlpoolLeft)) {
     drawWhirlpool(scene, TerrainTextures.whirlpoolLeft, false);
+  }
+}
+
+/** Paints a picture, one art pixel at a time, onto a crisp canvas texture. */
+function paintPixels(
+  scene: Phaser.Scene,
+  key: string,
+  size: number,
+  pixelAt: (x: number, y: number) => Pixel,
+): void {
+  if (scene.textures.exists(key)) {
+    return;
+  }
+  const canvas = scene.textures.createCanvas(key, size, size);
+  const context = canvas?.getContext();
+  if (!canvas || !context) {
+    return;
+  }
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const colour = pixelAt(x, y);
+      if (colour) {
+        context.fillStyle = colour;
+        context.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+  canvas.refresh();
+  canvas.setFilter(Phaser.Textures.FilterMode.NEAREST);
+}
+
+/** The pixel-art wind and whirlpool pictures (used with the Scallywag art). */
+export function generatePixelTerrainTextures(scene: Phaser.Scene): void {
+  for (const direction of DIRECTIONS) {
+    paintPixels(scene, pixelWindKey(direction), WIND_SIZE, (x, y) =>
+      windPixel(x, y, direction),
+    );
+  }
+  for (const clockwise of [true, false]) {
+    for (let frame = 0; frame < WHIRLPOOL_FRAMES; frame += 1) {
+      paintPixels(scene, pixelWhirlpoolKey(clockwise, frame), PIXEL_WHIRLPOOL_SIZE, (x, y) =>
+        whirlpoolPixel(x, y, frame, clockwise),
+      );
+    }
   }
 }

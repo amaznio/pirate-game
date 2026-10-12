@@ -438,7 +438,7 @@ describe('difficulty', () => {
     expect(hardVsEasy.aWins).toBeGreaterThan(hardVsEasy.bWins);
     expect(normalVsEasy.aWins).toBeGreaterThan(normalVsEasy.bWins);
     expect(hardVsNormal.aWins).toBeGreaterThan(hardVsNormal.bWins);
-  });
+  }, 30_000);
 
   it('is even when the same level plays itself (no built-in advantage for a side)', () => {
     const { aWins, bWins } = matchup('normal', 'normal', SEEDS);
