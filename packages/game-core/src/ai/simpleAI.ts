@@ -142,7 +142,10 @@ function volleyOf(
         ? hit.entity
         : null;
     for (const mount of mounts) {
-      shots.push({ victim, damage: getWeaponType(mount.weaponTypeId).damage });
+      shots.push({
+        victim,
+        damage: getWeaponType(mount.weaponTypeId).damage + (plan.me.bonusDamage ?? 0),
+      });
     }
   }
   plan.volleys.set(key, shots);

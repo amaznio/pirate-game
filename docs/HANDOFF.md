@@ -113,6 +113,9 @@ ROADMAP.md phase 4 for the detail. In short: a ship collects a pickup by
 no respawn; the opponent sees them. It was only glanced at in a browser
 (Canvas), so the pop, the "+n" and the bob want an eye.
 
+### Roadmap phase 5, match result and carry-over (a later session)
+A finished match now yields a `MatchResult` (outcome, turns, each ship's hull, ammo, tokens and pickups taken), sent on the view only at `game_over` and shown as a small summary on the game-over screen. A match can start ships with a carried hull, ammo and a cannon-damage modifier through an optional `carryOver` on `MatchConfig`. By the user's decision it is **not reachable from a URL, the lobby or the socket**, so it cannot be cheated: keep it that way. See ROADMAP.md phase 5.
+
 ## 3. The sea, and why it ended up this way
 
 Three versions were rejected by the user, which is why the final design is what
@@ -205,8 +208,7 @@ CRLF/timestamp artefact, `git add` clears it.
 
 1. **Optional leftovers:** the grey wreck set (wait until wrecks are real board
    objects), a sea section in the art lab (left out on purpose), spray (off).
-2. **Phase 5** and onward, per `docs/ROADMAP.md`: match results and carry-over,
-   objectives, a client-only solo run (`run-core`), Postgres, monsters. First
+2. **Phase 6** and onward, per `docs/ROADMAP.md`: battle objectives, a client-only solo run (`run-core`), Postgres, monsters. First
    have the user look at Loot in play and tune `PICKUP_EFFECTS`, `PICKUP_COUNT`
    and the sprites.
 3. Known loose ends: the menu's ship choice does not carry into an online lobby

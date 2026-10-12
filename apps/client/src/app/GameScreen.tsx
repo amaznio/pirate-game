@@ -9,6 +9,7 @@ import { DesktopSidebar } from '../ui/DesktopSidebar';
 import { PreviewToggle } from '../ui/PreviewToggle';
 import { useIsDesktop } from '../ui/useIsDesktop';
 import { useDesktopShortcuts } from '../ui/useDesktopShortcuts';
+import { ResultSummary } from '../ui/ResultSummary';
 
 interface GameScreenProps {
   client: GameClient;
@@ -194,6 +195,7 @@ export function GameScreen({
                   ? t('result.drawBody')
                   : t('result.sunkBodyAlt')}
             </p>
+            <ResultSummary />
             {canRestart && (
               <button
                 type="button"

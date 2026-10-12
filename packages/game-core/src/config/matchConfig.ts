@@ -10,6 +10,7 @@ import {
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
+import type { CarryOver } from '../domain/CarryOver';
 import {
   DEFAULT_MAP_STYLE,
   generateBoard,
@@ -66,6 +67,12 @@ export interface MatchConfig {
   /** The kind of sea the board was made for; shown in how the water looks. */
   readonly sea?: SeaChoice;
   readonly participants: readonly ParticipantConfig[];
+  /**
+   * What each ship brings from earlier battles, by player id. Set only by code
+   * that builds a match; nothing the players send can reach it. Nobody carries
+   * anything when left out.
+   */
+  readonly carryOver?: Readonly<Record<string, CarryOver>>;
   readonly rules: MatchRules;
   readonly startingTokens: TokenInventory;
   readonly startingAmmo: number;

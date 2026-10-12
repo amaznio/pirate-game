@@ -11,6 +11,7 @@ import type { Ship } from '../domain/Ship';
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
+import type { MatchResult } from '../domain/MatchResult';
 import type { SeaChoice } from '../board/generateBoard';
 
 /** What every player may know about another player. */
@@ -53,6 +54,8 @@ export interface GameView {
   /** Every player (the viewer included), public information only. */
   readonly players: Readonly<Record<PlayerId, PublicPlayerView>>;
   readonly outcome: Outcome | null;
+  /** How the match went, for everyone to see. Present only once the match is over. */
+  readonly result?: MatchResult;
   /**
    * Seconds left in the planning window as the host sees it. Sent as a
    * duration, not a timestamp, so clock differences between machines do not

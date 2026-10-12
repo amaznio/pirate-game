@@ -9,6 +9,7 @@ import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
 import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import { createBoard } from '../domain/Board';
+import { cannonDamageBonus } from '../domain/CarryOver';
 import {
   cloneInventory,
   emptyCannonQueue,
@@ -86,6 +87,17 @@ export function createGame(
       participant.shipTypeId,
     );
     const shipType = getShipType(participant.shipTypeId);
+    const carried = config.carryOver?.[participant.playerId];
+    const bonusDamage = cannonDamageBonus(carried?.modifiers);
+    const carriedShip = ships[id];
+    ships[id] = {
+      ...carriedShip,
+      hp:
+        carried?.hull === undefined
+          ? carriedShip.hp
+          : Math.min(carriedShip.maxHp, Math.max(1, Math.round(carried.hull))),
+      ...(bonusDamage > 0 ? { bonusDamage } : {}),
+    };
     const stats = shipType.tokens;
     players[participant.playerId] = {
       id: participant.playerId,
@@ -95,7 +107,10 @@ export function createGame(
       controller: participant.controller,
       aiDifficulty: participant.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
       tokens: cloneInventory(stats?.start ?? config.startingTokens),
-      ammo: shipType.cannons?.ammo ?? config.startingAmmo,
+      ammo:
+        carried?.ammo === undefined
+          ? (shipType.cannons?.ammo ?? config.startingAmmo)
+          : Math.max(0, Math.round(carried.ammo)),
       queue: emptyQueue(),
       cannonQueue: emptyCannonQueue(),
       tokenGeneration: { auto: true, requested: 'FORWARD', rotationIndex: 0 },

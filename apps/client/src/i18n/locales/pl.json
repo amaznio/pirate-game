@@ -244,7 +244,13 @@
     "leave": "Wyjdź",
     "sailAgain": "Wyrusz ponownie",
     "mainMenu": "Menu główne",
-    "backToMenu": "Powrót do menu"
+    "backToMenu": "Powrót do menu",
+    "turnsPlayed": "Rozegrane tury",
+    "yourHull": "Twój kadłub",
+    "cannonballsLeft": "Pozostałe kule armatnie",
+    "lootTaken": "Zebrane łupy",
+    "otherShips": "Pozostałe statki",
+    "sunkShort": "Zatopiony"
   },
   "notice": {
     "aiTookOver": "Byłeś nieobecny, więc AI prowadziło twój statek. Znów masz ster.",

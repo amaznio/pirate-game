@@ -236,7 +236,13 @@
     "leave": "Leave",
     "sailAgain": "Sail Again",
     "mainMenu": "Main menu",
-    "backToMenu": "Back to menu"
+    "backToMenu": "Back to menu",
+    "turnsPlayed": "Turns played",
+    "yourHull": "Your hull",
+    "cannonballsLeft": "Cannonballs left",
+    "lootTaken": "Loot taken",
+    "otherShips": "Other ships",
+    "sunkShort": "Sunk"
   },
   "notice": {
     "aiTookOver": "You were away, so an AI sailed for you. You are back in command.",

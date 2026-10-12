@@ -16,6 +16,7 @@ import {
   ACTIVITY_CANNON_WEIGHT,
   ACTIVITY_MOVE_WEIGHT,
 } from '../config/gameRules';
+import { buildMatchResult } from '../simulation/matchResult';
 import type { GameView, PublicPlayerView } from './GameView';
 
 /**
@@ -72,6 +73,8 @@ export function redactState(
     };
   }
 
+  const result = state.status === 'game_over' ? buildMatchResult(state) : null;
+
   return {
     viewerId,
     turn: state.turn,
@@ -86,6 +89,7 @@ export function redactState(
     self,
     players,
     outcome: state.outcome,
+    ...(result === null ? {} : { result }),
     planningSecondsRemaining,
   };
 }

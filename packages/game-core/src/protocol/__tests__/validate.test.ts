@@ -182,6 +182,19 @@ describe('parseRoomOptions', () => {
     expect(parseRoomOptions({ loot: 'yes' })).toBeNull();
   });
 
+  it('never takes carry-over from a player: only the listed options pass through', () => {
+    const parsed = parseRoomOptions({
+      ais: 2,
+      carryOver: { player: { hull: 1, ammo: 99 } },
+      hull: 1,
+      ammo: 99,
+    });
+    expect(parsed).not.toHaveProperty('carryOver');
+    expect(parsed).not.toHaveProperty('hull');
+    expect(parsed).not.toHaveProperty('ammo');
+    expect(parsed?.ais).toBe(2);
+  });
+
   it('allows turning the timer off', () => {
     expect(parseRoomOptions({ turnDurationSeconds: null })?.turnDurationSeconds).toBeNull();
   });

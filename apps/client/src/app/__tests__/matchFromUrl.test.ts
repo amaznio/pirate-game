@@ -7,6 +7,13 @@ describe('matchConfigFromSearch', () => {
     expect(config.participants.map((p) => p.playerId)).toEqual(['player', 'enemy']);
   });
 
+  it('cannot be given a head start through the address', () => {
+    const plain = matchConfigFromSearch('?seed=4');
+    const cheat = matchConfigFromSearch('?seed=4&hull=1&ammo=99&carryOver=1&bonus=5');
+    expect(cheat.carryOver).toBeUndefined();
+    expect(cheat).toEqual(plain);
+  });
+
   it('floats pickups only with ?loot=on', () => {
     expect(matchConfigFromSearch('?seed=4').pickups).toBeUndefined();
     expect(Object.keys(matchConfigFromSearch('?seed=4&loot=on').pickups ?? {}).length).toBeGreaterThan(0);

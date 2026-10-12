@@ -236,7 +236,13 @@
     "leave": "Salir",
     "sailAgain": "Zarpar de nuevo",
     "mainMenu": "Menú principal",
-    "backToMenu": "Volver al menú"
+    "backToMenu": "Volver al menú",
+    "turnsPlayed": "Turnos jugados",
+    "yourHull": "Tu casco",
+    "cannonballsLeft": "Balas de cañón restantes",
+    "lootTaken": "Botín recogido",
+    "otherShips": "Otros barcos",
+    "sunkShort": "Hundido"
   },
   "notice": {
     "aiTookOver": "Estabas ausente, así que una IA navegó por ti. Vuelves al mando.",

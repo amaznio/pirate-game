@@ -141,7 +141,7 @@ function fireMount(
   if (isShip(hit.entity)) {
     const friendly = hit.entity.teamId === ship.teamId;
     if (!friendly || state.rules.friendlyFire) {
-      damage = weapon.damage;
+      damage = weapon.damage + (ship.bonusDamage ?? 0);
       pending.push({ targetId: hit.entity.id, amount: damage });
     }
   }

@@ -422,9 +422,31 @@ Barrels, crates and planks behind a default-off "Loot" option.
       bob were not watched, and the sprite choices came from a contact sheet. The
       chest's open animation and the extra planks are not used.
 
-### 5. Match result and carry-over: `todo`
+### 5. Match result and carry-over: `done`
 `MatchResult`, optional starting hull, ammo and modifiers. Tokens reset each
 battle.
+
+- [x] `MatchResult` (`domain/MatchResult.ts`, built by the pure
+      `simulation/matchResult.ts` from the final state): the outcome, turns
+      played, and per ship its hull, ammo, tokens left and pickups taken. The
+      pickup tally is an optional `pickupsTaken` on the state, written when a
+      pickup is collected (absent until someone takes one).
+- [x] It reaches players as an optional `result` on the view, **only once the
+      match is `game_over`**, so ammo is not shown early.
+- [x] Carry-over (`domain/CarryOver.ts`): an optional `carryOver` per player id on
+      `MatchConfig` with `hull` (kept between 1 and the class max), `ammo` (not
+      below 0) and `modifiers`. One modifier kind exists so far, `cannonDamage`,
+      stored as an optional `bonusDamage` on the ship and added to every shot
+      (combat and the AI's expectations). Tokens are never carried.
+- [x] **Not cheatable:** nothing reads carry-over from a URL, a lobby option or a
+      socket message. Tests check `parseRoomOptions` and `?hull=&ammo=` ignore it.
+      Only code that builds a match (tests, and the solo run later) can set it.
+- [x] A small summary in the game-over screen (`ui/ResultSummary.tsx`): turns,
+      your hull, cannonballs left, loot taken, and the other ships' hulls. Text in
+      en/es/pl.
+- [ ] The summary was seen once in a browser with made-up data; a real match
+      ending was not played through. The first reader of a real result will be
+      phase 7 (`run-core`).
 
 ### 6. Battle objectives: `todo`
 Merchant interception, survive N turns, salvage race, ambush.

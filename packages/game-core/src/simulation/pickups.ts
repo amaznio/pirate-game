@@ -3,6 +3,7 @@ import type { Pickup, PickupMap } from '../domain/Pickup';
 import type { Ship } from '../domain/Ship';
 import { cellKey } from '../domain/Terrain';
 import { cloneInventory, totalTokens } from '../domain/Action';
+import { EMPTY_PICKUP_TALLY } from '../domain/MatchResult';
 import { PICKUP_EFFECTS } from '../config/gameRules';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import type { MutableGameState } from './internal';
@@ -96,6 +97,12 @@ export function collectPickups(
       continue;
     }
     const gained = applyPickup(state, here[0], pickup);
+    const owner = here[0].ownerId;
+    const tally = state.pickupsTaken?.[owner] ?? EMPTY_PICKUP_TALLY;
+    state.pickupsTaken = {
+      ...state.pickupsTaken,
+      [owner]: { ...tally, [pickup.kind]: tally[pickup.kind] + 1 },
+    };
     events.push({
       type: 'PICKUP_COLLECTED',
       shipId: here[0].id,
