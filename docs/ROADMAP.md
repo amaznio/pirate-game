@@ -2,7 +2,7 @@
 
 > **Picking this up fresh? Read `docs/HANDOFF.md` first.** It records what was
 > built and why, the user's way of working, tool gotchas on this machine, the
-> git state (11 commits unpushed) and the ordered next steps.
+> git state (all pushed) and the ordered next steps.
 
 Where Battle Navigation is going: from the current tactical skirmish to a solo
 roguelite voyage. This file is the source of truth for the plan; update the
@@ -379,7 +379,7 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 - 2026-10-12: phase 3: the sea's depth is worked out from the board (shelves round
   rocks, deeper by whirlpools, open sea past the edge, four levels, about 10 ms), ripples
   and rock surf are the default sea; swell bands are off (`?bands=on`); committed as
-  `49c9fa4`. Tests: game-core 354, client 181, server 174. 11 commits not yet pushed.
+  `49c9fa4`. Tests: game-core 354, client 181, server 174. Everything pushed.
   `docs/HANDOFF.md` written for a fresh session.
 
 - 2026-10-12: phase 3: the sea as drifting noise layers instead of a tile, and surf on the rocks; tests: client 152.

@@ -112,11 +112,12 @@ swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 
 ## 4. Git state at the end of the session
 
-On `main`. **11 commits are not pushed** (everything from the phase 3 art swap
-and the sea). The most recent are `49c9fa4` (sea and depth), `06ba35b` (camera
-and zoom), `72d6579`, `71d7923`, `37270d4`, `4624fc0`. The working tree is
-clean (`PhaserGame.ts` sometimes shows as modified with no real change; it is a
-CRLF/timestamp artefact, `git add` clears it). Ask before pushing.
+On `main`, **everything is pushed** and the working tree is clean (as of commit
+`c09cbb1`, the handoff itself). The phase 3 work is `49c9fa4` (sea and depth),
+`06ba35b` (camera and zoom), `72d6579`, `71d7923`, `37270d4`, `4624fc0`.
+`PhaserGame.ts` sometimes shows as modified with no real change; it is a
+CRLF/timestamp artefact, `git add` clears it. Still ask before pushing new
+work.
 
 ## 5. How the user likes to work (follow this)
 
@@ -157,20 +158,19 @@ CRLF/timestamp artefact, `git add` clears it). Ask before pushing.
 
 ## 7. Next steps (in this order)
 
-1. **Push** the 11 commits (ask first).
-2. **Finish phase 3:** the sinking explosion, and the plan-preview ghosts in
+1. **Finish phase 3:** the sinking explosion, and the plan-preview ghosts in
    the new style (cannon explosions and splashes are already done). Then the
    optional extras (yards, flag symbols, grey wreck set).
-3. **Make `scallywag` the default art** (`presentation/artStyle.ts`), after
+2. **Make `scallywag` the default art** (`presentation/artStyle.ts`), after
    item 2, so the default is not half-styled. Keep `?art=kenney`.
-4. **Water plan, remaining:** a Calm/Normal/Stormy look (palette, ripple
+3. **Water plan, remaining:** a Calm/Normal/Stormy look (palette, ripple
    density and speed, whitecaps; needs the sea style added to `GameView`, an
    additive protocol change), spray when a swell crashes on a rock, a slow tide
    that makes the halo and foam breathe, and a sea section in the art lab.
-5. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
+4. **Phase 4 (pickups)** and onward, per `docs/ROADMAP.md`: barrels, crates,
    planks as a default-off "Loot" sea option; then match results and carry-over,
    objectives, a client-only solo run (`run-core`), Postgres, monsters.
-6. Known loose ends: the menu's ship choice does not carry into an online lobby
+5. Known loose ends: the menu's ship choice does not carry into an online lobby
    (it starts on Sloop); the token tray's held/cap figure was not seen; the
    canvas is not sized to the device pixel ratio (blur on sharp screens); the
    smallest zoom step on a small window may not show the whole board; Hard AI
