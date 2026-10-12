@@ -652,11 +652,51 @@ what makes a node on the voyage map a particular kind of battle.
       - Seen once in a browser: the menu choice, the banner, the fleet list and
         the whole board with the exit strip. The escape animation and the
         end-of-match notes were not watched.
-- [ ] E. **Ambush:** scheduled arrivals (`SHIP_ARRIVED`), ships and their AI
+- [x] E. **Ambush:** scheduled arrivals (`SHIP_ARRIVED`), ships and their AI
       added mid-match, which touches the controller's player handling (the
       riskiest slice, so last). A big enemy wave versus a hero that starts
       hemmed in.
-- [ ] F. Docs and handoff.
+      Built, **without changing the controller**: reinforcements are ordinary
+      participants that exist from the start as ships with `hp: 0` and an
+      `arrivesOnTurn`, so every rule that looks at `hp > 0` (living ships,
+      blocking, shots, collection, planning) already ignores them, and no player
+      has to be added mid-match. `bringInArrivals` (in `beginNextTurn`, so the
+      ship appears when planning opens and the player can see it) gives a due
+      ship its full hull; if a rock or a ship is on its cell it tries again next
+      turn. A ship that has not arrived earns no tokens. There is no
+      `SHIP_ARRIVED` event: the state changes at the turn boundary.
+      - **Objective** `ambush { turns }` (default 14). Hero wins when every
+        raider is sunk **and none are still to come** (`ambush_broken`); loses if
+        sunk (`objective_failed`) or if raiders are afloat or still due when turn
+        N ends (`overrun`). The last-ship rule is switched off for this match, so
+        killing the first wave never ends it early.
+      - **Layout** (`ambushLayout`, pure): the AI ships are the first wave, five
+        cells round the hero facing it (hemming it in); at least two more raiders
+        (as many as the first wave if more) arrive from the corners, one every
+        two turns from turn 3. The terrain generator keeps all those cells clear.
+        `withAmbush` builds it for duels and skirmishes; every AI ship sails for
+        the team `raiders`.
+      - **Raiders** are a new unplayable class, `raider`: a sloop with hull 2.
+        They sail one skill level below the match (hard becomes normal, anything
+        else easy). The hero gets a veteran captain's guns: +1 damage a cannon
+        (`AMBUSH_HERO_DAMAGE_BONUS`, through the code-only carry-over, so one hit
+        sinks a raider).
+      - **Tuning** (harness, a hero AI that does not play to this, 20 duels a
+        sea): with equal sloops and no bonus the hero was sunk every time within
+        5 turns, even against easy hull-2 raiders, because each duel cost it
+        about two hull; with the bonus and hull-2 raiders it wins 20 to 50 per
+        cent (broke the ambush 8, 4 and 10 of 20 on calm, normal and stormy;
+        sunk 10 to 13). A person should do better than the AI. Constants.
+      - **Client:** an Ambush choice in the offline menu, a banner ("Raiders: 1
+        afloat, 2 on the way, turn 1 of 14"), the fleet list showing "Turn 3" for
+        a raider still due, end notes (broke it, time ran out, went down), "Did
+        not arrive" in the result summary, a raider look, and a gold ring with a
+        fade-in where a ship arrives. English, Spanish, Polish.
+      - Tests: `ambush.test.ts` (22) and client tests for progress, notes and
+        the menu; a golden duel. Seen in a browser (text only, the pane would not
+        draw): the menu blurb, the banner and the fleet list. The board with the
+        hemmed-in start and the arrival effect were not seen.
+- [x] F. Docs and handoff.
 
 **Open (decide while building):** exact numbers (turn counts, salvage targets,
 merchant speed and route length); whether a salvage target should scale with the

@@ -47,9 +47,11 @@
       "standard": "Gana el último barco a flote.",
       "survive": "Mantente a flote durante {{turns}} turnos. Si tu barco se hunde antes, pierdes.",
       "salvage": "Una carrera por la carga flotante: gana quien recoja {{target}} primero.",
-      "merchant": "Un barco de carga sin armas huye hacia el borde este y tus oponentes lo escoltan. Hunde al mercante en {{turns}} turnos o escapará."
+      "merchant": "Un barco de carga sin armas huye hacia el borde este y tus oponentes lo escoltan. Hunde al mercante en {{turns}} turnos o escapará.",
+      "ambush": "Los asaltantes te rodean desde el principio y llegan más desde las esquinas en turnos posteriores. Tus cañones son los de un capitán veterano (+1 de daño). Hunde a todos en {{turns}} turnos."
     },
-    "objectiveMerchant": "Mercante"
+    "objectiveMerchant": "Mercante",
+    "objectiveAmbush": "Emboscada"
   },
   "difficulty": {
     "easy": {
@@ -96,6 +98,10 @@
     "merchantman": {
       "name": "Mercante",
       "description": "Un barco de carga sin armas que corre hacia el borde del mapa."
+    },
+    "raider": {
+      "name": "Asaltante",
+      "description": "Una balandra pirata ligera enviada a emboscarte."
     }
   },
   "roomVisibility": {
@@ -161,7 +167,8 @@
     "aiSailingLevel": "Una IA pilota este barco ({{level}})",
     "aiTag": "IA",
     "sunk": "Hundido",
-    "escaped": "Fuera"
+    "escaped": "Fuera",
+    "arrives": "Turno {{turn}}"
   },
   "shipStatus": {
     "hull": "Casco {{hp}} de {{maxHp}}"
@@ -267,12 +274,16 @@
       "salvageDraw": "Nadie se adelantó en la carrera por la carga.",
       "intercepted": "Hundiste al mercante antes de que escapara.",
       "escaped": "El mercante escapó.",
-      "merchantLost": "Tu barco se hundió antes de que pudieras detener al mercante."
+      "merchantLost": "Tu barco se hundió antes de que pudieras detener al mercante.",
+      "ambushBroken": "Rompiste la emboscada: todos los asaltantes están hundidos.",
+      "ambushOverrun": "Se acabó el tiempo con asaltantes aún a flote.",
+      "ambushLost": "Tu barco se hundió en la emboscada."
     },
     "objective": "Objetivo",
     "objectiveMet": "Cumplido",
     "objectiveMissed": "Fallado",
-    "escapedShort": "Escapó"
+    "escapedShort": "Escapó",
+    "neverArrived": "No llegó"
   },
   "notice": {
     "aiTookOver": "Estabas ausente, así que una IA navegó por ti. Vuelves al mando.",
@@ -308,6 +319,7 @@
     "surviveProgress": "Sobrevive: turno {{turn}} de {{turns}}",
     "salvageProgress": "Carga: tú {{yours}} · rivales {{rival}} · el primero en {{target}}",
     "merchantProgress": "Mercante: a {{cells}} casillas de escapar · turno {{turn}} de {{turns}}",
-    "merchantGone": "El mercante ya no está"
+    "merchantGone": "El mercante ya no está",
+    "ambushProgress": "Asaltantes: {{afloat}} a flote, {{coming}} en camino · turno {{turn}} de {{turns}}"
   }
 }

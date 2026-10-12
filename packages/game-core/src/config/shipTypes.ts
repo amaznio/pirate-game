@@ -124,6 +124,17 @@ export const SHIP_TYPES: Readonly<Record<string, ShipType>> = {
     supplyUse: 3,
     cargoCap: 18,
   },
+  raider: {
+    id: 'raider',
+    name: 'Raider',
+    description: 'A light pirate sloop sent to ambush you.',
+    maxHp: 2,
+    broadsides: { left: 'lightCannon', right: 'lightCannon' },
+    color: 0x6e2f2f,
+    supplyUse: 1,
+    cargoCap: 4,
+    playable: false,
+  },
   merchantman: {
     id: 'merchantman',
     name: 'Merchantman',
@@ -150,6 +161,9 @@ export const DEFAULT_SHIP_TYPE_ID = 'sloop';
 
 /** The class of the unarmed cargo ship in a merchant match. */
 export const MERCHANT_SHIP_TYPE_ID = 'merchantman';
+
+/** The class of the raiders in an ambush: lighter than a sloop, so a lone hero stands a chance. */
+export const RAIDER_SHIP_TYPE_ID = 'raider';
 
 /** Whether players can pick this class (the merchant cannot). */
 export function isPlayableShipType(id: string): boolean {

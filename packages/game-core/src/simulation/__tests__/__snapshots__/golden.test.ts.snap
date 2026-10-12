@@ -1,5 +1,24 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`golden matches > plays the same way: duel, ambush, seed 7 1`] = `
+{
+  "events": 221,
+  "hash": "1e792bc11aeb67",
+  "hull": {
+    "enemy-ship": 0,
+    "player-ship": 0,
+    "raider-1-ship": 0,
+    "raider-2-ship": 2,
+  },
+  "outcome": {
+    "kind": "win",
+    "reason": "objective_failed",
+    "teamId": "raiders",
+  },
+  "turns": 10,
+}
+`;
+
 exports[`golden matches > plays the same way: duel, brigantine v sloop, seed 6 1`] = `
 {
   "events": 433,

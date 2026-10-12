@@ -19,6 +19,15 @@ export type ObjectiveProgress =
       readonly turns: number;
       /** Cells between the merchant and the edge it is making for; null once it is gone. */
       readonly cells: number | null;
+    }
+  | {
+      readonly kind: 'ambush';
+      readonly turn: number;
+      readonly turns: number;
+      /** Raiders afloat now. */
+      readonly afloat: number;
+      /** Raiders still to arrive. */
+      readonly coming: number;
     };
 
 /** The objective's progress, or null when the match has none. */
@@ -29,6 +38,18 @@ export function objectiveProgress(view: GameView): ObjectiveProgress | null {
   }
   if (objective.kind === 'survive') {
     return { kind: 'survive', turn: Math.min(view.turn, objective.turns), turns: objective.turns };
+  }
+
+  if (objective.kind === 'ambush') {
+    const mine = view.self.teamId;
+    const others = Object.values(view.ships).filter((ship) => ship.teamId !== mine);
+    return {
+      kind: 'ambush',
+      turn: Math.min(view.turn, objective.turns),
+      turns: objective.turns,
+      afloat: others.filter((ship) => ship.hp > 0).length,
+      coming: others.filter((ship) => ship.hp <= 0 && ship.arrivesOnTurn !== undefined).length,
+    };
   }
 
   if (objective.kind === 'merchant') {
@@ -84,6 +105,9 @@ export type EndNote =
   | 'intercepted'
   | 'escaped'
   | 'merchantLost'
+  | 'ambushBroken'
+  | 'ambushOverrun'
+  | 'ambushLost'
   | null;
 
 export function endNote(
@@ -92,6 +116,18 @@ export function endNote(
   reason: OutcomeReason | undefined,
 ): EndNote {
   if (result === null || !view.objective) {
+    return null;
+  }
+  if (view.objective.kind === 'ambush') {
+    if (reason === 'ambush_broken' && result === 'win') {
+      return 'ambushBroken';
+    }
+    if (reason === 'overrun' && result === 'loss') {
+      return 'ambushOverrun';
+    }
+    if (reason === 'objective_failed' && result === 'loss') {
+      return 'ambushLost';
+    }
     return null;
   }
   if (view.objective.kind === 'merchant') {

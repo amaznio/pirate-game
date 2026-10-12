@@ -47,9 +47,11 @@
       "standard": "The last ship afloat wins.",
       "survive": "Stay afloat for {{turns}} turns. If your ship sinks first, you lose.",
       "salvage": "A race for floating cargo: the first to take {{target}} wins.",
-      "merchant": "An unarmed cargo ship runs for the east edge and your opponents escort it. Sink it within {{turns}} turns, or it gets away."
+      "merchant": "An unarmed cargo ship runs for the east edge and your opponents escort it. Sink it within {{turns}} turns, or it gets away.",
+      "ambush": "Raiders close in on you from the start, and more arrive from the corners on later turns. You have a veteran captain’s guns (+1 damage). Sink every raider within {{turns}} turns."
     },
-    "objectiveMerchant": "Merchant"
+    "objectiveMerchant": "Merchant",
+    "objectiveAmbush": "Ambush"
   },
   "difficulty": {
     "easy": {
@@ -96,6 +98,10 @@
     "merchantman": {
       "name": "Merchantman",
       "description": "An unarmed cargo ship making a run for the edge of the map."
+    },
+    "raider": {
+      "name": "Raider",
+      "description": "A light pirate sloop sent to ambush you."
     }
   },
   "roomVisibility": {
@@ -161,7 +167,8 @@
     "aiSailingLevel": "An AI is sailing this ship ({{level}})",
     "aiTag": "AI",
     "sunk": "Sunk",
-    "escaped": "Away"
+    "escaped": "Away",
+    "arrives": "Turn {{turn}}"
   },
   "shipStatus": {
     "hull": "Hull {{hp}} of {{maxHp}}"
@@ -267,12 +274,16 @@
       "salvageDraw": "Nobody pulled ahead in the race for cargo.",
       "intercepted": "You sank the merchant before it got away.",
       "escaped": "The merchant got away.",
-      "merchantLost": "Your ship went down before you could stop the merchant."
+      "merchantLost": "Your ship went down before you could stop the merchant.",
+      "ambushBroken": "You broke the ambush: every raider is sunk.",
+      "ambushOverrun": "Time ran out with raiders still on the water.",
+      "ambushLost": "Your ship went down in the ambush."
     },
     "objective": "Objective",
     "objectiveMet": "Met",
     "objectiveMissed": "Missed",
-    "escapedShort": "Escaped"
+    "escapedShort": "Escaped",
+    "neverArrived": "Did not arrive"
   },
   "notice": {
     "aiTookOver": "You were away, so an AI sailed for you. You are back in command.",
@@ -308,6 +319,7 @@
     "surviveProgress": "Survive: turn {{turn}} of {{turns}}",
     "salvageProgress": "Cargo: you {{yours}} · rivals {{rival}} · first to {{target}}",
     "merchantProgress": "Merchant: {{cells}} cells from escaping · turn {{turn}} of {{turns}}",
-    "merchantGone": "The merchant is gone"
+    "merchantGone": "The merchant is gone",
+    "ambushProgress": "Raiders: {{afloat}} afloat, {{coming}} on the way · turn {{turn}} of {{turns}}"
   }
 }

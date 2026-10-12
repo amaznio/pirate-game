@@ -13,6 +13,7 @@ export const OBJECTIVE_CHOICES: readonly ObjectiveChoice[] = [
   'survive',
   'salvage',
   'merchant',
+  'ambush',
 ];
 
 /** The objective a menu choice stands for (none for a standard battle). */
@@ -30,6 +31,8 @@ export function objectiveLabel(t: TFunction, choice: ObjectiveChoice): string {
       return t('menu.objectiveSalvage');
     case 'merchant':
       return t('menu.objectiveMerchant');
+    case 'ambush':
+      return t('menu.objectiveAmbush');
   }
 }
 
@@ -49,6 +52,10 @@ export function objectiveBlurb(t: TFunction, choice: ObjectiveChoice): string {
     case 'merchant':
       return t('menu.objectiveBlurb.merchant', {
         turns: objective?.kind === 'merchant' ? objective.turns : 0,
+      });
+    case 'ambush':
+      return t('menu.objectiveBlurb.ambush', {
+        turns: objective?.kind === 'ambush' ? objective.turns : 0,
       });
   }
 }

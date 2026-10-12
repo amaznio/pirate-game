@@ -118,6 +118,14 @@ export function createGame(
     };
   }
 
+  // Ships that arrive later wait off the board with no hull until their turn.
+  for (const participant of config.participants) {
+    if (participant.arrivesOnTurn !== undefined) {
+      const id = shipIdFor(participant.playerId);
+      ships[id] = { ...ships[id], hp: 0, arrivesOnTurn: participant.arrivesOnTurn };
+    }
+  }
+
   return {
     seed: config.seed,
     turn: 1,

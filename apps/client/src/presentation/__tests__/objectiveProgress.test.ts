@@ -69,6 +69,50 @@ describe('objectiveProgress for a merchant match', () => {
   });
 });
 
+describe('objectiveProgress for an ambush', () => {
+  const ambush = () =>
+    createGame(createDuelConfig({ sea: 'open', objective: { kind: 'ambush', turns: 14 } }));
+
+  it('counts raiders afloat and raiders still to come, from the viewers side', () => {
+    expect(objectiveProgress(viewOf(ambush()))).toEqual({
+      kind: 'ambush',
+      turn: 1,
+      turns: 14,
+      afloat: 1,
+      coming: 2,
+    });
+  });
+
+  it('moves a raider from coming to afloat when it arrives, and counts none once all are sunk', () => {
+    const base = ambush();
+    const arrived = {
+      ...base,
+      turn: 3,
+      ships: { ...base.ships, 'raider-1-ship': { ...base.ships['raider-1-ship'], hp: 2, arrivesOnTurn: undefined } },
+    } as GameState;
+    expect(objectiveProgress(viewOf(arrived))).toMatchObject({ afloat: 2, coming: 1 });
+
+    const cleared = {
+      ...base,
+      ships: Object.fromEntries(
+        Object.entries(base.ships).map(([id, ship]) => [
+          id,
+          ship.teamId === 'player' ? ship : { ...ship, hp: 0, arrivesOnTurn: undefined },
+        ]),
+      ),
+    } as GameState;
+    expect(objectiveProgress(viewOf(cleared))).toMatchObject({ afloat: 0, coming: 0 });
+  });
+
+  it('explains how it ended', () => {
+    const view = viewOf(ambush());
+    expect(endNote(view, 'win', 'ambush_broken')).toBe('ambushBroken');
+    expect(endNote(view, 'loss', 'overrun')).toBe('ambushOverrun');
+    expect(endNote(view, 'loss', 'objective_failed')).toBe('ambushLost');
+    expect(endNote(view, 'draw', undefined)).toBeNull();
+  });
+});
+
 describe('endNote', () => {
   const survive = viewOf(createGame(createDuelConfig({ sea: 'open', objective: { kind: 'survive', turns: 5 } })));
   const salvage = viewOf(createGame(createDuelConfig({ sea: 'open', objective: { kind: 'salvage', target: 2 } })));

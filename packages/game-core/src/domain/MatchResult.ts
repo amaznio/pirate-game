@@ -19,6 +19,8 @@ export interface ShipResult {
   readonly afloat: boolean;
   /** The ship got clean away (a merchant that reached its exit). */
   readonly escaped?: boolean;
+  /** The ship was due to arrive on this turn but the match ended first. */
+  readonly arrivesOnTurn?: number;
   /** Cannonballs left in the pool. */
   readonly ammo: number;
   /** Movement tokens left (they do not carry over: each battle starts fresh). */

@@ -61,6 +61,8 @@ const SCENARIOS: Record<string, () => MatchConfig> = {
   // The merchant (phase 6, slice D).
   'duel, merchant interception, seed 5': () =>
     createDuelConfig({ seed: 5, objective: { kind: 'merchant', turns: 12 } }),
+  'duel, ambush, seed 7': () =>
+    createDuelConfig({ seed: 7, objective: { kind: 'ambush', turns: 14 } }),
   'free-for-all of 4 with a merchant, seed 12': () =>
     createSkirmishConfig({
       humans: 1,

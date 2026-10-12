@@ -47,9 +47,11 @@
       "standard": "Wygrywa ostatni statek na wodzie.",
       "survive": "Utrzymaj się na wodzie przez {{turns}} tur. Jeśli twój statek zatonie wcześniej, przegrywasz.",
       "salvage": "Wyścig po pływający ładunek: wygrywa ten, kto pierwszy zbierze {{target}}.",
-      "merchant": "Nieuzbrojony statek towarowy ucieka ku wschodniej krawędzi, a twoi przeciwnicy go eskortują. Zatop kupca w ciągu {{turns}} tur, inaczej ucieknie."
+      "merchant": "Nieuzbrojony statek towarowy ucieka ku wschodniej krawędzi, a twoi przeciwnicy go eskortują. Zatop kupca w ciągu {{turns}} tur, inaczej ucieknie.",
+      "ambush": "Najeźdźcy otaczają cię od początku, a w kolejnych turach pojawiają się następni z rogów mapy. Masz działa doświadczonego kapitana (+1 obrażeń). Zatop wszystkich w ciągu {{turns}} tur."
     },
-    "objectiveMerchant": "Kupiec"
+    "objectiveMerchant": "Kupiec",
+    "objectiveAmbush": "Zasadzka"
   },
   "difficulty": {
     "easy": {
@@ -96,6 +98,10 @@
     "merchantman": {
       "name": "Kupiec",
       "description": "Nieuzbrojony statek towarowy zmierzający ku krawędzi mapy."
+    },
+    "raider": {
+      "name": "Najeźdźca",
+      "description": "Lekka piracka szalupa wysłana, by cię zaatakować."
     }
   },
   "roomVisibility": {
@@ -167,7 +173,8 @@
     "aiSailingLevel": "Ten statek prowadzi AI ({{level}})",
     "aiTag": "AI",
     "sunk": "Zatopiony",
-    "escaped": "Poza grą"
+    "escaped": "Poza grą",
+    "arrives": "Tura {{turn}}"
   },
   "shipStatus": {
     "hull": "Kadłub {{hp}} z {{maxHp}}"
@@ -275,12 +282,16 @@
       "salvageDraw": "Nikt nie wysunął się na prowadzenie w wyścigu po ładunek.",
       "intercepted": "Zatopiłeś kupca, zanim uciekł.",
       "escaped": "Kupiec uciekł.",
-      "merchantLost": "Twój statek zatonął, zanim zdążyłeś zatrzymać kupca."
+      "merchantLost": "Twój statek zatonął, zanim zdążyłeś zatrzymać kupca.",
+      "ambushBroken": "Przełamałeś zasadzkę: wszyscy najeźdźcy zatopieni.",
+      "ambushOverrun": "Czas minął, a najeźdźcy wciąż są na wodzie.",
+      "ambushLost": "Twój statek zatonął w zasadzce."
     },
     "objective": "Cel",
     "objectiveMet": "Osiągnięty",
     "objectiveMissed": "Nieosiągnięty",
-    "escapedShort": "Uciekł"
+    "escapedShort": "Uciekł",
+    "neverArrived": "Nie dotarł"
   },
   "notice": {
     "aiTookOver": "Byłeś nieobecny, więc AI prowadziło twój statek. Znów masz ster.",
@@ -316,6 +327,7 @@
     "surviveProgress": "Przetrwaj: tura {{turn}} z {{turns}}",
     "salvageProgress": "Ładunek: ty {{yours}} · rywale {{rival}} · pierwszy do {{target}}",
     "merchantProgress": "Kupiec: {{cells}} pól od ucieczki · tura {{turn}} z {{turns}}",
-    "merchantGone": "Kupiec zniknął"
+    "merchantGone": "Kupiec zniknął",
+    "ambushProgress": "Najeźdźcy: {{afloat}} na wodzie, {{coming}} w drodze · tura {{turn}} z {{turns}}"
   }
 }

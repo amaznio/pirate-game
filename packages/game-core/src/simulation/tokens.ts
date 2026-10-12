@@ -19,6 +19,8 @@ import {
   type TokenEconomy,
 } from '../config/gameRules';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
+import type { Ship } from '../domain/Ship';
+import { blockingEntityAt } from './selectors';
 
 export interface TokenSelection {
   readonly token: MovementAction;
@@ -215,6 +217,28 @@ export interface NextTurnResult {
  * for each player from their own token-generation settings and economy: their
  * income, plus the rest bonus after a turn with no move, up to their cap.
  */
+/**
+ * Brings the ships due on `turn` onto the board with their full hull, at the
+ * place and heading they were given. If a rock or another ship is in the way,
+ * the ship tries again next turn.
+ */
+export function bringInArrivals(state: GameState, turn: number): Record<string, Ship> {
+  const ships: Record<string, Ship> = { ...state.ships };
+  for (const id of Object.keys(ships).sort()) {
+    const ship = ships[id];
+    if (ship.hp > 0 || ship.arrivesOnTurn === undefined || ship.arrivesOnTurn > turn) {
+      continue;
+    }
+    if (blockingEntityAt({ ...state, ships }, ship.position, ship.id)) {
+      ships[id] = { ...ship, arrivesOnTurn: turn + 1 };
+      continue;
+    }
+    const { arrivesOnTurn: _arrived, ...arrived } = ship;
+    ships[id] = { ...arrived, hp: ship.maxHp };
+  }
+  return ships;
+}
+
 export function beginNextTurn(state: GameState): NextTurnResult {
   const players: Record<PlayerId, PlayerState> = {};
   const first: Record<PlayerId, MovementAction> = {};
@@ -226,7 +250,11 @@ export function beginNextTurn(state: GameState): NextTurnResult {
     const shipType = shipTypeId ? getShipType(shipTypeId) : null;
     const economy = shipType ? tokenEconomyOf(shipType) : DEFAULT_TOKEN_ECONOMY;
     const reload = shipType?.cannons?.reload ?? CANNON_RELOAD_AMOUNT;
-    const income = economy.perTurn + (player.restedLastTurn ? economy.restBonus : 0);
+    // A ship that has not arrived yet earns nothing while it waits.
+    const waiting = state.ships[player.shipId]?.arrivesOnTurn !== undefined;
+    const income = waiting
+      ? 0
+      : economy.perTurn + (player.restedLastTurn ? economy.restBonus : 0);
     const production = produceTokens(player.tokens, player.tokenGeneration, economy, income);
     const tokens = production.tokens;
     const made = [...production.made];
@@ -256,6 +284,7 @@ export function beginNextTurn(state: GameState): NextTurnResult {
       turn: state.turn + 1,
       status: 'planning',
       players,
+      ships: state.objective?.kind === 'ambush' ? bringInArrivals(state, state.turn + 1) : state.ships,
     },
   };
 }

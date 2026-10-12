@@ -22,6 +22,9 @@ export function evaluateOutcome(state: GameState, endOfTurn = false): Outcome | 
   if (byObjective) {
     return byObjective;
   }
+  if (state.objective?.kind === 'ambush') {
+    return null; // ships still to arrive keep the match open: no last-ship shortcut
+  }
   const teams = new Set(getLivingShips(state).map((ship) => ship.teamId));
   if (teams.size === 0) {
     return { kind: 'draw' };

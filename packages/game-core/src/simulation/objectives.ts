@@ -1,6 +1,7 @@
 import type { GameState, Outcome } from '../domain/GameState';
 import type { TeamId } from '../domain/Entity';
 import type { Objective } from '../domain/Objective';
+import type { Ship } from '../domain/Ship';
 import { getLivingShips } from './selectors';
 
 /**
@@ -23,6 +24,43 @@ export function pickupsByTeam(state: GameState): Map<TeamId, number> {
     byTeam.set(player.teamId, (byTeam.get(player.teamId) ?? 0) + taken);
   }
   return byTeam;
+}
+
+/** Ships that have not arrived yet: no hull, and a turn they come on. */
+export function pendingShips(state: GameState): Ship[] {
+  return Object.values(state.ships).filter((ship) => ship.hp <= 0 && ship.arrivesOnTurn !== undefined);
+}
+
+/**
+ * The ambush. The hero team wins once every raider is sunk and none are still
+ * to arrive; it loses if it is sunk first, or if raiders are still afloat or
+ * still to come when its turns run out. A raider still to come is not "sunk",
+ * so the usual last-ship rule never ends this match early.
+ */
+function evaluateAmbush(
+  state: GameState,
+  objective: Extract<Objective, { kind: 'ambush' }>,
+  endOfTurn: boolean,
+): Outcome | null {
+  const living = getLivingShips(state);
+  const heroes = heroTeams(state);
+  const hero = living.find((ship) => heroes.has(ship.teamId));
+  const raiders = living.filter((ship) => !heroes.has(ship.teamId));
+  const coming = pendingShips(state).filter((ship) => !heroes.has(ship.teamId));
+  const opposition = raiders[0] ?? coming[0];
+
+  if (!hero) {
+    return opposition
+      ? { kind: 'win', teamId: opposition.teamId, reason: 'objective_failed' }
+      : { kind: 'draw' };
+  }
+  if (!opposition) {
+    return { kind: 'win', teamId: hero.teamId, reason: 'ambush_broken' };
+  }
+  if (endOfTurn && state.turn >= objective.turns) {
+    return { kind: 'win', teamId: opposition.teamId, reason: 'overrun' };
+  }
+  return null;
 }
 
 /**
@@ -91,6 +129,9 @@ export function evaluateObjective(state: GameState, endOfTurn: boolean): Outcome
 
   if (objective.kind === 'merchant') {
     return evaluateMerchant(state, objective, endOfTurn);
+  }
+  if (objective.kind === 'ambush') {
+    return evaluateAmbush(state, objective, endOfTurn);
   }
 
   // salvage

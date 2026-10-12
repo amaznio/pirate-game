@@ -28,6 +28,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       maxHull,
       alive: hull > 0,
       escaped: false,
+      arrivesOnTurn: null as number | null,
       you: true,
       bot: false,
       difficulty: null,
@@ -40,6 +41,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       maxHull: other.maxHull,
       alive: other.alive,
       escaped: other.escaped,
+      arrivesOnTurn: other.arrivesOnTurn,
       you: false,
       bot: other.bot,
       difficulty: other.difficulty,
@@ -51,7 +53,7 @@ export function FleetList({ compact = false }: FleetListProps) {
       {rows.map((row) => (
         <li
           key={row.id}
-          className={`flex items-center gap-2 ${row.alive ? '' : 'opacity-40'}`}
+          className={`flex items-center gap-2 ${row.alive || row.arrivesOnTurn !== null ? '' : 'opacity-40'}`}
         >
           <span
             className={`h-3 w-3 shrink-0 rounded-full ring-2 ${
@@ -63,7 +65,7 @@ export function FleetList({ compact = false }: FleetListProps) {
           <span
             className={`truncate font-bold ${
               compact ? 'w-14 text-[11px]' : 'w-20 text-xs uppercase tracking-wide'
-            } ${row.alive ? 'text-parchment' : 'text-parchment/70 line-through'}`}
+            } ${row.alive || row.arrivesOnTurn !== null ? 'text-parchment' : 'text-parchment/70 line-through'}`}
           >
             {row.name}
           </span>
@@ -83,9 +85,11 @@ export function FleetList({ compact = false }: FleetListProps) {
           <span className="ml-auto text-xs font-semibold tabular-nums text-parchment">
             {row.alive
               ? `${row.hull}/${row.maxHull}`
-              : row.escaped
-                ? t('fleet.escaped')
-                : t('fleet.sunk')}
+              : row.arrivesOnTurn !== null
+                ? t('fleet.arrives', { turn: row.arrivesOnTurn })
+                : row.escaped
+                  ? t('fleet.escaped')
+                  : t('fleet.sunk')}
           </span>
         </li>
       ))}

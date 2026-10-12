@@ -19,6 +19,10 @@ import type { Position } from './Position';
  *    The merchant sails for the opposition (with any escorts), so it is never
  *    shot at by them and they are not shot at by it. `shipId` and `exit` are
  *    filled in when the match is built.
+ *  - `ambush`: the hero team starts hemmed in by a first wave, and more ships
+ *    arrive at the start of later turns (see `ambushLayout`). The hero team wins
+ *    by sinking every raider, those still to arrive included; it loses if it is
+ *    sunk, or if raiders are still afloat or still to come when turn `turns` ends.
  */
 export type Objective =
   | { readonly kind: 'survive'; readonly turns: number }
@@ -31,17 +35,19 @@ export type Objective =
       readonly shipId?: string;
       /** The edge of the board the merchant is making for, set when the match is built. */
       readonly exit?: Direction;
-    };
+    }
+  | { readonly kind: 'ambush'; readonly turns: number };
 
 export type ObjectiveKind = Objective['kind'];
 
-export const OBJECTIVE_KINDS: readonly ObjectiveKind[] = ['survive', 'salvage', 'merchant'];
+export const OBJECTIVE_KINDS: readonly ObjectiveKind[] = ['survive', 'salvage', 'merchant', 'ambush'];
 
 /** Default numbers when an objective is chosen from a menu (a solo run sets its own). */
 export const DEFAULT_OBJECTIVES: Readonly<Record<ObjectiveKind, Objective>> = {
   survive: { kind: 'survive', turns: 8 },
   salvage: { kind: 'salvage', target: 2 },
   merchant: { kind: 'merchant', turns: 12 },
+  ambush: { kind: 'ambush', turns: 14 },
 };
 
 /** The player id and ship id of the merchant in a merchant match. */
@@ -66,4 +72,88 @@ export type OutcomeReason =
   | 'salvaged'
   | 'objective_failed'
   | 'intercepted'
-  | 'escaped';
+  | 'escaped'
+  | 'ambush_broken'
+  | 'overrun';
+
+/** The team every raider sails for in an ambush match. */
+export const AMBUSH_TEAM_ID = 'raiders';
+
+/** Where an ambush's ships start, and when the late ones arrive. */
+export interface AmbushLayout {
+  /** One start per AI ship already on the board at the beginning, round the hero. */
+  readonly firstWave: ReadonlyArray<{ readonly position: Position; readonly heading: Direction }>;
+  /** Ships that arrive at the start of a turn, from the corners. */
+  readonly reinforcements: ReadonlyArray<{
+    readonly position: Position;
+    readonly heading: Direction;
+    readonly turn: number;
+  }>;
+}
+
+const FIRST_WAVE_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [0, -5],
+  [-5, 0],
+  [5, 0],
+  [0, 5],
+  [-4, -4],
+  [4, -4],
+  [-4, 4],
+  [4, 4],
+];
+
+/** The turn the first reinforcement arrives, and the gap between the rest. */
+export const FIRST_ARRIVAL_TURN = 3;
+export const ARRIVAL_GAP_TURNS = 2;
+
+function headingTowards(from: Position, to: Position): Direction {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? 'EAST' : 'WEST';
+  }
+  return dy > 0 ? 'SOUTH' : 'NORTH';
+}
+
+/**
+ * Lays out an ambush on a board for a hero starting at `hero` against `ais`
+ * ships already there: they are spread round the hero five cells off (hemming
+ * it in), facing it. At least two more ships (as many as the first wave, if that
+ * is more) arrive one at a time from the corners, from turn 3, two turns apart.
+ * Pure, so the terrain generator can keep these cells clear.
+ */
+export function ambushLayout(
+  width: number,
+  height: number,
+  hero: Position,
+  ais: number,
+): AmbushLayout {
+  const inside = (p: Position): boolean => p.x >= 0 && p.y >= 0 && p.x < width && p.y < height;
+  const firstWave: Array<{ position: Position; heading: Direction }> = [];
+  for (const [dx, dy] of FIRST_WAVE_OFFSETS) {
+    if (firstWave.length >= ais) {
+      break;
+    }
+    const position = { x: hero.x + dx, y: hero.y + dy };
+    if (inside(position)) {
+      firstWave.push({ position, heading: headingTowards(position, hero) });
+    }
+  }
+
+  const centre = { x: Math.floor(width / 2), y: Math.floor(height / 2) };
+  const corners: Position[] = [
+    { x: 1, y: 1 },
+    { x: width - 2, y: height - 2 },
+    { x: width - 2, y: 1 },
+    { x: 1, y: height - 2 },
+  ];
+  const reinforcements = Array.from({ length: Math.max(2, ais) }, (_, index) => {
+    const position = corners[index % corners.length];
+    return {
+      position,
+      heading: headingTowards(position, centre),
+      turn: FIRST_ARRIVAL_TURN + ARRIVAL_GAP_TURNS * index,
+    };
+  });
+  return { firstWave, reinforcements };
+}

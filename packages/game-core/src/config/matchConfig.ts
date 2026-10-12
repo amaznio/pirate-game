@@ -12,6 +12,8 @@ import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
 import {
+  AMBUSH_TEAM_ID,
+  ambushLayout,
   ESCORT_TEAM_ID,
   MERCHANT_PLAYER_ID,
   MERCHANT_SHIP_ID,
@@ -25,7 +27,7 @@ import {
   type SeaChoice,
 } from '../board/generateBoard';
 import { generatePickups } from '../board/generatePickups';
-import { DEFAULT_SHIP_TYPE_ID, MERCHANT_SHIP_TYPE_ID } from './shipTypes';
+import { DEFAULT_SHIP_TYPE_ID, MERCHANT_SHIP_TYPE_ID, RAIDER_SHIP_TYPE_ID } from './shipTypes';
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -48,6 +50,8 @@ export interface ParticipantConfig {
   readonly shipTypeId: string;
   readonly spawn: SpawnConfig;
   readonly controller: ControllerKind;
+  /** The turn this ship arrives at the start of; on the board from the start when absent. */
+  readonly arrivesOnTurn?: number;
   /** How well an AI sails this ship. Defaults to normal. */
   readonly aiDifficulty?: AiDifficulty;
 }
@@ -107,9 +111,16 @@ export function withAiDifficulty(
     ...config,
     participants: config.participants.map((participant) => ({
       ...participant,
-      aiDifficulty,
+      // The raiders of an ambush are caught off guard: a step below everyone else.
+      aiDifficulty:
+        participant.teamId === AMBUSH_TEAM_ID ? easierThan(aiDifficulty) : aiDifficulty,
     })),
   };
+}
+
+/** One skill level lower (easy stays easy). */
+function easierThan(level: AiDifficulty): AiDifficulty {
+  return level === 'hard' ? 'normal' : 'easy';
 }
 
 export type { SeaChoice };
@@ -151,6 +162,77 @@ function seaFor(
 /** The merchant's start, when the match has a merchant objective (kept clear of rocks and hazards). */
 function merchantSpawns(height: number, objective: Objective | undefined): Position[] {
   return objective?.kind === 'merchant' ? [merchantRoute(height).spawn] : [];
+}
+
+/** The extra damage each of the hero's cannons does in an ambush. */
+export const AMBUSH_HERO_DAMAGE_BONUS = 1;
+
+/** The cells an ambush's ships start on or arrive at, so the terrain keeps them clear. */
+function ambushSpawns(
+  width: number,
+  height: number,
+  hero: Position,
+  ais: number,
+  objective: Objective | undefined,
+): Position[] {
+  if (objective?.kind !== 'ambush') {
+    return [];
+  }
+  const layout = ambushLayout(width, height, hero, ais);
+  return [...layout.firstWave, ...layout.reinforcements].map((spot) => spot.position);
+}
+
+/**
+ * For an ambush match: puts every AI ship on the raiders' side and round the
+ * hero (hemming it in, facing it), and schedules more raiders of the same class
+ * to arrive from the corners at the start of later turns. Any other match is
+ * returned as it is.
+ */
+export function withAmbush(config: MatchConfig): MatchConfig {
+  if (config.objective?.kind !== 'ambush') {
+    return config;
+  }
+  const hero = config.participants.find((p) => p.controller === 'human') ?? config.participants[0];
+  const ais = config.participants.filter((p) => p.controller === 'ai');
+  const layout = ambushLayout(config.board.width, config.board.height, hero.spawn.position, ais.length);
+
+  let placed = 0;
+  const participants: ParticipantConfig[] = config.participants.map((participant) => {
+    if (participant.controller !== 'ai') {
+      return participant;
+    }
+    const spot = layout.firstWave[placed];
+    placed += 1;
+    return {
+      ...participant,
+      teamId: AMBUSH_TEAM_ID,
+      shipTypeId: RAIDER_SHIP_TYPE_ID,
+      ...(spot ? { spawn: { position: spot.position, heading: spot.heading } } : {}),
+    };
+  });
+  const shipTypeId = RAIDER_SHIP_TYPE_ID;
+  layout.reinforcements.forEach((spot, index) => {
+    participants.push({
+      playerId: `raider-${index + 1}`,
+      name: `Raider ${index + 1}`,
+      teamId: AMBUSH_TEAM_ID,
+      shipTypeId,
+      spawn: { position: spot.position, heading: spot.heading },
+      controller: 'ai',
+      arrivesOnTurn: spot.turn,
+    });
+  });
+  // The hero is outnumbered, so it fights with a veteran captain's guns: +1 damage a
+  // cannon (one hit sinks a raider). Set here, never from anything a player sends.
+  const carried = config.carryOver?.[hero.playerId];
+  const carryOver = {
+    ...config.carryOver,
+    [hero.playerId]: {
+      ...carried,
+      modifiers: [...(carried?.modifiers ?? []), { kind: 'cannonDamage' as const, bonus: AMBUSH_HERO_DAMAGE_BONUS }],
+    },
+  };
+  return { ...config, participants, carryOver };
 }
 
 /**
@@ -215,7 +297,11 @@ export function createDuelConfig(
       BOARD_WIDTH,
       BOARD_HEIGHT,
       seed,
-      [...duelSpawns, ...merchantSpawns(BOARD_HEIGHT, overrides.objective)],
+      [
+        ...duelSpawns,
+        ...merchantSpawns(BOARD_HEIGHT, overrides.objective),
+        ...ambushSpawns(BOARD_WIDTH, BOARD_HEIGHT, duelSpawns[0], 1, overrides.objective),
+      ],
       overrides.sea,
       overrides.loot,
       overrides.objective,
@@ -243,7 +329,7 @@ export function createDuelConfig(
     startingTokens: INITIAL_TOKEN_POOL,
     startingAmmo: CANNON_STARTING_AMMO,
   };
-  return withAiDifficulty(withMerchant(config), overrides.aiDifficulty ?? DEFAULT_AI_DIFFICULTY);
+  return withAiDifficulty(withAmbush(withMerchant(config)), overrides.aiDifficulty ?? DEFAULT_AI_DIFFICULTY);
 }
 
 export interface SkirmishOptions {
@@ -384,14 +470,18 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
     width,
     height,
     seed,
-    [...spawns.map((spawn) => spawn.position), ...merchantSpawns(height, options.objective)],
+    [
+      ...spawns.map((spawn) => spawn.position),
+      ...merchantSpawns(height, options.objective),
+      ...ambushSpawns(width, height, spawns[0].position, options.ais, options.objective),
+    ],
     options.sea,
     options.loot,
     options.objective,
   );
 
   return withAiDifficulty(
-    withMerchant({
+    withAmbush(withMerchant({
       seed,
       board: { width, height },
       ...sea,
@@ -400,7 +490,7 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
       rules: options.rules ?? DEFAULT_RULES,
       startingTokens: INITIAL_TOKEN_POOL,
       startingAmmo: CANNON_STARTING_AMMO,
-    }),
+    })),
     options.aiDifficulty ?? DEFAULT_AI_DIFFICULTY,
   );
 }

@@ -30,6 +30,8 @@ export interface ShipSummary {
   alive: boolean;
   /** Got clean away (a merchant that reached its exit). */
   escaped: boolean;
+  /** Not on the board yet: the turn it arrives on (a raider of an ambush). */
+  arrivesOnTurn: number | null;
   /** An AI is sailing it (a computer opponent, or a player who is away). */
   bot: boolean;
   /** How well that AI plays, when one is sailing it. */
@@ -132,6 +134,7 @@ function snapshot({
         ally: player.teamId === self.teamId,
         alive: (other?.hp ?? 0) > 0,
         escaped: other?.escaped === true,
+        arrivesOnTurn: other?.arrivesOnTurn ?? null,
         bot: player.controller === 'ai',
         difficulty: player.aiDifficulty,
       };

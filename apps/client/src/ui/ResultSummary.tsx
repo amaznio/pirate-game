@@ -54,9 +54,11 @@ export function ResultSummary() {
                 <span className="font-bold text-parchment">
                   {ship.afloat
                     ? `${ship.hull}/${ship.maxHull}`
-                    : ship.escaped
-                      ? t('result.escapedShort')
-                      : t('result.sunkShort')}
+                    : ship.arrivesOnTurn !== undefined
+                      ? t('result.neverArrived')
+                      : ship.escaped
+                        ? t('result.escapedShort')
+                        : t('result.sunkShort')}
                 </span>
               </li>
             ))}

@@ -353,6 +353,25 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /** A ring that opens where a ship arrives, and the ship fading in. */
+  private announceArrival(
+    view: Phaser.GameObjects.Container,
+    position: { x: number; y: number },
+  ): void {
+    const { x, y } = gridToWorld(position);
+    view.setAlpha(0);
+    this.tweens.add({ targets: view, alpha: 1, duration: 700, ease: 'Sine.easeOut' });
+    const ring = this.add.circle(x, y, TILE_SIZE * 0.3).setStrokeStyle(4, 0xf2c14e, 0.9).setDepth(60);
+    this.tweens.add({
+      targets: ring,
+      scale: 2.4,
+      alpha: 0,
+      duration: 900,
+      ease: 'Sine.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+  }
+
   /** Snaps ships, obstacles and avatars to the view (no animation in flight). */
   private syncAll(view: GameView): void {
     this.syncViews(view);
@@ -386,10 +405,12 @@ export class BattleScene extends Phaser.Scene {
         setShipHull(existing, ship.hp, ship.maxHp);
       } else {
         const style = styles.get(ship.teamId) ?? [...styles.values()][0];
-        this.views.register(
-          ship.id,
-          createShipView(this, ship, style, { isViewer: ship.ownerId === state.viewerId }),
-        );
+        const created = createShipView(this, ship, style, { isViewer: ship.ownerId === state.viewerId });
+        this.views.register(ship.id, created);
+        // A ship that turns up after the match began (a raider arriving) fades in under a ring.
+        if (state.turn > 1) {
+          this.announceArrival(created as Phaser.GameObjects.Container, ship.position);
+        }
       }
     }
 
