@@ -28,6 +28,18 @@ export interface ShipViewOptions {
   readonly isViewer?: boolean;
 }
 
+/** The skull (emblem 2) is yours; every other ship wears one of the rest, by its id. */
+export function emblemFor(ship: Ship, isViewer: boolean): number {
+  if (isViewer) {
+    return 2;
+  }
+  let hash = 0;
+  for (const char of ship.id) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return [0, 1, 3, 4][hash % 4];
+}
+
 /** A ship wears the sails of its team. */
 export function createShipView(
   scene: Phaser.Scene,
@@ -47,6 +59,7 @@ export function createShipView(
         sailColour: style.sail,
         state: hullStateFor(ship.hp, ship.maxHp),
         cannons,
+        emblem: emblemFor(ship, options.isViewer === true),
       },
       x,
       y,

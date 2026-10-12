@@ -114,6 +114,44 @@ const SAIL_BOXES: Readonly<Record<SailKind, Box>> = {
 export const sailFrameName = (colour: SailColour, kind: SailKind): string =>
   `sail/${colour}/${kind}`;
 
+/**
+ * The spar a sail hangs from, in six colours (grey, dark brown, brown, red,
+ * white, gold), 32 px apart. It is a little wider than the sail it carries; the
+ * crossbar is the top few rows and the rest is the mast. `billow` bends with
+ * the billowing sail.
+ */
+export const YARD_COLOURS = 6;
+export type YardKind = 'flat' | 'billow';
+const YARD_BOXES: Readonly<Record<YardKind, Box>> = {
+  flat: { x: 0, y: 551, w: 32, h: 15 },
+  billow: { x: 3, y: 583, w: 28, h: 15 },
+};
+/** Rows from the top of a yard frame to the middle of its crossbar. */
+export const YARD_BAR_ROW = 3.5;
+export const yardFrameName = (kind: YardKind, colour: number): string => `yard/${kind}/${colour}`;
+
+/**
+ * Emblems for a sail (birds, a skull and so on), drawn dark for pale sails and
+ * light for dark ones. Five of them are large enough for the big sails.
+ */
+const EMBLEM_BOXES: readonly Box[] = [
+  { x: 200, y: 493, w: 16, h: 7 },
+  { x: 230, y: 493, w: 19, h: 7 },
+  { x: 264, y: 493, w: 16, h: 7 },
+  { x: 297, y: 493, w: 19, h: 7 },
+  { x: 326, y: 493, w: 20, h: 7 },
+];
+export const EMBLEM_COUNT = EMBLEM_BOXES.length;
+/** The sheet draws the light copies exactly 64 rows below the dark ones. */
+const LIGHT_EMBLEM_OFFSET = 64;
+export type EmblemTone = 'dark' | 'light';
+export const emblemFrameName = (tone: EmblemTone, index: number): string =>
+  `emblem/${tone}/${index}`;
+
+/** Whether a sail is pale enough to carry a dark emblem. */
+export const emblemToneFor = (sail: SailColour): EmblemTone =>
+  sail === 'grey' || sail === 'cream' || sail === 'yellow' ? 'dark' : 'light';
+
 /** Idle frames of the five cannon types (the fire animations come later). */
 const CANNON_BOXES: readonly Box[] = [
   { x: 452, y: 566, w: 6, h: 6 },
@@ -241,6 +279,24 @@ export function shipFrameRects(): FrameRect[] {
       const box = SAIL_BOXES[kind];
       rects.push({ name: sailFrameName(colour, kind), x: box.x + 64 * index, y: box.y, w: box.w, h: box.h });
     }
+  });
+
+  for (let colour = 0; colour < YARD_COLOURS; colour += 1) {
+    for (const kind of Object.keys(YARD_BOXES) as YardKind[]) {
+      const box = YARD_BOXES[kind];
+      rects.push({ name: yardFrameName(kind, colour), x: box.x + 32 * colour, y: box.y, w: box.w, h: box.h });
+    }
+  }
+
+  EMBLEM_BOXES.forEach((box, index) => {
+    rects.push({ name: emblemFrameName('dark', index), x: box.x, y: box.y, w: box.w, h: box.h });
+    rects.push({
+      name: emblemFrameName('light', index),
+      x: box.x,
+      y: box.y + LIGHT_EMBLEM_OFFSET,
+      w: box.w,
+      h: box.h,
+    });
   });
 
   CANNON_BOXES.forEach((box, index) => {

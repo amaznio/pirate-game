@@ -2,9 +2,14 @@ import type Phaser from 'phaser';
 import {
   HULL_LAYOUT,
   SAIL_COLOURS,
+  YARD_BAR_ROW,
+  EMBLEM_COUNT,
   cannonFrameName,
+  emblemFrameName,
+  emblemToneFor,
   hullFrameName,
   sailFrameName,
+  yardFrameName,
   ScallywagKeys,
   type HullSize,
   type HullState,
@@ -62,7 +67,13 @@ export interface ScallywagShipSpec {
   readonly state: HullState;
   /** Cannons on each side. */
   readonly cannons: number;
+  /** Which emblem the big billowing sails carry (0 to 4), or none. */
+  readonly emblem?: number;
 }
+
+/** The yard colour that stands out from a hull (tan on dark wood and the reverse), grey for a wreck. */
+const YARD_FOR_HULL = [2, 1, 1, 4, 1] as const;
+const yardColourFor = (hull: number | 'grey'): number => (hull === 'grey' ? 0 : YARD_FOR_HULL[hull % 5]);
 
 export interface ScallywagShipOptions {
   /** Mark the corners of the cell the ship sails in (its logical footprint). */
@@ -132,11 +143,30 @@ export function createScallywagShip(
   const parts: Phaser.GameObjects.Image[] = [];
   const sailColour = SAIL_COLOURS[spec.sailColour % SAIL_COLOURS.length];
   for (const sail of spec.look.sails) {
+    const billow = sail.kind === 'billowLarge' || sail.kind === 'billowSmall';
+    // The spar goes behind its sail, its crossbar level with the sail's middle.
+    parts.push(
+      scene.add
+        .image(0, sail.y, ScallywagKeys.ships, yardFrameName(billow ? 'billow' : 'flat', yardColourFor(spec.hullColour)))
+        .setOrigin(0.5, YARD_BAR_ROW / 15),
+    );
     parts.push(
       scene.add
         .image(0, sail.y, ScallywagKeys.ships, sailFrameName(sailColour, sail.kind))
         .setOrigin(0.5, 0.5),
     );
+    if (spec.emblem !== undefined && sail.kind === 'billowLarge') {
+      parts.push(
+        scene.add
+          .image(
+            0,
+            sail.y,
+            ScallywagKeys.ships,
+            emblemFrameName(emblemToneFor(sailColour), spec.emblem % EMBLEM_COUNT),
+          )
+          .setOrigin(0.5, 0.5),
+      );
+    }
   }
 
   // The ship's right side is screen-left when it faces south; the cannon art
