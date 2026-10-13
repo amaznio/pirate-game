@@ -351,5 +351,24 @@
     "merchantProgress": "Kupiec: {{cells}} pól od ucieczki · tura {{turn}} z {{turns}}",
     "merchantGone": "Kupiec zniknął",
     "ambushProgress": "Najeźdźcy: {{afloat}} na wodzie, {{coming}} w drodze · tura {{turn}} z {{turns}}"
+  },
+  "voyage": {
+    "preview": "Podgląd",
+    "previewBanner": "Wyprawa pojawi się wkrótce. To podgląd mapy.",
+    "supplies": "Zapasy",
+    "hull": "Kadłub",
+    "cannonballs": "Kule armatnie",
+    "nextBattle": "Następna bitwa",
+    "homePort": "Port macierzysty",
+    "port": "Port",
+    "boss": "Boss",
+    "kindStart": "Start",
+    "kindBattle": "Bitwa",
+    "kindPort": "Naprawa",
+    "kindBoss": "Bitwa z bossem",
+    "cleared": "ukończone",
+    "here": "jesteś tutaj",
+    "locked": "zablokowane",
+    "notTaken": "niewybrane"
   }
 }

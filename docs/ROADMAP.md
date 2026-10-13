@@ -520,7 +520,7 @@ battle.
       ending was not played through. The first reader of a real result will be
       phase 7 (`run-core`).
 
-### 6. Battle objectives: `todo` (planned, agreed with the user)
+### 6. Battle objectives: `done`
 Merchant interception, survive N turns, salvage race, ambush. An objective is a
 way for a battle to end other than "last team standing", and in phase 7 it is
 what makes a node on the voyage map a particular kind of battle.

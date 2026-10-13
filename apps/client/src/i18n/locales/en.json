@@ -341,5 +341,24 @@
     "merchantProgress": "Merchant: {{cells}} cells from escaping · turn {{turn}} of {{turns}}",
     "merchantGone": "The merchant is gone",
     "ambushProgress": "Raiders: {{afloat}} afloat, {{coming}} on the way · turn {{turn}} of {{turns}}"
+  },
+  "voyage": {
+    "preview": "Preview",
+    "previewBanner": "Voyage is coming soon. This is a preview of the map.",
+    "supplies": "Supplies",
+    "hull": "Hull",
+    "cannonballs": "Cannonballs",
+    "nextBattle": "Next battle",
+    "homePort": "Home port",
+    "port": "Port",
+    "boss": "Boss",
+    "kindStart": "Start",
+    "kindBattle": "Battle",
+    "kindPort": "Repair",
+    "kindBoss": "Boss battle",
+    "cleared": "cleared",
+    "here": "you are here",
+    "locked": "locked",
+    "notTaken": "not taken"
   }
 }

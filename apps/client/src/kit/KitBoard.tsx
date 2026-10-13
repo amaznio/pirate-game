@@ -1,6 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Banner } from '@/kit/Banner';
+import { Tile } from '@/kit/Tile';
+import { Anchor, Compass } from 'lucide-react';
+import { CannonToggle } from '@/ui/CannonToggle';
+import { HullBar } from '@/ui/ShipStatus';
+import { TOKEN_META, TOKEN_ORDER } from '@/ui/tokenMeta';
 import { ChoiceGroup, ChoiceRow } from '@/kit/ChoiceRow';
 import { Notice } from '@/kit/Notice';
 import { Segmented } from '@/kit/Segmented';
@@ -17,6 +25,8 @@ export function KitBoard() {
   const [seas, setSeas] = useState('normal');
   const [scenario, setScenario] = useState('a');
   const [count, setCount] = useState(2);
+  const [language, setLanguage] = useState('en');
+  const [fire, setFire] = useState(true);
   return (
     <div className="h-full overflow-y-auto bg-background p-8 text-foreground">
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
@@ -76,6 +86,73 @@ export function KitBoard() {
         <Section title="Stepper and notice">
           <Stepper label="Opponents" value={count} min={1} max={7} onChange={setCount} />
           <Notice>Room not found.</Notice>
+        </Section>
+
+        <Section title="Select">
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger aria-label="Language" className="min-w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="es">Español</SelectItem>
+              <SelectItem value="pl">Polski</SelectItem>
+            </SelectContent>
+          </Select>
+        </Section>
+
+        <Section title="Dialog">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary">Open a dialog</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-head text-2xl font-bold">Sea guide</DialogTitle>
+                <DialogDescription>Wind pushes a ship one cell.</DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </Section>
+
+        <Section title="Banner (objective, info, warning, bad)">
+          <div className="flex w-full flex-col gap-2">
+            <Banner tone="objective">Merchant: 11 cells from escaping, turn 3 of 12</Banner>
+            <Banner tone="info">Locked in, waiting for 1 other player</Banner>
+            <Banner tone="warning">Timer low</Banner>
+            <Banner tone="bad">Your ship was sunk, watching the battle</Banner>
+          </div>
+        </Section>
+
+        <Section title="Tile (primary, normal, disabled)">
+          <div className="grid w-full gap-3 md:grid-cols-3">
+            <Tile primary icon={<Anchor />} title="Quick battle" blurb="Pick a scenario." cta="Choose" onClick={() => {}} />
+            <Tile icon={<Anchor />} title="Friends" blurb="Create a room." cta="Open lobby" onClick={() => {}} />
+            <Tile icon={<Compass />} title="Voyage" blurb="A map of battles." badge="Coming soon" />
+          </div>
+        </Section>
+
+        <Section title="Hull pips (full, damaged)">
+          <HullBar hp={6} maxHp={6} />
+          <HullBar hp={3} maxHp={6} />
+          <HullBar hp={2} maxHp={4} small />
+        </Section>
+
+        <Section title="Token chips (arrow, word, count)">
+          {TOKEN_ORDER.map((action) => (
+            <Badge key={action} className={`${TOKEN_META[action].bgClass} gap-1 text-ocean-deep`}>
+              <span aria-hidden>{TOKEN_META[action].arrow}</span>
+              {TOKEN_META[action].short.charAt(0) + TOKEN_META[action].short.slice(1).toLowerCase()}
+              <span className="tabular-nums">x3</span>
+            </Badge>
+          ))}
+        </Section>
+
+        <Section title="Cannon toggle (on, off, disabled, small)">
+          <CannonToggle active={fire} disabled={false} label="Fire" onClick={() => setFire(!fire)} />
+          <CannonToggle active={false} disabled={false} label="Off" onClick={() => {}} />
+          <CannonToggle active={false} disabled label="Disabled" onClick={() => {}} />
+          <CannonToggle active small disabled={false} label="Small" onClick={() => {}} />
         </Section>
 
         <Section title="Switch">

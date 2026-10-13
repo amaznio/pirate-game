@@ -8,6 +8,7 @@ import { ModeSelectScreen } from './ModeSelectScreen';
 import type { ObjectiveChoice } from './objectiveChoices';
 import { QuickBattleScreen } from './QuickBattleScreen';
 import { useStoredName } from './useStoredName';
+import { VoyagePreviewScreen } from '../voyage/VoyagePreviewScreen';
 
 interface MainMenuProps {
   /** A room code from the page link (?room=ABCDE), to prefill the join box. */
@@ -23,7 +24,7 @@ interface MainMenuProps {
   ) => void;
 }
 
-type Screen = 'home' | 'modes' | 'quick' | 'friends';
+type Screen = 'home' | 'modes' | 'quick' | 'friends' | 'voyage';
 
 /** The screens before a match: Home, Choose a mode, then the mode's own settings. */
 export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps) {
@@ -62,12 +63,17 @@ export function MainMenu({ initialRoomCode = '', onPlayOffline }: MainMenuProps)
     );
   }
 
+  if (screen === 'voyage') {
+    return <VoyagePreviewScreen onBack={goModes} />;
+  }
+
   if (screen === 'modes') {
     return (
       <ModeSelectScreen
         onBack={() => setScreen('home')}
         onQuickBattle={() => setScreen('quick')}
         onFriends={() => setScreen('friends')}
+        onVoyage={() => setScreen('voyage')}
       />
     );
   }

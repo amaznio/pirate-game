@@ -7,10 +7,11 @@ interface ModeSelectScreenProps {
   onBack: () => void;
   onQuickBattle: () => void;
   onFriends: () => void;
+  onVoyage: () => void;
 }
 
-/** Pick a mode: the main action (Quick battle) comes first and largest; Voyage, not yet playable, last. */
-export function ModeSelectScreen({ onBack, onQuickBattle, onFriends }: ModeSelectScreenProps) {
+/** Pick a mode: the main action (Quick battle) comes first and largest; Voyage, still a preview, last. */
+export function ModeSelectScreen({ onBack, onQuickBattle, onFriends, onVoyage }: ModeSelectScreenProps) {
   const { t } = useTranslation();
   return (
     <ScreenFrame title={t('menu.chooseMode')} onBack={onBack}>
@@ -36,6 +37,8 @@ export function ModeSelectScreen({ onBack, onQuickBattle, onFriends }: ModeSelec
           title={t('menu.voyage')}
           blurb={t('menu.voyageBlurb')}
           badge={t('menu.comingSoon')}
+          cta={t('voyage.preview')}
+          onClick={onVoyage}
         />
       </div>
     </ScreenFrame>

@@ -341,5 +341,24 @@
     "merchantProgress": "Mercante: a {{cells}} casillas de escapar · turno {{turn}} de {{turns}}",
     "merchantGone": "El mercante ya no está",
     "ambushProgress": "Asaltantes: {{afloat}} a flote, {{coming}} en camino · turno {{turn}} de {{turns}}"
+  },
+  "voyage": {
+    "preview": "Vista previa",
+    "previewBanner": "La travesía llegará pronto. Esto es una vista previa del mapa.",
+    "supplies": "Provisiones",
+    "hull": "Casco",
+    "cannonballs": "Balas de cañón",
+    "nextBattle": "Próxima batalla",
+    "homePort": "Puerto base",
+    "port": "Puerto",
+    "boss": "Jefe",
+    "kindStart": "Inicio",
+    "kindBattle": "Batalla",
+    "kindPort": "Reparación",
+    "kindBoss": "Batalla de jefe",
+    "cleared": "superado",
+    "here": "estás aquí",
+    "locked": "bloqueado",
+    "notTaken": "sin elegir"
   }
 }

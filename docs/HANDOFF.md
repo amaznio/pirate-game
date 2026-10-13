@@ -127,7 +127,9 @@ The user adopted a Claude Design bundle (14 boards: Harbour dark skin, Logbook p
 - **Menu flow:** Home (title, Play, language dropdown) to Choose a mode (Quick battle, Play with friends, Voyage "coming soon") to the mode's settings (`QuickBattleScreen`, `FriendsScreen`). `MainMenu` holds the step. The player's name is asked for only on the friends screen (a stored name is still used for offline matches). A `?room=` link opens the friends screen. Quick battle shows the "Your battle" summary first on a phone and in the right column on desktop; each objective's rule is behind an info popover. `LobbyScreen` is two columns with a footer bar. Game over and "sunk, keep watching" are shadcn Dialogs in `ui/EndDialogs.tsx`.
 - **Battle HUD:** `TurnTimer` (icon, digits, bar, and a "Hurry" chip when low), hull pips (solid or hollow), `FleetList` with words for sunk, escaped or arriving, `Banner` for the objective and status messages, a pinned Clear and Pass or Lock In row, and a `SeaGuideButton` (phone only) that opens the wind, whirlpool and loot legend. The phone sheet is custom and **non-modal on purpose** (a modal sheet would block the board). Its header row holds "Battle Plan", the Auto token switch and the cannonball chip; with Auto off a captioned row of arrow buttons ("Next turn you get:") appears (`ui/NextTokenControl.tsx`). The sheet is about 36 per cent of the screen.
 - **Kept on purpose:** the user preferred the **old** token buttons, plan slots and round cannonball toggles over the redesign (`MoveTokenTray`, `PlannedMoves`, `CannonGroup`, `CannonToggle` are as before). Do not re-do them in the design's L/R counter style unless asked.
-- **Not done:** HUD widgets and Dialog, Select and Popover on the `?kit` board; a CI check that fails on raw hex colours outside `index.css`; the Voyage preview map; the design's bottom tab bar (waits for Voyage); the design's collapsed phone strip is taller than the mockup (full token chips).
+- **Guard and board:** `src/kit/__tests__/noRawColours.test.ts` fails when `ui/`, `kit/`, `app/` or `components/` contain a hex colour, `rgb()` or `hsl()` (a line can end with `raw-colour-ok` to allow one; the Phaser code is not scanned). `/?kit` now also shows Select, Dialog, Banner, Tile, hull pips, token chips and the cannon toggle (not the store-driven widgets: token tray, plan slots, `TurnTimer`).
+- **Voyage preview:** the Voyage tile on Choose a mode opens `ui/voyage/VoyagePreviewScreen.tsx`, a placeholder: stat pills (supplies 12, hull 5/6, cannonballs 8), a banner saying it is coming soon, nine fixed stops as `kit/MapNode` (cleared, current, available, locked; shape, icon and words, not colour alone) and a "Next battle" card. The numbers and route are illustrative, **not game state**, and Set sail is disabled. Strings are under `voyage.*` (Spanish and Polish machine-drafted). When phase 7 (`run-core`) lands, replace the `ROUTE` constant and the numbers with real data.
+- **Not done:** the design's bottom tab bar (waits for a live Voyage); the design's collapsed phone strip is taller than the mockup (full token chips).
 - **Not seen in a browser:** the Lobby, the game-over and sunk dialogs, the objective banner and "Hurry" chip at phone width, the Friends screen with a real server, the Spanish and Polish layouts (new strings are machine-drafted), and any screenshot of an open dropdown.
 
 ## 3. The sea, and why it ended up this way
@@ -221,8 +223,10 @@ CRLF/timestamp artefact, `git add` clears it.
 - Textures cut from one sheet bleed into each other when a sprite sits on a
   fractional pixel or is rotated: use padded copies (`buildPaddedShipSheet`,
   the rock texture) and whole-pixel camera steps.
-- `.claude/launch.json` is created only to start a preview; delete it after
-  (it is untracked and stays out of commits).
+- `.claude/launch.json` is committed. It is the config the preview tool uses to
+  start the client dev server (`pnpm --filter @pirate/client dev`, port 5173),
+  so keep it. If `preview_start` refuses because a leftover server holds the
+  port, navigate to it instead, or stop that server.
 - **The in-app browser did render the WebGL board in the UI session** (a match
   at `/?ais=3&seed=3` drew the sea and ships), so try it before the Canvas
   switch above. The hidden-pane animation stall still applies (a turn can stay
@@ -256,12 +260,13 @@ CRLF/timestamp artefact, `git add` clears it.
 
 ## 7b. UI next steps
 
-1. Look at the screens listed under "Not seen in a browser" above, on a real
-   phone if possible.
-2. Add the HUD widgets, Dialog, Select and Popover to `?kit`; add the raw-hex
-   check.
-3. Decide with the user whether to restyle the old token, plan and cannon
-   section after all (they like it as it is), then the Voyage preview.
+1. The user has looked at the screens listed under "Not seen in a browser"
+   (the lobby, game-over dialogs and phone layouts) on their own device. The
+   Voyage preview screen has been seen in the browser pane only.
+2. Add the store-driven HUD widgets to `?kit` only if there is a way to feed
+   them state without a match (not done).
+3. Leave the old token, plan and cannon section as it is unless the user asks.
+4. Voyage itself is roadmap phase 7; the preview screen is its UI placeholder.
 
 ## 8. Rules from the roadmap that always apply
 
