@@ -834,10 +834,27 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
       the boss; the sea goes calm, normal, normal, stormy, stormy. One route is
       about 6 to 12 battles per area, so a whole run is on the order of 45
       battles: slice E must measure whether that is too long.
-- [ ] B. Run state and rules: pure reducers for start, travel (supplies and
+- [x] B. Run state and rules: pure reducers for start, travel (supplies and
       starvation), building a node's battle config, applying a result, port
       actions, the move from one area to the next, win or lose, and serialising
-      the state for the save.
+      the state for the save. Done, in `packages/run-core/src/run/`: `rules.ts`
+      (every number in one place), `types.ts`, `upgrades.ts`, `battle.ts`
+      (`buildBattle`), `engine.ts` (`startRun`, `applyAction`, `availableMoves`,
+      `legCost`) and `save.ts` (`serializeRun`, `parseRun`, version 1). The run
+      opens at the first landfall with an upgrade to pick. Actions: `travel`,
+      `chooseUpgrade`, `finishBattle` (takes a `MatchResult`) and `abandon`.
+      - **Not yet in real battles (slice C):** the hero's hull level (maximum hull)
+        and cannon count are kept in the run state but the match cannot take them
+        yet, so a battle uses the class's own hull and cannons. Hull, cannonballs
+        and cannon damage already carry. The boss is a Galleon flagship with
+        escorts and no extra strength until C.
+      - **First numbers, all in `rules.ts` and `battle.ts`:** supply rewards 2 to 4
+        a won battle; ports repair 2 and restock 3 (a landfall repairs 4 and fills
+        the hold); the enemy fleet grows from one Sloop (easy) to three Galleons
+        (hard) over the run. A scripted always-win run is about 65 legs, 45 to 49
+        battles and 21 to 25 upgrades, and reaches the fully upgraded ship, but
+        **supplies never ran low** (the lowest hold was 6), so supplies add no
+        tension yet and the run is very long: slice E has to settle both.
 - [ ] C. Small `game-core` additions, optional fields only: carry-over `maxHull`
       and `cannonsPerSide` (read in `createGame.ts` and shown in the view and
       HUD), and a boss config helper.
