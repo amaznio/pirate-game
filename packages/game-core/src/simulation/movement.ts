@@ -11,7 +11,7 @@ import { inBounds } from '../domain/Board';
 import { positionsEqual, translate } from '../domain/Position';
 import { turnLeft, turnRight, vectorFor } from '../domain/Direction';
 import type { MutableGameState } from './internal';
-import { obstacleAt } from './selectors';
+import { obstacleAt, solidMonsterAt } from './selectors';
 
 /** One step forward in the given heading. */
 export function getForwardPosition(
@@ -163,7 +163,7 @@ function blockedMoves(
 
   // Terrain: the board edge and obstacles stop a ship outright.
   for (const [shipId, cell] of desired) {
-    if (!inBounds(state.board, cell) || obstacleAt(state, cell)) {
+    if (!inBounds(state.board, cell) || obstacleAt(state, cell) || solidMonsterAt(state, cell)) {
       blocked.add(shipId);
     }
   }

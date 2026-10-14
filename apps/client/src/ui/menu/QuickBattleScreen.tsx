@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
+import { MONSTER_TYPE_IDS } from '@pirate/game-core/config/monsterTypes';
+import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,6 +36,8 @@ export interface QuickBattleSettings {
   difficulty: AiDifficulty;
   mapStyle: MapStyle;
   loot: boolean;
+  monster: MonsterTypeId | null;
+  monsterWarnings: boolean;
   ships: OfflineShips;
   objective: ObjectiveChoice;
 }
@@ -51,6 +55,8 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
   const [difficulty, setDifficulty] = useStoredDifficulty();
   const [mapStyle, setMapStyle] = useStoredMapStyle();
   const [loot, setLoot] = useState(false);
+  const [monster, setMonster] = useState<MonsterTypeId | 'none'>('none');
+  const [monsterWarnings, setMonsterWarnings] = useState(false);
   const [objective, setObjective] = useState<ObjectiveChoice>('standard');
   const [yourShip, setYourShip] = useStoredShip();
   const [theirShip, setTheirShip] = useState(DEFAULT_SHIP_TYPE_ID);
@@ -63,6 +69,8 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
       difficulty,
       mapStyle,
       loot,
+      monster: monster === 'none' ? null : monster,
+      monsterWarnings,
       ships: { yours: yourShip, theirs: theirShip },
       objective,
     });
@@ -93,6 +101,9 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
             <Badge variant="secondary">
               {t('common.loot')}: {loot ? t('common.lootOn') : t('common.lootOff')}
             </Badge>
+            {monster !== 'none' && (
+              <Badge variant="secondary">{t(`common.monsterNames.${monster}`)}</Badge>
+            )}
             <Badge variant="secondary">
               {t('menu.yourShip')}: {shipLabel(t, yourShip)}
             </Badge>
@@ -183,6 +194,26 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
                   aria-label={t('common.loot')}
                 />
               </Field>
+              <Field label={t('common.monster')} hint={t('common.monsterBlurb')}>
+                <Segmented
+                  label={t('common.monster')}
+                  value={monster}
+                  onChange={setMonster}
+                  choices={[
+                    { label: t('common.monsterOff'), value: 'none' as const },
+                    ...MONSTER_TYPE_IDS.map((id) => ({ label: t(`common.monsterNames.${id}`), value: id })),
+                  ]}
+                />
+              </Field>
+              {monster !== 'none' && (
+                <Field label={t('common.monsterWarnings')} hint={t('common.monsterWarningsBlurb')}>
+                  <Switch
+                    checked={monsterWarnings}
+                    onCheckedChange={setMonsterWarnings}
+                    aria-label={t('common.monsterWarnings')}
+                  />
+                </Field>
+              )}
             </CollapsibleContent>
           </Card>
         </Collapsible>

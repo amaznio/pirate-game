@@ -10,6 +10,7 @@ import { toMutable, freeze } from './internal';
 import { resolvePhase } from './resolvePhase';
 import { getLivingShips } from './selectors';
 import { evaluateObjective } from './objectives';
+import { clearMonsterAttacks } from './monsters';
 
 /**
  * The match is over when at most one team still has a ship afloat. One team
@@ -64,6 +65,9 @@ export function resolveTurn(
       }
     }
   }
+
+  // Whatever the monsters planned is done: take the marks off the water.
+  clearMonsterAttacks(state);
 
   // A ship that planned no move this turn earns its rest bonus next turn.
   for (const id of Object.keys(state.players)) {

@@ -1,3 +1,4 @@
+import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
 import { useState } from 'react';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
@@ -26,6 +27,8 @@ interface MainMenuProps {
     loot: boolean,
     ships: OfflineShips,
     objective: ObjectiveChoice,
+    monster: MonsterTypeId | null,
+    monsterWarnings: boolean,
   ) => void;
 }
 
@@ -56,6 +59,8 @@ export function MainMenu({
             s.loot,
             s.ships,
             s.objective,
+            s.monster,
+            s.monsterWarnings,
           )
         }
       />

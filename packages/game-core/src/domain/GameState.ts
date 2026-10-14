@@ -10,6 +10,7 @@ import type {
 import type { MatchRules } from './Rules';
 import type { TerrainMap } from './Terrain';
 import type { PickupMap } from './Pickup';
+import type { MonsterMap } from './Monster';
 import type { PickupTally } from './MatchResult';
 import type { Objective, OutcomeReason } from './Objective';
 import type { SeaChoice } from '../board/generateBoard';
@@ -82,6 +83,13 @@ export interface GameState {
   readonly terrain: TerrainMap;
   /** Barrels, crates and planks afloat, taken by the ship that ends a phase on one. None when left out. */
   readonly pickups?: PickupMap;
+  /** Creatures on the water that block, strike marked cells and can be sunk. None when absent. */
+  readonly monsters?: MonsterMap;
+  /**
+   * Whether players are shown what the monsters will strike this turn. Off (hidden, like
+   * every ship's plan) when absent: the lashes still land, but nobody is warned.
+   */
+  readonly monsterWarnings?: boolean;
   /** A way for the match to end besides last team standing. None when absent. */
   readonly objective?: Objective;
   /** What each player has picked up so far. Only present once someone has taken something. */

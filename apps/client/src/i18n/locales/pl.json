@@ -18,7 +18,13 @@
     "loot": "Łupy",
     "lootOff": "Wył.",
     "lootOn": "Wł.",
-    "lootBlurb": "Beczki, skrzynie i deski pływają po wodzie. Zakończ ruch na jednej, aby ją zabrać: kule armatnie, żetony lub naprawiony kadłub."
+    "lootBlurb": "Beczki, skrzynie i deski pływają po wodzie. Zakończ ruch na jednej, aby ją zabrać: kule armatnie, żetony lub naprawiony kadłub.",
+    "monster": "Potwór morski",
+    "monsterOff": "Brak",
+    "monsterNames": { "squid": "Kałamarnica", "giant-squid": "Gigantyczna kałamarnica", "shark": "Rekin" },
+    "monsterBlurb": "Do bitwy dołącza potwór morski. Gigantyczna kałamarnica się nie rusza, ale smaga pola obok dziobu i przed nim. Kałamarnica i rekin cię ścigają: kałamarnica smaga pole przed sobą długimi mackami, a rekin je gryzie. Zatop go albo trzymaj się z daleka.",
+    "monsterWarnings": "Ostrzeżenia o potworze",
+    "monsterWarningsBlurb": "Zaznacza pola, które potwór smagnie w tej turze. Wyłączone: atakuje bez ostrzeżenia, jak plan każdego statku."
   },
   "menu": {
     "yourName": "Twoje imię",

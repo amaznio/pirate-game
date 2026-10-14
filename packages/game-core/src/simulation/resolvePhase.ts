@@ -1,10 +1,11 @@
 import type { GameEvent } from '../domain/GameEvent';
 import type { SubmittedActions, PhaseResult } from '../domain/TurnResult';
 import type { MutableGameState } from './internal';
-import { applyMovementPhase, type MovementIntent } from './movement';
+import type { MovementIntent } from './movement';
 import { resolveFirePhase, type FirePlan } from './combat';
 import { collectPickups } from './pickups';
 import { resolveEscapes } from './escapes';
+import { applyMovementWithMonsters, resolveMonsterAttacks } from './monsters';
 
 /**
  * Resolves a single phase for every ship at once: all movement first, then all
@@ -35,9 +36,10 @@ export function resolvePhase(
         intents.push({ shipId: ship.id, action });
       }
     }
-    events.push(...applyMovementPhase(state, intents, phase));
+    events.push(...applyMovementWithMonsters(state, intents, phase));
     events.push(...collectPickups(state, phase));
     events.push(...resolveEscapes(state, phase));
+    events.push(...resolveMonsterAttacks(state, phase));
 
     const firePlans: FirePlan[] = [];
     for (const { ship, plan } of participants) {
