@@ -824,10 +824,16 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
   and deterministic for a given seed.
 
 **Slices, in order (none started).**
-- [ ] A. `run-core` skeleton: package setup, the seeded graph generator for an area
+- [x] A. `run-core` skeleton: package setup, the seeded graph generator for an area
       (size, port placement, boss at the end), the list of areas, and tests for
       determinism, reachability from start to boss, a port before every boss, and
-      growing size.
+      growing size. Done: `packages/run-core` (`graph/generateArea.ts`,
+      `graph/query.ts`, `graph/types.ts`, `config/areas.ts`, `rng.ts`). Starting
+      numbers in `AREAS`: 10, 12, 14, 16 and 18 layers, one to three nodes a layer,
+      a port every 3rd layer in the middle, plus the landfall and the port before
+      the boss; the sea goes calm, normal, normal, stormy, stormy. One route is
+      about 6 to 12 battles per area, so a whole run is on the order of 45
+      battles: slice E must measure whether that is too long.
 - [ ] B. Run state and rules: pure reducers for start, travel (supplies and
       starvation), building a node's battle config, applying a result, port
       actions, the move from one area to the next, win or lose, and serialising
