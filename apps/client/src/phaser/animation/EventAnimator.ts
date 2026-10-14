@@ -225,11 +225,12 @@ export class EventAnimator {
       ),
     );
 
-    for (const event of events) {
-      if (event.type === 'MONSTER_DESTROYED') {
-        await this.hooks.onMonsterDestroyed?.(event);
-      }
-    }
+    // A monster that sinks takes what it surfaced with it, and they go down together.
+    await Promise.all(
+      events.map((event) =>
+        event.type === 'MONSTER_DESTROYED' ? this.hooks.onMonsterDestroyed?.(event) : undefined,
+      ),
+    );
 
     for (const event of events) {
       if (event.type === 'SHIP_DESTROYED') {

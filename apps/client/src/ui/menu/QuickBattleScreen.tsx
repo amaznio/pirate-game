@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
-import { MONSTER_TYPE_IDS } from '@pirate/game-core/config/monsterTypes';
+import { SELECTABLE_MONSTER_TYPE_IDS } from '@pirate/game-core/config/monsterTypes';
 import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -201,7 +201,7 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
                   onChange={setMonster}
                   choices={[
                     { label: t('common.monsterOff'), value: 'none' as const },
-                    ...MONSTER_TYPE_IDS.map((id) => ({ label: t(`common.monsterNames.${id}`), value: id })),
+                    ...SELECTABLE_MONSTER_TYPE_IDS.map((id) => ({ label: t(`common.monsterNames.${id}`), value: id })),
                   ]}
                 />
               </Field>

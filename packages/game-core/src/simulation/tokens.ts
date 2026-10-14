@@ -21,7 +21,7 @@ import {
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import type { Ship } from '../domain/Ship';
 import { blockingEntityAt } from './selectors';
-import { planMonsterTurn } from './monsters';
+import { monstersForNextTurn } from './monsters';
 
 export interface TokenSelection {
   readonly token: MovementAction;
@@ -286,7 +286,7 @@ export function beginNextTurn(state: GameState): NextTurnResult {
       status: 'planning',
       players,
       ships: state.objective?.kind === 'ambush' ? bringInArrivals(state, state.turn + 1) : state.ships,
-      ...(state.monsters === undefined ? {} : { monsters: planMonsterTurn({ ...state, turn: state.turn + 1 }) ?? state.monsters }),
+      ...(state.monsters === undefined ? {} : { monsters: monstersForNextTurn(state) ?? state.monsters }),
     },
   };
 }

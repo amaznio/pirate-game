@@ -29,12 +29,16 @@ interface MonsterView {
   readonly art: MonsterArt;
   readonly container: Phaser.GameObjects.Container;
   readonly sprite: Phaser.GameObjects.Image;
+  /** The foam round a monster that rises out of the water; it stays level while the body turns. */
+  readonly ring: Phaser.GameObjects.Image | null;
   /** The limb a squid lashes with; absent for monsters that attack with their body. */
   readonly whip: Phaser.GameObjects.Image | null;
   readonly bar: Phaser.GameObjects.Graphics;
   readonly idle: Phaser.Time.TimerEvent;
   /** An attack, hurt, move or death animation owns the sprite; the idle sway waits. */
   busy: boolean;
+  /** It is rising out of the water; syncing the board must not cut that short. */
+  surfacing: boolean;
   frame: number;
   monster: Monster;
 }
@@ -111,7 +115,7 @@ export class MonsterField {
     const monster: Monster = { ...view.monster, position: event.to, heading: event.heading };
     view.monster = monster;
     const target = this.centre(monster);
-    const angle = Phaser.Math.Angle.Wrap(headingToAngle(event.heading));
+    const angle = view.art.upright ? 0 : Phaser.Math.Angle.Wrap(headingToAngle(event.heading));
     const from = Phaser.Math.Angle.Wrap(view.container.rotation);
     const turn = Phaser.Math.Angle.ShortestBetween(Phaser.Math.RadToDeg(from), Phaser.Math.RadToDeg(angle));
     view.bar.clear();
@@ -137,6 +141,10 @@ export class MonsterField {
     const mark = this.marks.get(key);
     if (view) {
       view.busy = true;
+      if (view.art.upright && event.aim) {
+        // The art reaches up, so "up" is turned round to the way it strikes.
+        await this.turnTo(view, headingToAngle(event.aim) + Math.PI);
+      }
       const animation = attackAnimation(view.art);
       for (let frame = 0; frame < view.art.attack.frames; frame += 1) {
         if (view.whip) {
@@ -145,14 +153,17 @@ export class MonsterField {
         } else {
           view.sprite.setFrame(monsterFrame(animation, frame));
         }
-        if (frame === Math.floor(view.art.attack.frames / 2)) {
+        if (frame === (view.art.attack.impact ?? Math.floor(view.art.attack.frames / 2))) {
           // The blow lands: the cell it strikes is shown, whether or not anyone was warned of it.
           mark?.cell.setFillStyle(MARK_COLOUR, 0.7);
           this.strike(event);
         }
-        await wait(this.scene, ATTACK_FRAME_MS);
+        await wait(this.scene, view.art.attack.frameMs?.[frame] ?? ATTACK_FRAME_MS);
       }
       view.whip?.setVisible(false);
+      if (view.art.upright && event.aim) {
+        await this.turnTo(view, 0);
+      }
       view.busy = false;
     }
     if (mark) {
@@ -164,6 +175,25 @@ export class MonsterField {
         mark.label.setText(markText(mark.phases));
       }
     }
+  }
+
+  /** Swings the whole body round to an angle, the short way. */
+  private turnTo(view: MonsterView, target: number): Promise<void> {
+    const from = Phaser.Math.Angle.Wrap(view.container.rotation);
+    const turn = Phaser.Math.Angle.ShortestBetween(Phaser.Math.RadToDeg(from), Phaser.Math.RadToDeg(Phaser.Math.Angle.Wrap(target)));
+    return new Promise<void>((resolve) =>
+      this.scene.tweens.add({
+        targets: view.container,
+        rotation: from + Phaser.Math.DegToRad(turn),
+        duration: 110,
+        ease: 'Sine.easeOut',
+        onUpdate: () => view.ring?.setRotation(-view.container.rotation),
+        onComplete: () => {
+          view.ring?.setRotation(-view.container.rotation);
+          resolve();
+        },
+      }),
+    );
   }
 
   /**
@@ -249,6 +279,7 @@ export class MonsterField {
     this.dropMarksOf(event.monsterId);
     for (let frame = 0; frame < view.art.death; frame += 1) {
       view.sprite.setFrame(monsterFrame('death', frame));
+      view.ring?.setFrame(monsterFrame('ring', Math.min(frame + 1, 3)));
       await wait(this.scene, DEATH_FRAME_MS);
     }
     await new Promise<void>((resolve) =>
@@ -268,22 +299,27 @@ export class MonsterField {
 
   private add(monster: Monster): MonsterView {
     const art = MONSTER_ART[monster.monsterTypeId];
+    const ring = art.ring ? this.scene.add.image(0, 0, art.key, monsterFrame('ring', 0)) : null;
     const sprite = this.scene.add.image(0, 0, art.key, monsterFrame('idle', 0));
     const whip =
       art.attack.kind === 'overlay'
         ? this.scene.add.image(0, 0, art.key, monsterFrame('whip', 0)).setVisible(false)
         : null;
     const container = this.scene.add
-      .container(0, 0, whip ? [sprite, whip] : [sprite])
+      .container(0, 0, [...(ring ? [ring] : []), sprite, ...(whip ? [whip] : [])])
       .setDepth(DEPTH);
     const bar = this.scene.add.graphics().setDepth(BAR_DEPTH);
+    // One that has just risen out of the water (a tentacle) comes up through a ring of spray.
+    const rising = monster.surfacedOnTurn !== undefined && monster.surfacedOnTurn > 1;
     const view: MonsterView = {
       art,
       container,
       sprite,
+      ring,
       whip,
       bar,
       busy: false,
+      surfacing: rising,
       frame: 0,
       monster,
       idle: this.scene.time.addEvent({
@@ -299,7 +335,35 @@ export class MonsterField {
       }),
     };
     this.views.set(monster.id, view);
+    if (rising) {
+      this.surface(view);
+    }
     return view;
+  }
+
+  /** It rises: the body grows up out of a ring of foam that spreads and fades. */
+  private surface(view: MonsterView): void {
+    const { x, y } = this.centre(view.monster);
+    view.container.setAlpha(0).setScale(0.55);
+    this.scene.tweens.add({
+      targets: view.container,
+      alpha: 1,
+      scale: 1,
+      duration: 520,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        view.surfacing = false;
+      },
+    });
+    const ring = this.scene.add.circle(x, y, 10).setStrokeStyle(3, 0xe8f6ff, 0.9).setDepth(DEPTH + 0.5);
+    this.scene.tweens.add({
+      targets: ring,
+      scale: 3.4,
+      alpha: 0,
+      duration: 650,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy(),
+    });
   }
 
   /** The body's centre is halfway along its cells. */
@@ -316,8 +380,13 @@ export class MonsterField {
     const { monster } = view;
     const { x, y } = this.centre(monster);
     view.container.setPosition(x, y);
-    view.container.setRotation(headingToAngle(monster.heading));
-    view.container.setAlpha(1);
+    if (!view.busy) {
+      view.container.setRotation(view.art.upright ? 0 : headingToAngle(monster.heading));
+      view.ring?.setRotation(0);
+    }
+    if (!view.surfacing) {
+      view.container.setAlpha(1);
+    }
     if (!view.busy) {
       view.sprite.setFrame(monsterFrame('idle', view.frame));
     }

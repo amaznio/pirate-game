@@ -6,7 +6,7 @@ import type { Position } from './Position';
 import { translate } from './Position';
 
 /** Which creature a monster is. Its numbers live in `config/monsterTypes.ts`. */
-export type MonsterTypeId = 'giant-squid' | 'squid' | 'shark';
+export type MonsterTypeId = 'giant-squid' | 'squid' | 'shark' | 'tentacle';
 
 /** Where a lash lands, as seen from the monster: beside its bow, or ahead of it. */
 export type LashSide = 'left' | 'right' | 'front';
@@ -20,6 +20,13 @@ export type LashSide = 'left' | 'right' | 'front';
 export interface MonsterPlan {
   readonly movement: readonly ActionSlot[];
   readonly lashes: readonly (LashSide | null)[];
+  /**
+   * For a monster with no front (a tentacle): the way it steps in each phase,
+   * in place of `movement`. It takes that heading for the phase and sails forward.
+   */
+  readonly steps?: readonly (Direction | null)[];
+  /** For a monster with no front: the way it strikes in each phase it lashes. */
+  readonly aims?: readonly (Direction | null)[];
 }
 
 /**
@@ -50,6 +57,12 @@ export interface Monster extends Entity {
   readonly heading: Direction;
   readonly hp: number;
   readonly maxHp: number;
+  /** The monster that surfaced this one; it sinks when that one does. None for a monster that began the match. */
+  readonly parentId?: EntityId;
+  /** The turn this monster rose out of the water; it does not act that turn, so everyone sees it first. */
+  readonly surfacedOnTurn?: number;
+  /** How many of its hull thresholds a monster that surfaces others has already answered with a wave. */
+  readonly spawnWaves?: number;
   /** This turn's plan. Present from the start of the turn until it has been played; never in a player's view. */
   readonly plan?: MonsterPlan;
   /** The forecast of this turn's lashes. Empty when it is not planning, and hidden unless the match warns. */

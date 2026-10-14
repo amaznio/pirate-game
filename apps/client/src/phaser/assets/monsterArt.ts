@@ -3,6 +3,7 @@ import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
 import squidManifest from './giantSquidFrames.json';
 import sharkManifest from './sharkFrames.json';
 import squidSmallManifest from './squidFrames.json';
+import tentacleManifest from './tentacleFrames.json';
 
 interface FrameRect {
   readonly x: number;
@@ -13,8 +14,8 @@ interface FrameRect {
 
 /** How a monster's attack is drawn: a limb laid over the board, or a change of the body itself. */
 export type MonsterAttackArt =
-  | { readonly kind: 'overlay'; readonly frames: number }
-  | { readonly kind: 'body'; readonly frames: number };
+  | { readonly kind: 'overlay'; readonly frames: number; readonly impact?: number; readonly frameMs?: readonly number[] }
+  | { readonly kind: 'body'; readonly frames: number; readonly impact?: number; readonly frameMs?: readonly number[] };
 
 /** One monster's picture: its sheet, and how many frames each animation has. */
 export interface MonsterArt {
@@ -25,6 +26,10 @@ export interface MonsterArt {
   readonly hurt: number;
   readonly death: number;
   readonly attack: MonsterAttackArt;
+  /** Drawn the same way up whatever it faces; it turns only to strike. */
+  readonly upright?: boolean;
+  /** Has a ring of foam in its own frames (`ring/0` to `ring/3`), kept level while the body turns. */
+  readonly ring?: boolean;
 }
 
 /** The sheets, made by the scripts in `tools/art/` (each writes its picture and its frame manifest). */
@@ -46,6 +51,18 @@ export const MONSTER_ART: Readonly<Record<MonsterTypeId, MonsterArt>> = {
     hurt: 2,
     death: 3,
     attack: { kind: 'body', frames: 3 },
+  },
+  tentacle: {
+    key: 'tentacle',
+    path: 'assets/monsters/tentacle.png',
+    frames: tentacleManifest.frames,
+    idle: 4,
+    hurt: 2,
+    death: 3,
+    // Coil back, snap out, full reach (the blow lands here), slam, recoil: quick in the middle.
+    attack: { kind: 'body', frames: 5, impact: 2, frameMs: [140, 45, 70, 110, 130] },
+    upright: true,
+    ring: true,
   },
   shark: {
     key: 'shark',

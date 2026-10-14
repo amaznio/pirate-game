@@ -3,7 +3,7 @@ import type { GameState } from '../../domain/GameState';
 import type { LashSide, Monster, MonsterPlan } from '../../domain/Monster';
 import { monsterCells } from '../../domain/Monster';
 import { ACTIONS_PER_TURN } from '../../domain/Action';
-import { MONSTER_TYPES, getMonsterType } from '../../config/monsterTypes';
+import { MONSTER_TYPES, SELECTABLE_MONSTER_TYPE_IDS, getMonsterType } from '../../config/monsterTypes';
 import { createDuelConfig } from '../../config/matchConfig';
 import { generateMonsters } from '../../board/generateMonsters';
 import { runMatch } from '../../testing/matchRunner';
@@ -469,4 +469,215 @@ describe('monsters: one that sails', () => {
       expect(a.turns).toBeGreaterThan(0);
     }
   }, 30_000);
+});
+
+describe('monsters: tentacles', () => {
+  const TENTACLE = getMonsterType('tentacle');
+  const GIANT = getMonsterType('giant-squid');
+
+  /** The giant squid at (10,6) facing south, a player far off in a corner, the enemy elsewhere. */
+  function giantSea(overrides: Partial<Monster> = {}, extra: Monster[] = []): GameState {
+    const base = sea(squid(overrides), defaultPlayer({ position: { x: 3, y: 17 }, heading: 'NORTH' }));
+    const monsters: Record<string, Monster> = { 'monster-1': base.monsters!['monster-1'] };
+    for (const monster of extra) {
+      monsters[monster.id] = monster;
+    }
+    return { ...base, monsters };
+  }
+
+  const advance = (state: GameState, times = 1): GameState => {
+    let current = state;
+    for (let i = 0; i < times; i += 1) {
+      current = beginNextTurn({ ...resolveTurn(current, submitted()).nextState, status: 'animating' }).state;
+    }
+    return current;
+  };
+
+  const tentaclesOf = (state: GameState): Monster[] =>
+    Object.values(state.monsters ?? {}).filter((m) => m.monsterTypeId === 'tentacle');
+
+  it('surfaces one on the giant squid timer, and not before', () => {
+    const second = advance(giantSea(), 1);
+    expect(second.turn).toBe(2);
+    expect(tentaclesOf(second)).toHaveLength(0);
+    const third = advance(second, 1);
+    expect(third.turn).toBe(3);
+    expect(tentaclesOf(third)).toHaveLength(GIANT.spawns!.timerCount);
+  });
+
+  it('rises on free water a few cells from the squid, away from ships and rocks, linked to its parent', () => {
+    const state = advance(giantSea(), 2);
+    const [tentacle] = tentaclesOf(state);
+    expect(tentacle).toMatchObject({ parentId: 'monster-1', surfacedOnTurn: 3, hp: TENTACLE.maxHp, maxHp: TENTACLE.maxHp });
+    const body = [{ x: 10, y: 6 }, { x: 10, y: 7 }];
+    const gap = Math.min(...body.map((c) => Math.max(Math.abs(c.x - tentacle.position.x), Math.abs(c.y - tentacle.position.y))));
+    expect(gap).toBeGreaterThanOrEqual(GIANT.spawns!.reach[0]);
+    expect(gap).toBeLessThanOrEqual(GIANT.spawns!.reach[1]);
+    for (const ship of Object.values(state.ships)) {
+      expect(Math.max(Math.abs(ship.position.x - tentacle.position.x), Math.abs(ship.position.y - tentacle.position.y))).toBeGreaterThanOrEqual(2);
+    }
+    expect(Object.values(state.obstacles).some((o) => o.position.x === tentacle.position.x && o.position.y === tentacle.position.y)).toBe(false);
+  });
+
+  it('does nothing the turn it surfaces, so everyone sees it first, then hunts', () => {
+    const risen = advance(giantSea(), 2);
+    const [fresh] = tentaclesOf(risen);
+    expect(fresh.plan).toBeUndefined();
+    expect(fresh.attacks).toEqual([]);
+
+    const next = advance(risen, 1);
+    const same = next.monsters![fresh.id];
+    expect(same.plan).toBeDefined();
+  });
+
+  it('answers each fall in hull with a wave, once', () => {
+    // Down to 7 of 10 (70%): the first threshold, a wave of two on the next turn.
+    const hurt = giantSea({ hp: 7 });
+    const second = advance(hurt, 1);
+    expect(tentaclesOf(second)).toHaveLength(GIANT.spawns!.thresholdCount);
+    expect(second.monsters!['monster-1'].spawnWaves).toBe(1);
+    // Nothing more while the hull holds at 7 (the timer is not due on turn 3 either way: it brings one).
+    const calm = advance(second, 1);
+    expect(tentaclesOf(calm).length).toBeLessThanOrEqual(GIANT.spawns!.thresholdCount + GIANT.spawns!.timerCount);
+    expect(calm.monsters!['monster-1'].spawnWaves).toBe(1);
+  });
+
+  it('never has more afloat than its cap', () => {
+    const children: Monster[] = [1, 2, 3, 4].map((n) => ({
+      id: `tentacle-monster-1-1-${n}`,
+      kind: 'monster',
+      monsterTypeId: 'tentacle',
+      position: { x: 4 + n, y: 12 },
+      heading: 'SOUTH',
+      hp: 2,
+      maxHp: 2,
+      attacks: [],
+      parentId: 'monster-1',
+      surfacedOnTurn: 1,
+    }));
+    const state = advance(giantSea({ hp: 4 }, children), 2);
+    expect(tentaclesOf(state).filter((m) => m.hp > 0)).toHaveLength(GIANT.spawns!.max);
+  });
+
+  it('surfaces the same tentacles every time for the same match', () => {
+    expect(advance(giantSea(), 4).monsters).toEqual(advance(giantSea(), 4).monsters);
+  });
+
+  it('sinks with the squid that surfaced it', () => {
+    const child: Monster = {
+      id: 'tentacle-monster-1-1-1', kind: 'monster', monsterTypeId: 'tentacle', position: { x: 12, y: 9 }, heading: 'SOUTH',
+      hp: 2, maxHp: 2, attacks: [], parentId: 'monster-1', surfacedOnTurn: 1,
+    };
+    const state = giantSea({ hp: 1 }, [child]);
+    const shooter = { ...state, ships: { ...state.ships, 'player-ship': { ...state.ships['player-ship'], position: { x: 7, y: 7 }, heading: 'NORTH' as const } } };
+    const result = resolveTurn(shooter, submitted([null, null, null, null], [cannon(false, true)]));
+    const destroyed = result.events.filter((e) => e.type === 'MONSTER_DESTROYED').map((e) => (e.type === 'MONSTER_DESTROYED' ? e.monsterId : ''));
+    expect(destroyed).toEqual(['monster-1', 'tentacle-monster-1-1-1']);
+    expect(result.nextState.monsters!['tentacle-monster-1-1-1'].hp).toBe(0);
+  });
+
+  it('a tentacle is not chosen for a match, only surfaced', () => {
+    expect(SELECTABLE_MONSTER_TYPE_IDS).not.toContain('tentacle');
+    expect(SELECTABLE_MONSTER_TYPE_IDS).toContain('giant-squid');
+  });
+
+  it('a match with a giant squid surfaces tentacles and plays through, deterministically', () => {
+    let surfaced = 0;
+    for (const seed of [1, 2, 3]) {
+      const config = createDuelConfig({ seed, sea: 'normal', monster: 'giant-squid' });
+      const a = runMatch(config);
+      const b = runMatch(config);
+      expect(a.hash).toBe(b.hash);
+      surfaced += Object.values(a.finalState.monsters ?? {}).filter((m) => m.monsterTypeId === 'tentacle').length;
+    }
+    expect(surfaced).toBeGreaterThan(0);
+  }, 30_000);
+});
+
+describe('monsters: a tentacle has no front', () => {
+  /** A tentacle at (10,10) facing south, with a player ship at the given cell and the enemy far away. */
+  function stalking(target: { x: number; y: number }, extra: Partial<GameState> = {}): GameState {
+    const tentacle: Monster = {
+      id: 'monster-1', kind: 'monster', monsterTypeId: 'tentacle', position: { x: 10, y: 10 }, heading: 'SOUTH',
+      hp: 2, maxHp: 2, attacks: [],
+    };
+    const base = sea(tentacle, defaultPlayer({ position: target, heading: 'NORTH' }));
+    return { ...base, ...extra };
+  }
+
+  const firstStep = (state: GameState) => {
+    const planned = planMonsterTurn(state)!['monster-1'];
+    return planned.plan!.steps!.find((step) => step !== null);
+  };
+
+  it('steps straight at a ship from any side, without turning first', () => {
+    expect(firstStep(stalking({ x: 10, y: 5 }))).toBe('NORTH');
+    expect(firstStep(stalking({ x: 15, y: 10 }))).toBe('EAST');
+    expect(firstStep(stalking({ x: 10, y: 15 }))).toBe('SOUTH');
+    expect(firstStep(stalking({ x: 5, y: 10 }))).toBe('WEST');
+  });
+
+  it('sails in the way it planned, one cell, whatever it was facing', () => {
+    // It faces south, but the ship is to the east: it goes east, a cell a phase.
+    const state = stalking({ x: 16, y: 10 });
+    const planned = { ...state, monsters: planMonsterTurn(state)! };
+    const result = resolveTurn(planned, submitted());
+    const moved = result.events.filter((e) => e.type === 'MONSTER_MOVED');
+    expect(moved.length).toBeGreaterThan(0);
+    for (const move of moved) {
+      if (move.type === 'MONSTER_MOVED') {
+        expect(move.to.x - move.from.x).toBe(1);
+        expect(move.to.y).toBe(move.from.y);
+      }
+    }
+    expect(result.nextState.monsters!['monster-1'].position.x).toBeGreaterThan(10);
+  });
+
+  it('stops beside a ship and strikes it, in the way of the ship, not the way it faces', () => {
+    // The ship is next door to the east; the tentacle faces south.
+    const state = stalking({ x: 11, y: 10 });
+    const planned = { ...state, monsters: planMonsterTurn(state)! };
+    const plan = planned.monsters!['monster-1'].plan!;
+    expect(plan.aims!.filter((aim) => aim === 'EAST').length).toBeGreaterThan(0);
+    expect(plan.steps!.every((step) => step === null)).toBe(true);
+
+    const result = resolveTurn(planned, submitted());
+    expect(result.events.find((e) => e.type === 'MONSTER_ATTACKED')).toMatchObject({
+      aim: 'EAST',
+      cell: { x: 11, y: 10 },
+      targetId: 'player-ship',
+    });
+    expect(result.nextState.ships['player-ship'].hp).toBeLessThan(state.ships['player-ship'].hp);
+  });
+
+  it('forecasts the cell it will strike', () => {
+    const state = stalking({ x: 11, y: 10 });
+    const attacks = planMonsterTurn(state)!['monster-1'].attacks;
+    expect(attacks.length).toBeGreaterThan(0);
+    expect(attacks[0].cell).toEqual({ x: 11, y: 10 });
+  });
+
+  it('goes round a rock that is in the way, not into a standstill', () => {
+    const base = stalking({ x: 10, y: 15 });
+    let state: GameState = {
+      ...base,
+      obstacles: { 'rock-1': { id: 'rock-1', kind: 'rock' as const, position: { x: 10, y: 11 } } },
+    };
+    state = { ...state, monsters: planMonsterTurn(state)! };
+    const columns = new Set<number>();
+    let closest = Infinity;
+    for (let turn = 0; turn < 10; turn += 1) {
+      state = beginNextTurn({ ...resolveTurn(state, submitted()).nextState, status: 'animating' }).state;
+      const at = state.monsters!['monster-1'].position;
+      columns.add(at.x);
+      closest = Math.min(closest, Math.abs(at.x - 10) + Math.abs(at.y - 15));
+    }
+    expect(columns.size).toBeGreaterThan(1); // it left the column the rock blocks
+    expect(closest).toBeLessThanOrEqual(2);
+  });
+
+  it('a tentacle is drawn upright: it never needs to be told which way it faces', () => {
+    expect(getMonsterType('tentacle').omnidirectional).toBe(true);
+    expect(getMonsterType('shark').omnidirectional).toBeUndefined();
+  });
 });

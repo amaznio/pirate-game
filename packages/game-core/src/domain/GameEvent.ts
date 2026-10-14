@@ -121,6 +121,8 @@ export type GameEvent =
       type: 'MONSTER_ATTACKED';
       monsterId: EntityId;
       side: LashSide;
+      /** The way a monster with no front struck; absent for one that strikes relative to its heading. */
+      aim?: Direction;
       cell: Position;
       targetId?: EntityId;
       damage?: number;
