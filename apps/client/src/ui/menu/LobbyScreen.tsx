@@ -1,5 +1,5 @@
 import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_ROOM_OPTIONS,
@@ -21,6 +21,7 @@ import { humanMessage } from '../../i18n/humanMessage';
 import { AI_LEVELS, aiLevelBlurb, aiLevelLabel } from './aiLevels';
 import { MAP_STYLE_CHOICES, mapStyleBlurb, mapStyleLabel } from './mapStyles';
 import { SHIP_CHOICES, shipBlurb, shipLabel } from './shipClasses';
+import { loadStoredShip, saveStoredShip } from './useStoredShip';
 import { VISIBILITY_CHOICES, shareCodeLabel, visibilityBlurb, visibilityLabel } from './visibility';
 
 const TIMER_SECONDS: readonly (number | null)[] = [null, 20, 30, 45, 60, 90];
@@ -64,6 +65,20 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
   }
 
   const set = (patch: Partial<RoomOptions>) => void onlineSession?.configure(patch);
+
+  // The server seats everyone in a Sloop; put the player in the ship they last
+  // chose instead, once, when their seat first appears.
+  const shipApplied = useRef(false);
+  useEffect(() => {
+    if (shipApplied.current || !me) {
+      return;
+    }
+    shipApplied.current = true;
+    const wanted = loadStoredShip();
+    if (me.shipTypeId === DEFAULT_SHIP_TYPE_ID && wanted !== DEFAULT_SHIP_TYPE_ID) {
+      void onlineSession?.chooseShip(wanted);
+    }
+  }, [me]);
 
   return (
     <ScreenFrame
@@ -153,7 +168,10 @@ export function LobbyScreen({ lobby }: { lobby: LobbyState }) {
               <Segmented
                 label={t('lobby.yourShip')}
                 value={myShip}
-                onChange={(shipTypeId) => void onlineSession?.chooseShip(shipTypeId)}
+                onChange={(shipTypeId) => {
+                  saveStoredShip(shipTypeId);
+                  void onlineSession?.chooseShip(shipTypeId);
+                }}
                 choices={SHIP_CHOICES.map((id) => ({ label: shipLabel(t, id), value: id }))}
               />
             </Field>

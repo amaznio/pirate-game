@@ -78,6 +78,16 @@ describe('a save that cannot be trusted gives nothing', () => {
     expect(parseRun(JSON.stringify(without))).toBeNull();
   });
 
+  it('keeps the mark of a fight begun, and refuses it anywhere but in a fight', () => {
+    const fight = JSON.parse(good);
+    const inFight = { ...fight, phase: 'battle', offer: undefined, battleStarted: true, nodeId: fight.nodeId, path: fight.path };
+    // The landfall is a port, so this is not a fight node: move to a battle stop first.
+    expect(parseRun(JSON.stringify(inFight))).toBeNull();
+    expect(parseRun(tweak({ battleStarted: true }))).toBeNull();
+    expect(parseRun(tweak({ battleStarted: false }))).toBeNull();
+    expect(parseRun(tweak({ battleStarted: 'yes' }))).toBeNull();
+  });
+
   it('refuses a defeat with no reason', () => {
     expect(parseRun(tweak({ phase: 'defeat', hull: 0 }))).toBeNull();
     expect(parseRun(tweak({ phase: 'defeat', hull: 0, defeatReason: 'sunk', offer: undefined }))).not.toBeNull();

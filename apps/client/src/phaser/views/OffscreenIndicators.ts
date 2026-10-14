@@ -43,6 +43,8 @@ export class OffscreenIndicators {
     camera: Phaser.Cameras.Scene2D.Camera,
     targets: readonly IndicatorTarget[],
     insets: { top: number; bottom: number },
+    /** Device pixels per CSS pixel: the sizes below are in CSS pixels. */
+    uiScale = 1,
   ): void {
     const zoom = camera.zoom;
     const view = camera.worldView;
@@ -55,7 +57,7 @@ export class OffscreenIndicators {
       bottom: view.bottom - insets.bottom / zoom,
     };
     // Where indicators sit: inset from the visible edge, never inverted.
-    const inset = EDGE_MARGIN / zoom;
+    const inset = (EDGE_MARGIN * uiScale) / zoom;
     const safe = {
       left: visible.left + inset,
       right: Math.max(visible.left + inset, visible.right - inset),
@@ -82,7 +84,7 @@ export class OffscreenIndicators {
 
       item.container.setVisible(true);
       item.container.setPosition(x, y);
-      item.container.setScale(1 / zoom);
+      item.container.setScale(uiScale / zoom);
       item.arrow.setPosition(
         Math.cos(angle) * ARROW_DISTANCE,
         Math.sin(angle) * ARROW_DISTANCE,

@@ -83,6 +83,9 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
   ) {
     return null;
   }
+  if (s.battleStarted !== undefined && (s.battleStarted !== true || phase !== 'battle')) {
+    return null;
+  }
   if (phase === 'port') {
     if (node.kind !== 'port' || !Array.isArray(s.offer) || s.offer.length === 0) {
       return null;

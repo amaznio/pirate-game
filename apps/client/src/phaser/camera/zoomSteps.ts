@@ -6,12 +6,21 @@
  * every pixel is the same size.
  */
 
-/** Screen pixels per world pixel that stay crisp: whole numbers, and 1/n for zooming out. */
-export const SCREEN_SCALES: readonly number[] = [1 / 4, 1 / 3, 1 / 2, 1, 2, 3];
+/** Zooming out, a whole fraction: every art pixel is the same size, and the board can be shown whole on a small window. */
+export const ZOOM_OUT_SCALES: readonly number[] = [1 / 6, 1 / 4, 1 / 3, 1 / 2];
 
-/** All the zoom levels, smallest first, for a screen with `pixelRatio` device pixels per CSS pixel. */
+/** The most the art zooms in: this many CSS pixels per art pixel. */
+export const MAX_ART_SCALE = 3;
+
+/**
+ * All the zoom levels, smallest first, for a canvas drawn in device pixels on a
+ * screen with `pixelRatio` device pixels per CSS pixel (1 on an ordinary screen).
+ * A zoom is device pixels per art pixel, so whole numbers are crisp; there are
+ * enough of them to reach `MAX_ART_SCALE` CSS pixels per art pixel.
+ */
 export function zoomSteps(pixelRatio = 1): number[] {
-  return SCREEN_SCALES.map((scale) => scale / pixelRatio);
+  const whole = Math.max(1, Math.round(MAX_ART_SCALE * pixelRatio));
+  return [...ZOOM_OUT_SCALES, ...Array.from({ length: whole }, (_, index) => index + 1)];
 }
 
 /**
@@ -49,4 +58,28 @@ export function stepFrom(zoom: number, steps: readonly number[], direction: 1 | 
   const index = steps.indexOf(snapToStep(zoom, steps));
   const next = Math.min(steps.length - 1, Math.max(0, index + direction));
   return steps[next];
+}
+
+/**
+ * The steps a camera may use on a canvas of a given size. `coverFit` is the zoom
+ * at which the padded board fills the canvas, `containFit` the zoom at which the
+ * whole padded board still fits inside it.
+ *
+ * The board may not shrink to less than `minBoardShare` of the screen, so a big
+ * window has a few steps to choose from. But a small or short window (a phone on
+ * its side) must always be able to show the whole board, so the floor is also
+ * lowered to the largest step that does.
+ */
+export function cameraSteps(options: {
+  readonly pixelRatio: number;
+  readonly coverFit: number;
+  readonly containFit: number;
+  readonly minBoardShare: number;
+}): number[] {
+  const epsilon = 1e-6;
+  const steps = zoomSteps(options.pixelRatio);
+  const wholeBoard = steps.filter((zoom) => zoom <= options.containFit + epsilon).pop();
+  const shareFloor = options.coverFit * options.minBoardShare;
+  const floor = wholeBoard === undefined ? shareFloor : Math.min(shareFloor, wholeBoard);
+  return allowedSteps(steps, floor, steps[steps.length - 1]);
 }

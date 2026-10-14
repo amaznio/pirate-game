@@ -62,6 +62,12 @@ export interface RunState {
   readonly cannonDamage: number;
   readonly supplies: number;
 
+  /**
+   * Set once the fight at this stop has begun. A voyage found in this state when
+   * it is loaded was left mid-battle, which counts as a loss: reloading the page
+   * is not a way to retry a fight.
+   */
+  readonly battleStarted?: boolean;
   /** In a port: the upgrades on offer, until one is picked. */
   readonly offer?: readonly UpgradeId[];
   /** Every upgrade taken so far, in order. */
@@ -75,6 +81,8 @@ export type RunAction =
   | { readonly type: 'travel'; readonly to: string }
   | { readonly type: 'chooseUpgrade'; readonly upgrade: UpgradeId }
   | { readonly type: 'finishBattle'; readonly result: MatchResult }
+  /** The fight at the ship's stop has begun (and cannot be taken back). */
+  | { readonly type: 'startBattle' }
   /** The hero was sunk and left the fight before it ended. */
   | { readonly type: 'loseBattle' }
   | { readonly type: 'abandon' };

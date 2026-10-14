@@ -27,6 +27,7 @@ import {
 import { SHIP_CHOICES, shipBlurb, shipLabel } from './shipClasses';
 import { useStoredDifficulty } from './useStoredDifficulty';
 import { useStoredMapStyle } from './useStoredMapStyle';
+import { useStoredShip } from './useStoredShip';
 
 export interface QuickBattleSettings {
   opponents: number;
@@ -51,7 +52,7 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
   const [mapStyle, setMapStyle] = useStoredMapStyle();
   const [loot, setLoot] = useState(false);
   const [objective, setObjective] = useState<ObjectiveChoice>('standard');
-  const [yourShip, setYourShip] = useState(DEFAULT_SHIP_TYPE_ID);
+  const [yourShip, setYourShip] = useStoredShip();
   const [theirShip, setTheirShip] = useState(DEFAULT_SHIP_TYPE_ID);
   // Open on a wide screen, folded away on a phone.
   const [advancedOpen, setAdvancedOpen] = useState(desktop);

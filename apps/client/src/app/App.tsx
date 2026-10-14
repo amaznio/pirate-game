@@ -65,13 +65,24 @@ export default function App() {
   useEffect(() => () => runBattleRef.current?.dispose(), []);
 
   const startRunBattle = useCallback((setup: BattleSetup) => {
+    // From here the fight is saved as begun: leaving the page now loses it.
+    if (!runStore.getState().apply({ type: 'startBattle' })) {
+      return;
+    }
     setRunBattle(startOfflineMatch(setup.config));
   }, []);
 
-  /** The fight is over: hand its result to the voyage (a missing result counts as a loss) and go back to it. */
-  const endRunBattle = useCallback((result: MatchResult | null) => {
-    runBattleRef.current?.dispose();
+  /** The match has ended: the voyage takes its result at once (a missing one counts as a loss). */
+  const reportRunBattle = useCallback((result: MatchResult | null) => {
     runStore.getState().apply(result ? { type: 'finishBattle', result } : { type: 'loseBattle' });
+  }, []);
+
+  /** Back to the voyage. Leaving a fight that is still on (after being sunk) loses it. */
+  const leaveRunBattle = useCallback(() => {
+    if (runStore.getState().run?.phase === 'battle') {
+      runStore.getState().apply({ type: 'loseBattle' });
+    }
+    runBattleRef.current?.dispose();
     setRunBattle(null);
     setMenuStart('voyage');
   }, []);
@@ -122,8 +133,8 @@ export default function App() {
         client={runBattle.client}
         canRestart={false}
         // Leaving a fight after being sunk loses the voyage.
-        onExit={() => endRunBattle(null)}
-        runBattle={{ onFinished: endRunBattle }}
+        onExit={leaveRunBattle}
+        runBattle={{ onResult: reportRunBattle, onContinue: leaveRunBattle }}
       />
     );
   }

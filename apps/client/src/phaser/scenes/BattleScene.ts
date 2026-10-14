@@ -27,6 +27,7 @@ import { PlanPreviewView } from '../views/PlanPreviewView';
 import { PickupField } from '../views/PickupField';
 import { usePreviewSettings } from '../../store/previewSettings';
 import { getPhaserContext } from '../PhaserGame';
+import { pixelRatio } from '../pixelRatio';
 
 export class BattleScene extends Phaser.Scene {
   private views!: EntityViewRegistry;
@@ -109,6 +110,7 @@ export class BattleScene extends Phaser.Scene {
     this.cameraController = new BattleCameraController(this, worldWidth, worldHeight, {
       pixelSteps: currentArtStyle() === 'scallywag',
       reach: margin,
+      pixelRatio: pixelRatio(),
     });
     this.indicators = new OffscreenIndicators(this, (shipId) =>
       this.panToShip(shipId),
@@ -231,7 +233,9 @@ export class BattleScene extends Phaser.Scene {
       // Avatar floats just above the ship's bow, at a constant screen size.
       hud?.setVisible(true);
       const lift = view.ships[player.shipId] ? hudLift(view.ships[player.shipId]) : TILE_SIZE * 0.5;
-      hud?.place(ship.x, ship.y - lift - 20 / zoom, zoom);
+      // Screen-space sizes are in CSS pixels; the canvas is in device pixels.
+      const ui = pixelRatio();
+      hud?.place(ship.x, ship.y - lift - (20 * ui) / zoom, zoom / ui);
 
       targets.push({
         id: player.shipId,
@@ -242,7 +246,7 @@ export class BattleScene extends Phaser.Scene {
       });
     }
 
-    this.indicators.update(camera, targets, this.cameraController.getInsets());
+    this.indicators.update(camera, targets, this.cameraController.getInsets(), pixelRatio());
   }
 
   recenterOnPlayer(): void {

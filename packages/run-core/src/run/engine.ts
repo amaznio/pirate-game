@@ -105,9 +105,15 @@ export function applyAction(state: RunState, action: RunAction, specs: readonly 
       return chooseUpgrade(state, action.upgrade);
     case 'finishBattle':
       return finishBattle(state, action.result, specs);
+    case 'startBattle':
+      return state.phase !== 'battle'
+        ? fail('There is no battle to start')
+        : state.battleStarted
+          ? fail('The battle has already started')
+          : ok({ ...state, battleStarted: true }, []);
     case 'loseBattle':
       return state.phase === 'battle'
-        ? ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk' }, [{ type: 'defeat', reason: 'sunk' }])
+        ? ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk', battleStarted: undefined }, [{ type: 'defeat', reason: 'sunk' }])
         : fail('There is no battle to leave');
   }
 }
@@ -201,7 +207,9 @@ function finishBattle(
   const hero = result.ships.find((ship) => ship.playerId === setup.heroPlayerId);
   const won = hero !== undefined && result.outcome.kind === 'win' && result.outcome.teamId === hero.teamId && hero.afloat;
   if (!hero || !won) {
-    return ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk' }, [{ type: 'defeat', reason: 'sunk' }]);
+    return ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk', battleStarted: undefined }, [
+      { type: 'defeat', reason: 'sunk' },
+    ]);
   }
 
   const cap = cargoCapFor(state.hullLevel);
@@ -212,6 +220,7 @@ function finishBattle(
     ammo: Math.max(0, hero.ammo),
     supplies: Math.min(cap, state.supplies + reward),
     battlesWon: state.battlesWon + 1,
+    battleStarted: undefined,
   };
   const events: RunEvent[] = [
     { type: 'battleWon', kind: setup.kind, suppliesGained: afterFight.supplies - state.supplies },

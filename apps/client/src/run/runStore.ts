@@ -63,6 +63,15 @@ export function createRunStore(storage: RunStorage | null = browserStorage()): S
   } catch {
     saved = null;
   }
+  // A voyage found in the middle of a fight was left in the middle of it, which
+  // counts as a loss: reloading the page is not a way to retry the battle.
+  if (saved?.phase === 'battle' && saved.battleStarted) {
+    const forfeit = applyAction(saved, { type: 'loseBattle' });
+    if (forfeit.ok) {
+      saved = forfeit.state;
+      save(saved);
+    }
+  }
 
   return createStore<RunStoreState>((set, get) => ({
     run: saved,

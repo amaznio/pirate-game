@@ -61,6 +61,31 @@ describe('the run store', () => {
     expect(store.getState().run).toBe(before);
   });
 
+  it('counts a voyage left in the middle of a fight as lost when it is loaded again', () => {
+    const storage = memoryStorage();
+    const store = createRunStore(storage);
+    store.getState().start(5);
+    // Sail to the first fight and begin it.
+    store.getState().apply({ type: 'chooseUpgrade', upgrade: store.getState().run!.offer![0]! });
+    for (let guard = 0; guard < 40 && store.getState().run!.phase !== 'battle'; guard += 1) {
+      store.getState().apply({ type: 'travel', to: availableMoves(store.getState().run!)[0]!.id });
+      if (store.getState().run!.phase === 'port') {
+        store.getState().apply({ type: 'chooseUpgrade', upgrade: store.getState().run!.offer![0]! });
+      }
+    }
+    expect(store.getState().run!.phase).toBe('battle');
+
+    // Loaded before the fight began: the fight is still there to play.
+    expect(createRunStore(storage).getState().run!.phase).toBe('battle');
+
+    expect(store.getState().apply({ type: 'startBattle' })).toBe(true);
+    const reloaded = createRunStore(storage).getState().run!;
+    expect(reloaded.phase).toBe('defeat');
+    expect(reloaded.defeatReason).toBe('sunk');
+    // And that is saved, so loading again gives the same answer.
+    expect(createRunStore(storage).getState().run!.phase).toBe('defeat');
+  });
+
   it('keeps a finished voyage until it is thrown away', () => {
     const storage = memoryStorage();
     const store = createRunStore(storage);

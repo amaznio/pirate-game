@@ -1,12 +1,9 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../Grid';
 import { panPadding } from './panPadding';
-import { allowedSteps, snapToStep, stepFrom, zoomSteps } from './zoomSteps';
+import { cameraSteps, snapToStep, stepFrom } from './zoomSteps';
 
 const MAX_ZOOM = 2.5;
-
-/** The pixel art zooms in as far as 3 screen pixels per art pixel. */
-const MAX_PIXEL_ZOOM = 3;
 
 /** Zoomed right out, the padded board still takes this share of the screen's longer side. */
 const MIN_BOARD_SHARE = 0.4;
@@ -22,6 +19,12 @@ export interface CameraOptions {
   readonly pixelSteps?: boolean;
   /** How far past the board the sea is drawn, in world pixels (the most the camera may scroll out). */
   readonly reach?: number;
+  /**
+   * Device pixels per CSS pixel. The canvas is drawn in device pixels, so a zoom
+   * is device pixels per world pixel; the camera starts at one CSS pixel per art
+   * pixel and may zoom in to three. 1 on an ordinary screen.
+   */
+  readonly pixelRatio?: number;
 }
 
 /** How far past the board edge the camera may pan (world pixels). */
@@ -45,6 +48,7 @@ export class BattleCameraController {
   private wheelTravel = 0;
   private readonly pixelSteps: boolean;
   private readonly reach: number;
+  private readonly pixelRatio: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -54,8 +58,12 @@ export class BattleCameraController {
   ) {
     this.pixelSteps = options.pixelSteps ?? false;
     this.reach = Math.max(CAMERA_PAD, options.reach ?? CAMERA_PAD);
+    this.pixelRatio = Math.max(1, options.pixelRatio ?? 1);
     this.camera = scene.cameras.main;
     this.camera.roundPixels = this.pixelSteps;
+    // Start where the art is one CSS pixel per art pixel (the nearest step to it).
+    this.camera.setZoom(this.pixelRatio);
+    this.rawZoom = this.pixelRatio;
     this.applyBounds();
     scene.scale.on('resize', this.refit, this);
     this.refit();
@@ -147,17 +155,30 @@ export class BattleCameraController {
    * choose from rather than the one that happens to fill it.
    */
   private steps(): number[] {
-    return allowedSteps(zoomSteps(), this.fitZoom() * MIN_BOARD_SHARE, MAX_PIXEL_ZOOM);
+    return cameraSteps({
+      pixelRatio: this.pixelRatio,
+      coverFit: this.fitZoom(),
+      containFit: this.containZoom(),
+      minBoardShare: MIN_BOARD_SHARE,
+    });
+  }
+
+  /** Zoom at which the whole padded board just fits inside the viewport. */
+  private containZoom(): number {
+    return Math.min(
+      this.camera.width / (this.worldWidth + CAMERA_PAD * 2),
+      this.camera.height / (this.worldHeight + CAMERA_PAD * 2),
+    );
   }
 
   /** The smallest zoom allowed. */
   private minZoom(): number {
-    return this.pixelSteps ? this.steps()[0] : Math.min(this.fitZoom(), MAX_ZOOM);
+    return this.pixelSteps ? this.steps()[0] : Math.min(this.fitZoom(), MAX_ZOOM * this.pixelRatio);
   }
 
   /** The biggest zoom allowed. */
   private maxZoom(): number {
-    return this.pixelSteps ? this.steps()[this.steps().length - 1] : MAX_ZOOM;
+    return this.pixelSteps ? this.steps()[this.steps().length - 1] : MAX_ZOOM * this.pixelRatio;
   }
 
   /** Re-applies the zoom floor after the viewport changes size. */

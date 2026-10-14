@@ -247,11 +247,18 @@ CRLF/timestamp artefact, `git add` clears it.
 2. **Phase 6** (battle objectives; all done, see ROADMAP.md) and onward: a client-only solo run (`run-core`), Postgres, monsters. First
    have the user look at Loot in play and tune `PICKUP_EFFECTS`, `PICKUP_COUNT`
    and the sprites.
-3. Known loose ends: the menu's ship choice does not carry into an online lobby
-   (it starts on Sloop); the token tray's held/cap figure was not seen; the
-   canvas is not sized to the device pixel ratio (blur on sharp screens); the
-   smallest zoom step on a small window may not show the whole board; Hard AI
-   barely beats Easy on generated boards.
+3. Known loose ends: the token tray's held/cap figure was not seen; Hard AI
+   barely beats Easy on generated boards. (Fixed since: the ship choice is
+   remembered and applied in an online lobby, `ui/menu/useStoredShip.ts`; the
+   board canvas is drawn in device pixels, `phaser/pixelRatio.ts`, with ship
+   avatars and edge arrows scaled to match and zoom steps counted in device
+   pixels; a smaller zoom step, 1/6, lets a small or short window show the whole
+   board; reloading mid-battle in a voyage counts as a loss.)
+   Not seen on a real sharp screen: the pane's pixel ratio could only be faked
+   (`Object.defineProperty(window, 'devicePixelRatio', ...)` before the match
+   starts); canvas size, drag and zoom behaved as expected. The smallest zoom
+   step ignores the HUD and planning sheet when working out whether the board
+   fits, so on a very short window a strip of its edge can sit behind the sheet.
 4. **i18n follow-ups:** the Spanish and Polish catalogs are machine-drafted and
    want a speaker's review; more languages are a `locales/<code>.json` plus a
    `LANGUAGES` entry (see the i18n note above); only the menu and one offline

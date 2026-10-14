@@ -901,9 +901,12 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
         checked the game-over, Continue, map, refresh and abandon paths by setting
         the game's store to a finished state), the screens at phone width, and the
         Spanish and Polish texts (machine-drafted).
-      - **Known:** refreshing the page during a battle, before pressing Continue,
-        replays the battle (the voyage is only changed when the result is
-        handed in), so a lost fight can be retried by reloading.
+      - **Reload is not a retry (fixed after slice D):** setting sail on a battle
+        applies a `startBattle` step that is saved (`RunState.battleStarted`). A
+        voyage loaded with that mark set was left mid-fight and counts as lost
+        (`createRunStore` applies `loseBattle`). The result is applied the moment
+        the match ends (`GameScreen`'s `runBattle.onResult`), not when Continue is
+        pressed, so reloading at the victory dialog cannot cost a win.
 - [ ] E. Balance harness: the AI plays whole runs offline, to tune supply costs,
       rewards, upgrade strength, port counts, area sizes and difficulty by
       completion rate, and measures how long a run takes, before the user plays it.

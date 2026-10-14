@@ -25,8 +25,12 @@ interface GameScreenProps {
   disconnected?: boolean;
   /** A short message to show for a moment (e.g. a plan the server refused). */
   notice?: string | null;
-  /** A battle of the solo voyage: the game-over dialog hands the result back instead of offering a restart. */
-  runBattle?: { onFinished: (result: MatchResult | null) => void };
+  /**
+   * A battle of the solo voyage. `onResult` is called once, as soon as the match
+   * has ended, so the voyage has its result even if the page is closed before the
+   * player presses Continue; `onContinue` then takes them back to the voyage.
+   */
+  runBattle?: { onResult: (result: MatchResult | null) => void; onContinue: () => void };
 }
 
 /** Catalog keys for the short messages shown over the board. */
@@ -70,6 +74,17 @@ export function GameScreen({
     }
   }, [spectating]);
   const restart = useGameUIStore((state) => state.restart);
+
+  // A voyage battle hands its result over the moment the match ends.
+  const runBattleRef = useRef(runBattle);
+  runBattleRef.current = runBattle;
+  const reportedRef = useRef(false);
+  useEffect(() => {
+    if (status === 'game_over' && !reportedRef.current && runBattleRef.current) {
+      reportedRef.current = true;
+      runBattleRef.current.onResult(matchResult);
+    }
+  }, [status, matchResult]);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -177,7 +192,7 @@ export function GameScreen({
           canRestart={canRestart}
           onRestart={restart}
           onExit={onExit}
-          {...(runBattle ? { onContinue: () => runBattle.onFinished(matchResult) } : {})}
+          {...(runBattle ? { onContinue: runBattle.onContinue } : {})}
         />
       )}
     </div>

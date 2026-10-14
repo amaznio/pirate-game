@@ -59,6 +59,9 @@ export function playWithWins(start: RunState, pickUpgrade: (state: RunState) => 
       const next = moves.find((node) => node.kind === 'port') ?? moves[0]!;
       state = step(state, { type: 'travel', to: next.id }).state;
     } else {
+      // The fight begins (and is saved as begun), then it is won.
+      state = step(state, { type: 'startBattle' }).state;
+      seen.push(state);
       state = step(state, { type: 'finishBattle', result: winningResult(state) }).state;
     }
     seen.push(state);

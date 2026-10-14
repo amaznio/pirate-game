@@ -154,6 +154,26 @@ describe('the path through an area', () => {
   });
 });
 
+describe('starting a battle', () => {
+  const inBattle = (): RunState => ({ ...startRun(SEED), phase: 'battle', offer: undefined });
+
+  it('marks the fight as begun, once, and only at a fight', () => {
+    expect(applyAction(startRun(SEED), { type: 'startBattle' }).ok).toBe(false);
+    const begun = step(inBattle(), { type: 'startBattle' });
+    expect(begun.state.battleStarted).toBe(true);
+    expect(begun.state.phase).toBe('battle');
+    expect(applyAction(begun.state, { type: 'startBattle' }).ok).toBe(false);
+  });
+
+  it('is cleared when the fight ends, whichever way', () => {
+    const begun = step(inBattle(), { type: 'startBattle' }).state;
+    const won = step(begun, { type: 'finishBattle', result: winningResult(begun) }).state;
+    expect(won.battleStarted).toBeUndefined();
+    expect(step(begun, { type: 'finishBattle', result: losingResult(begun) }).state.battleStarted).toBeUndefined();
+    expect(step(begun, { type: 'loseBattle' }).state.battleStarted).toBeUndefined();
+  });
+});
+
 describe('leaving a battle after being sunk', () => {
   it('ends the run as sunk, but only from a battle', () => {
     const run = startRun(SEED);
