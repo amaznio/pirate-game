@@ -20,6 +20,7 @@
     "test:watch": "pnpm --filter @pirate/game-core test:watch",
     "typecheck": "pnpm -r typecheck",
     "harness": "pnpm --filter @pirate/game-core harness",
-    "smoke": "pnpm --filter @pirate/server smoke"
+    "smoke": "pnpm --filter @pirate/server smoke",
+    "harness:run": "pnpm --filter @pirate/run-core harness"
   }
 }

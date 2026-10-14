@@ -907,6 +907,54 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
 - [ ] E. Balance harness: the AI plays whole runs offline, to tune supply costs,
       rewards, upgrade strength, port counts, area sizes and difficulty by
       completion rate, and measures how long a run takes, before the user plays it.
+      **The harness is built; the tuning is not done** (it needs the user's
+      targets, see "What the harness found" below).
+      - `pnpm harness:run [--runs N] [--areas K] [--skill easy|normal|hard|matched]
+        [--scripted] [--playon] [--route smart|first|random] [--seed0 N]
+        [--json file] [--quiet]` (`packages/run-core/scripts/harness.ts`, with the
+        bot in `src/sim/`: `botPlayer.ts`, `policies.ts`, `summary.ts`). A bot plays
+        whole voyages on the real maps. Battles are real AI-versus-AI matches
+        (`runMatch`), with the hero piloted by the AI at a fixed level or `matched`
+        (as good as the enemy it faces, the default). `--scripted` skips fighting
+        (every battle won at a hull cost that grows with depth) to measure the
+        economy and the length on their own. `--playon` records a lost battle and
+        carries on, so every battle is measured and not only the ones the bot
+        survives to reach. The bot is a yardstick, not a person: an AI pilot is
+        worse than a person, and a draw counts as a loss, so read the numbers as
+        better or worse than before, over the same seeds.
+      - **What the harness found (the first numbers, before any tuning; 6 voyages
+        of 5 areas, seeds 1 to 6):**
+        - **Length:** 65 legs and 46 battles a run (about 300 turns of fighting).
+          That is a very long voyage: at half a minute a turn it is several hours.
+        - **Supplies never bind:** the hold averaged 14.5 as a leg began and never
+          fell below 8; no leg ever starved. Rewards and port restocks outrun the
+          cost of the legs, so supplies add no tension yet.
+        - **Upgrades max out early:** 24 picks a run (one per port), but a fully
+          grown ship needs only 12 (hull level 6, 3 cannons, +3 damage). Every run
+          met the area 2 boss to the area 5 boss as a Galleon, so the later areas
+          bring nothing new to the ship; the other picks are filler.
+        - **Fights get harder than the upgrades can answer:** with a pilot as good
+          as the enemy (draws are rare, 0 to 8 per cent), the win rate was 50 per
+          cent in area 1 and fell to 46, 25, 28 and 17 per cent over the next four
+          areas (boss 13 per cent, ambush 19, salvage 12). Easing the enemy (at most
+          two ships, bigger ships later, a softer AI) only moved it to 50, 40, 29,
+          38 and 26 per cent, so it is not only the enemy fleet. Upgrades hardly tilt
+          an even fight for the bot (area 1 stays near 50 per cent). The bot may not
+          make use of cannons and damage the way a person would, and ammo (3 to 5
+          cannonballs, 1 reloaded a turn) may be the real limit on a ship with
+          three cannons a side.
+        - **A lost battle ends the run, over about 46 battles.** With that rule a
+          run is only completed if nearly every fight is won: at 95 per cent a
+          battle, 46 battles give a completion rate of about 9 per cent. Most
+          ordinary fights have to be close to safe for a good player, and the real
+          danger has to sit in the bosses and ambushes.
+      - **To decide with the user before tuning:** how often a good player should
+        complete a run (and so how safe an ordinary fight should be); whether the
+        voyage should be shorter than 46 battles; whether supplies should bind (a
+        harsher starvation, or smaller rewards and restocks); whether the upgrade
+        ladder should stretch over five areas (a higher hull cap, more cannon and
+        damage levels, or a pool that offers fewer filler picks); and a play test
+        by the user, since the bot cannot say how the fights feel.
 - [ ] F. Docs: this file and the handoff.
 
 **Open questions.**

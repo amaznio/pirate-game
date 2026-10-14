@@ -277,8 +277,13 @@ matches; `game-core` knows nothing of runs). Done so far:
   battle briefing, end screens), and `App.tsx` / `GameScreen` run a voyage battle
   and hand its `MatchResult` back (`GameScreen`'s `runBattle` prop). You play a
   voyage from Play, then the Voyage tile ("New voyage" or "Continue voyage").
-Next: **E** (a balance harness: the AI plays whole runs, to tune supplies, rewards,
-ports, run length and difficulty) and **F** (docs). Not yet seen in a browser: a
+- **E (harness built, tuning not done):** `pnpm harness:run` (see the header of
+  `packages/run-core/scripts/harness.ts` for the options; `--scripted` measures
+  the economy and length, `--playon` measures every battle). The first numbers
+  are in ROADMAP.md slice E: the voyage is about 46 battles, supplies never bind,
+  the ship maxes out by area 2, and a matched AI pilot wins 50 per cent of fights
+  in area 1 falling to 17 per cent in area 5. Tuning needs the user's targets.
+Next: tune with the user (slice E), then **F** (docs). Not yet seen in a browser: a
 voyage battle played to a real win or loss, and the voyage screens at phone width.
 Known open issues for E: a scripted always-win run is about 65 legs and 45 to 49
 battles and never runs short of supplies, so supplies add no tension and the run
