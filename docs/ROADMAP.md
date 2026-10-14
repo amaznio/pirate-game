@@ -702,24 +702,162 @@ what makes a node on the voyage map a particular kind of battle.
 merchant speed and route length); whether a salvage target should scale with the
 number of players; how the merchant picks its route on a board with rocks.
 
-### 7. Solo run, client only: `todo`
-Map art: islands, shallow water, docks for ports, fort pieces for fortress nodes.
-New pure `packages/run-core`: seeded node graph, supplies, ports, 1-of-3
-upgrades, boss, starvation at zero. Progress kept in `localStorage`.
+### 7. Solo run, client only: `todo` (planned, agreed with the user)
+A solo run: a seeded route map where every battle node is an existing skirmish
+with a phase 6 objective. Hull, cannonballs and upgrades carry from fight to
+fight, ports repair and offer upgrades, and supplies limit how far you can
+sail. It lives in a new pure package, `packages/run-core`; the client saves a run
+in `localStorage`. No server. `game-core` never learns about runs.
 
-**Node types (proposal, to settle when planning this phase).** Each battle node
-carries a phase 6 objective; `run-core` builds the battle's `MatchConfig` from
-the node and reads the `MatchResult` afterwards.
-- Skirmish: the classic fight. Merchant: sink the cargo ship for supplies.
-  Salvage: a race for cargo, suited to a supply-starved run. Survive: hold out N
-  turns on dangerous water. Ambush: harder, with a better reward.
-- Port: no battle; repair, restock, pick 1 of 3 upgrades. Fortress, boss and hunt
-  nodes arrive with the fort art and the phase 9 monsters.
-- Carry-over (phase 5) is what makes it a run: hull, cannonballs and upgrades
-  (such as the cannon damage modifier) go from battle to battle; tokens reset.
-- Open design questions: what each objective pays out (supplies, an upgrade
-  choice, repairs) and what losing a battle costs (ends the run, or costs
-  supplies and hull and carries on).
+Map art: islands, shallow water, docks for ports, fort pieces for fortress nodes.
+
+**Decided with the user.**
+- **Losing a battle ends the run** (roguelite). A draw (mutual destruction)
+  counts as a loss.
+- **Every run starts in a Sloop**, so there is no ship pick screen. The ship
+  grows through the run by upgrades (see "How the ship grows" below).
+- **A long run made of 5 areas** (to start). Each area is its own route graph
+  that ends in a boss; beating the boss opens a **new, bigger area graph** with
+  more nodes and its own boss at the end. Beating the fifth boss wins the run.
+  There are **plenty of ports and extra nodes**, enough to give the player
+  enough upgrades over the run (not necessarily a new ship class before each
+  boss). See "Areas" below. Exact sizes are tuned by the harness
+  (slice E), not fixed here.
+- **The hull thresholds and the starting formula under "How the ship grows" are
+  accepted as the starting point**: the user will see how they play out and
+  adjust later.
+- **The upgrade list below is accepted**, with the changes under "How the ship
+  grows". The pool is bigger than one run uses, and a port offers 1 of 3 drawn
+  from it.
+- Entry: the Voyage tile on Choose a mode opens "New voyage" or "Continue
+  voyage" (the screen from the UI work in `ui/voyage/VoyagePreviewScreen.tsx`,
+  which today shows illustrative data). Starting a run goes straight to the map.
+
+
+**How the ship grows (decided with the user).** The run starts with the Sloop's
+hull and **hull upgrades step the ship up through the classes**, so the Sloop
+becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
+**Cannons come from upgrades**, not from the class.
+- **Hull level.** `run-core` keeps a hull level, 0 at the start. Each "reinforce
+  hull" upgrade adds one: +1 maximum hull and +1 hull now. The level picks the
+  ship class (its sprite, token economy, supply use and cargo cap): Sloop until a
+  first threshold, Brigantine until a second, then Galleon. Starting thresholds,
+  to be tuned by the harness: Brigantine at level 2, Galleon at level 4, the
+  ladder capped at level 6. The player gets a clear "your Sloop is refitted as a
+  Brigantine" moment at each step. The three classes are the three hull sprites
+  we have.
+- **Carried hull.** The maximum hull is an absolute value set by the run
+  (`4 + level` as a starting guess), not the class's own `maxHp`, so growth is
+  gradual inside a class and the step in class does not make hull jump.
+- **Cannons.** A ship in a run starts with one cannon on each broadside whatever
+  its class, and "add a cannon" upgrades raise that count (cap 3, the Galleon's
+  number). The class's own cannon count is ignored for the hero in a run; ammo and
+  reload still follow the class.
+- **A real tradeoff.** A bigger class costs more supplies per leg (Sloop 1,
+  Brigantine 2, Galleon 3) but holds more (8, 12, 18), so growing makes the
+  voyage hungrier. Slice E must make the supply economy work for that.
+- **Game-core changes this needs** (slice C, optional fields only, so defaults and
+  golden snapshots do not change): carry-over gains an absolute `maxHull` and a
+  `cannonsPerSide`, read where the ship and its weapons are built
+  (`createGame.ts`), and carried through the view so the HUD draws the right
+  number of cannon toggles. The client also needs the new class sprite when the
+  `shipTypeId` changes between battles.
+- **Boss.** It is built from the same pieces (a class plus carry-over hull and
+  cannons for the AI ship), so it can out-class a fully upgraded hero.
+
+**Areas (decided with the user: 5 graphs to start).**
+- A run is an ordered list of areas. Each area is a seeded layered graph (derived
+  from the run seed and the area number) that starts at a landfall and ends at its
+  boss. The ship, its upgrades, hull, ammo and supplies all carry on from one
+  area to the next.
+- Each area is **bigger than the one before**: starting guess of 10, 12, 14, 16
+  and 18 layers, one to three nodes per layer. The number of areas, the layer
+  counts and the mix of node kinds are configuration, not code, so a playtest
+  can run one or two areas.
+- **Ports are frequent and placed on purpose**: the first node of an area is a
+  landfall port (free repair and a supply restock after the last boss), a port
+  sits one layer before the boss so the ship can always be repaired and upgraded
+  before that fight, and more ports are spread through the middle. Slice E sets
+  the counts so a run offers enough upgrades overall; reaching a new ship class
+  before a given boss is not required.
+- **Difficulty and look rise by area:** the sea style steps from calm toward
+  stormy, wind and whirlpools appear later, and enemy class, count and AI level
+  rise within and across areas.
+- **Bosses:** one per area. In v1 each is a Galleon flagship with escorts under
+  the ambush rules, stronger each time (carry-over hull and cannons for the AI
+  ship); the Kraken and other monsters replace or join them in phase 9.
+- **Length:** five areas is a long run (dozens of battles). The save must work
+  across sessions (a run is resumed, not restarted), and slice E measures how long
+  a run takes so the layer counts can be cut if it is too long.
+
+**Design.**
+- **Map:** a layered graph, per area:, one or two nodes per layer, and the player picks a
+  path. `run-core` models it as a generic graph (nodes with coordinates, edges
+  with a cost, region tags) so bigger maps, nested graphs or a grid sea can feed
+  it later. Generation is seeded and pure; every node can be reached from the
+  start and every path ends at the area's boss.
+- **Supplies:** one number. A route edge costs the ship class's `supplyUse`
+  (sloop 1, brigantine 2, galleon 3); the hold holds at most `cargoCap` (8, 12,
+  18). A run starts full. At zero, each leg costs 1 hull instead of ending the
+  run. No gold in this phase: ports restock supplies directly, and gold waits for
+  the phase 8 hub shop.
+- **Node types:** start; battle (standard, merchant, salvage, survive, ambush);
+  port (including each area's landfall); boss. Fortress and hunt nodes arrive
+  with the fort art and phase 9.
+- **Battle node:** `run-core` builds the `MatchConfig` from the node (objective,
+  sea, enemy class and count, AI level) plus the hero's `carryOver` (hull, ammo,
+  modifiers), then reads the `MatchResult` afterwards. AI level and enemy class
+  rise with depth, easy to hard.
+- **Rewards:** winning pays supplies by objective, a merchant kill the most.
+  Upgrades come only from ports.
+- **Port:** repair some hull, restock some supplies, and pick 1 of 3 upgrades. A
+  landfall port gives a larger repair and restock.
+- **Upgrade pool (v1):** reinforce hull (the ship grows, see below), add a cannon
+  to each broadside, cannon damage +1 (stacks; the `cannonDamage` modifier
+  exists), +3 cannonballs, repair 2 hull, +4 supplies. More kinds can join the
+  pool in slice B or C without changing the shape: a bigger cargo cap, extra
+  tokens.
+- **Saving:** one active run, in a versioned `localStorage` key; resume or
+  abandon. The run seed is stored (so a shareable or daily seed can come later).
+- **Rules that always apply:** carry-over is only set by `run-core` (no URL,
+  lobby option or socket can set it, as in phase 5), and the run engine is pure
+  and deterministic for a given seed.
+
+**Slices, in order (none started).**
+- [ ] A. `run-core` skeleton: package setup, the seeded graph generator for an area
+      (size, port placement, boss at the end), the list of areas, and tests for
+      determinism, reachability from start to boss, a port before every boss, and
+      growing size.
+- [ ] B. Run state and rules: pure reducers for start, travel (supplies and
+      starvation), building a node's battle config, applying a result, port
+      actions, the move from one area to the next, win or lose, and serialising
+      the state for the save.
+- [ ] C. Small `game-core` additions, optional fields only: carry-over `maxHull`
+      and `cannonsPerSide` (read in `createGame.ts` and shown in the view and
+      HUD), and a boss config helper.
+- [ ] D. Client: a run store, the real Voyage screen (one area at a time, with
+      the area number) replacing the preview's illustrative data, a node card, the
+      Port screen, an area-cleared screen, and a hook in
+      `GameScreen` so a run's game-over shows Continue (or Abandon after a loss)
+      instead of Sail again.
+- [ ] E. Balance harness: the AI plays whole runs offline, to tune supply costs,
+      rewards, upgrade strength, port counts, area sizes and difficulty by
+      completion rate, and measures how long a run takes, before the user plays it.
+- [ ] F. Docs: this file and the handoff.
+
+**Open questions.**
+- **How many upgrades a run gives** is now settled by ports and nodes rather than
+  by picks per port (the user chose more ports and more nodes, one pick each).
+  Slice E checks that this gives enough upgrades over the whole run, and that five
+  areas do not give so many that the ship is maxed out far too early. A new class
+  before each boss is not a goal.
+- Whether the run's hull thresholds and ladder cap (starting values accepted)
+  leave room for growth across five areas, or whether the later areas need more
+  hull levels or a class above the Galleon.
+- Exactly how much each objective pays and how much a port restocks (slice E
+  answers this with numbers).
+- Whether a run can be abandoned from the map at any time without penalty (the
+  default assumed here).
 
 ### 8. Postgres persistence: `todo`
 Profile, run history, unlocks, hub shop. Anonymous accounts with a secret token.
