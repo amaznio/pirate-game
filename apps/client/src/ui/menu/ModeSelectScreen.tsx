@@ -2,6 +2,7 @@ import { Anchor, Compass, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ScreenFrame } from '@/kit/ScreenFrame';
 import { Tile } from '@/kit/Tile';
+import { useRun } from '../../run/runStore';
 
 interface ModeSelectScreenProps {
   onBack: () => void;
@@ -10,9 +11,11 @@ interface ModeSelectScreenProps {
   onVoyage: () => void;
 }
 
-/** Pick a mode: the main action (Quick battle) comes first and largest; Voyage, still a preview, last. */
+/** Pick a mode: the main action (Quick battle) comes first and largest; Voyage last. */
 export function ModeSelectScreen({ onBack, onQuickBattle, onFriends, onVoyage }: ModeSelectScreenProps) {
   const { t } = useTranslation();
+  // A voyage that is still going on can be carried on; a finished one starts over.
+  const ongoing = useRun((state) => state.run !== null && state.run.phase !== 'victory' && state.run.phase !== 'defeat');
   return (
     <ScreenFrame title={t('menu.chooseMode')} onBack={onBack}>
       <div className="grid gap-4 md:grid-cols-3">
@@ -36,8 +39,7 @@ export function ModeSelectScreen({ onBack, onQuickBattle, onFriends, onVoyage }:
           icon={<Compass />}
           title={t('menu.voyage')}
           blurb={t('menu.voyageBlurb')}
-          badge={t('menu.comingSoon')}
-          cta={t('voyage.preview')}
+          cta={ongoing ? t('voyage.continue') : t('voyage.new')}
           onClick={onVoyage}
         />
       </div>

@@ -2,6 +2,7 @@ import { LocateFixed } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameClient } from '@pirate/game-core/client/GameClient';
+import type { MatchResult } from '@pirate/game-core/domain/MatchResult';
 import { Button } from '@/components/ui/button';
 import { createPhaserGame, type PhaserHandle } from '../phaser/PhaserGame';
 import { bindGameClient, useGameUIStore } from '../store/useGameUIStore';
@@ -24,6 +25,8 @@ interface GameScreenProps {
   disconnected?: boolean;
   /** A short message to show for a moment (e.g. a plan the server refused). */
   notice?: string | null;
+  /** A battle of the solo voyage: the game-over dialog hands the result back instead of offering a restart. */
+  runBattle?: { onFinished: (result: MatchResult | null) => void };
 }
 
 /** Catalog keys for the short messages shown over the board. */
@@ -42,6 +45,7 @@ export function GameScreen({
   onExit,
   disconnected = false,
   notice = null,
+  runBattle,
 }: GameScreenProps) {
   const { t } = useTranslation();
   // Point the UI at this match before anything below reads from the store.
@@ -56,6 +60,7 @@ export function GameScreen({
   const status = useGameUIStore((state) => state.status);
   const result = useGameUIStore((state) => state.result);
   const note = useGameUIStore((state) => state.endNote);
+  const matchResult = useGameUIStore((state) => state.battle);
   const spectating = useGameUIStore((state) => state.spectating);
   // Told once per sinking; it comes back only if the player is afloat again.
   const [sunkDismissed, setSunkDismissed] = useState(false);
@@ -172,6 +177,7 @@ export function GameScreen({
           canRestart={canRestart}
           onRestart={restart}
           onExit={onExit}
+          {...(runBattle ? { onContinue: () => runBattle.onFinished(matchResult) } : {})}
         />
       )}
     </div>

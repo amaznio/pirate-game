@@ -343,8 +343,6 @@
     "ambushProgress": "Raiders: {{afloat}} afloat, {{coming}} on the way · turn {{turn}} of {{turns}}"
   },
   "voyage": {
-    "preview": "Preview",
-    "previewBanner": "Voyage is coming soon. This is a preview of the map.",
     "supplies": "Supplies",
     "hull": "Hull",
     "cannonballs": "Cannonballs",
@@ -359,6 +357,80 @@
     "cleared": "cleared",
     "here": "you are here",
     "locked": "locked",
-    "notTaken": "not taken"
+    "notTaken": "in reach",
+    "new": "New voyage",
+    "continue": "Continue voyage",
+    "introBlurb": "Sail a Sloop across five seas. Win battles, mend your ship at ports and grow it with upgrades. Lose a battle and the voyage is over.",
+    "area": "Area {{n}} of {{total}}",
+    "abandon": "Abandon voyage",
+    "abandonTitle": "Abandon this voyage?",
+    "abandonBody": "Your ship and everything you have earned will be lost.",
+    "keepSailing": "Keep sailing",
+    "chooseNext": "Choose where to sail next",
+    "sailHere": "Sail here",
+    "cancel": "Cancel",
+    "legCost_one": "The leg costs {{count}} supply.",
+    "legCost_other": "The leg costs {{count}} supplies.",
+    "willStarve": "Not enough supplies: the hull will take 1 damage.",
+    "landfall": "Landfall",
+    "portArrival": "You reach {{name}}.",
+    "repaired": "Hull mended: +{{count}}",
+    "restocked": "Supplies: +{{count}}",
+    "reloaded": "Cannonballs restocked: +{{count}}",
+    "chooseUpgrade": "Choose an upgrade",
+    "takeUpgrade": "Take upgrade",
+    "briefingTitle": "Battle ahead",
+    "bossBattle": "Boss battle",
+    "bossBlurb": "A flagship guards these waters. Sink it to sail on.",
+    "youSail": "You sail",
+    "against": "Against",
+    "cannonsSide_one": "{{count}} cannon a side",
+    "victoryTitle": "Voyage complete!",
+    "victoryBody": "You beat the last boss and crossed every sea.",
+    "defeatTitle": "Voyage over",
+    "defeatReason": {
+      "sunk": "Your ship was sunk.",
+      "starved": "The hold ran dry and the ship went down.",
+      "abandoned": "You abandoned the voyage."
+    },
+    "statBattles": "Battles won",
+    "statLegs": "Legs sailed",
+    "statUpgrades": "Upgrades",
+    "statArea": "Area reached",
+    "statShip": "Final ship",
+    "mainMenu": "Main menu",
+    "seeResult": "See the result",
+    "eventStarved": "The hold ran dry: hull -{{count}}.",
+    "eventBattleWon": "Victory! Supplies: +{{count}}.",
+    "eventAreaCleared": "Area {{n}} cleared!",
+    "eventRefit": "Your {{from}} is refitted as a {{to}}!",
+    "eventUpgraded": "Upgrade taken: {{name}}.",
+    "upgrades": {
+      "reinforceHull": {
+        "name": "Reinforce the hull",
+        "blurb": "+1 maximum hull and mend 1. A big enough hull refits your ship as a larger class."
+      },
+      "addCannon": {
+        "name": "Add a cannon",
+        "blurb": "+1 cannon on each side."
+      },
+      "cannonDamage": {
+        "name": "Heavier shot",
+        "blurb": "Every cannon hits for +1 damage."
+      },
+      "cannonballs": {
+        "name": "Powder store",
+        "blurb": "+2 cannonballs now, and in every restock."
+      },
+      "repair": {
+        "name": "Carpenter",
+        "blurb": "Mend 2 hull."
+      },
+      "provisions": {
+        "name": "Provisions",
+        "blurb": "+4 supplies."
+      }
+    },
+    "cannonsSide_other": "{{count}} cannons a side"
   }
 }

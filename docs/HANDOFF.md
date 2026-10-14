@@ -128,7 +128,7 @@ The user adopted a Claude Design bundle (14 boards: Harbour dark skin, Logbook p
 - **Battle HUD:** `TurnTimer` (icon, digits, bar, and a "Hurry" chip when low), hull pips (solid or hollow), `FleetList` with words for sunk, escaped or arriving, `Banner` for the objective and status messages, a pinned Clear and Pass or Lock In row, and a `SeaGuideButton` (phone only) that opens the wind, whirlpool and loot legend. The phone sheet is custom and **non-modal on purpose** (a modal sheet would block the board). Its header row holds "Battle Plan", the Auto token switch and the cannonball chip; with Auto off a captioned row of arrow buttons ("Next turn you get:") appears (`ui/NextTokenControl.tsx`). The sheet is about 36 per cent of the screen.
 - **Kept on purpose:** the user preferred the **old** token buttons, plan slots and round cannonball toggles over the redesign (`MoveTokenTray`, `PlannedMoves`, `CannonGroup`, `CannonToggle` are as before). Do not re-do them in the design's L/R counter style unless asked.
 - **Guard and board:** `src/kit/__tests__/noRawColours.test.ts` fails when `ui/`, `kit/`, `app/` or `components/` contain a hex colour, `rgb()` or `hsl()` (a line can end with `raw-colour-ok` to allow one; the Phaser code is not scanned). `/?kit` now also shows Select, Dialog, Banner, Tile, hull pips, token chips and the cannon toggle (not the store-driven widgets: token tray, plan slots, `TurnTimer`).
-- **Voyage preview:** the Voyage tile on Choose a mode opens `ui/voyage/VoyagePreviewScreen.tsx`, a placeholder: stat pills (supplies 12, hull 5/6, cannonballs 8), a banner saying it is coming soon, nine fixed stops as `kit/MapNode` (cleared, current, available, locked; shape, icon and words, not colour alone) and a "Next battle" card. The numbers and route are illustrative, **not game state**, and Set sail is disabled. Strings are under `voyage.*` (Spanish and Polish machine-drafted). When phase 7 (`run-core`) lands, replace the `ROUTE` constant and the numbers with real data.
+- **Voyage:** the Voyage tile on Choose a mode opens the real solo voyage (`ui/voyage/`, see section 7a). It first existed as a placeholder preview screen with made-up data; that screen is gone. `kit/MapNode` (cleared, current, available, locked; shape, icon and words, not colour alone, and pressable when it is a stop in reach) draws the map. Strings are under `voyage.*` (Spanish and Polish machine-drafted).
 - **Not done:** the design's bottom tab bar (waits for a live Voyage); the design's collapsed phone strip is taller than the mockup (full token chips).
 - **Not seen in a browser:** the Lobby, the game-over and sunk dialogs, the objective banner and "Hurry" chip at phone width, the Friends screen with a real server, the Spanish and Polish layouts (new strings are machine-drafted), and any screenshot of an open dropdown.
 
@@ -258,7 +258,7 @@ CRLF/timestamp artefact, `git add` clears it.
    battle were checked in a browser (the WebGL board cannot run in the in-app
    browser).
 
-## 7a. Roadmap phase 7, the solo run (in progress; slices A to C done)
+## 7a. Roadmap phase 7, the solo run (in progress; slices A to D done)
 
 Planned in ROADMAP.md phase 7 (read it: it holds the decisions). New package
 `packages/run-core` (pure, depends on `game-core` for types and for building
@@ -272,9 +272,14 @@ matches; `game-core` knows nothing of runs). Done so far:
   hero's state) and `run/save.ts` (`serializeRun`, `parseRun`).
 - **C:** `game-core` carry-over takes `maxHull` and `cannonsPerSide`, so a run's
   hull level and cannon upgrades take effect in battle.
-Next: **D** (client: a run store, the real Voyage screen replacing the preview,
-a node card, the Port screen, a `GameScreen` hook so a run's game-over says
-Continue or Abandon) and **E** (a balance harness: the AI plays whole runs).
+- **D:** the client. `apps/client/src/run/runStore.ts` (zustand over `run-core`,
+  saved in `localStorage` key `pirate:run:v1`), `ui/voyage/` (intro, map, port,
+  battle briefing, end screens), and `App.tsx` / `GameScreen` run a voyage battle
+  and hand its `MatchResult` back (`GameScreen`'s `runBattle` prop). You play a
+  voyage from Play, then the Voyage tile ("New voyage" or "Continue voyage").
+Next: **E** (a balance harness: the AI plays whole runs, to tune supplies, rewards,
+ports, run length and difficulty) and **F** (docs). Not yet seen in a browser: a
+voyage battle played to a real win or loss, and the voyage screens at phone width.
 Known open issues for E: a scripted always-win run is about 65 legs and 45 to 49
 battles and never runs short of supplies, so supplies add no tension and the run
 may be too long.
@@ -283,11 +288,12 @@ may be too long.
 
 1. The user has looked at the screens listed under "Not seen in a browser"
    (the lobby, game-over dialogs and phone layouts) on their own device. The
-   Voyage preview screen has been seen in the browser pane only.
+   voyage screens have been seen in the browser pane at desktop width only.
 2. Add the store-driven HUD widgets to `?kit` only if there is a way to feed
    them state without a match (not done).
 3. Leave the old token, plan and cannon section as it is unless the user asks.
-4. Voyage itself is roadmap phase 7; the preview screen is its UI placeholder.
+4. The voyage UI is built (phase 7 slice D); what is left for it is the balance
+   work in slice E and looking at it on a phone.
 
 ## 8. Rules from the roadmap that always apply
 

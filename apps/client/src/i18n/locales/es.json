@@ -343,8 +343,6 @@
     "ambushProgress": "Asaltantes: {{afloat}} a flote, {{coming}} en camino · turno {{turn}} de {{turns}}"
   },
   "voyage": {
-    "preview": "Vista previa",
-    "previewBanner": "La travesía llegará pronto. Esto es una vista previa del mapa.",
     "supplies": "Provisiones",
     "hull": "Casco",
     "cannonballs": "Balas de cañón",
@@ -359,6 +357,80 @@
     "cleared": "superado",
     "here": "estás aquí",
     "locked": "bloqueado",
-    "notTaken": "sin elegir"
+    "notTaken": "al alcance",
+    "new": "Nueva travesía",
+    "continue": "Continuar travesía",
+    "introBlurb": "Navega en una balandra por cinco mares. Gana batallas, repara tu barco en los puertos y hazlo crecer con mejoras. Si pierdes una batalla, la travesía termina.",
+    "area": "Zona {{n}} de {{total}}",
+    "abandon": "Abandonar travesía",
+    "abandonTitle": "¿Abandonar esta travesía?",
+    "abandonBody": "Perderás tu barco y todo lo que hayas conseguido.",
+    "keepSailing": "Seguir navegando",
+    "chooseNext": "Elige adónde navegar",
+    "sailHere": "Navegar hasta aquí",
+    "cancel": "Cancelar",
+    "legCost_one": "El tramo cuesta {{count}} provisión.",
+    "legCost_other": "El tramo cuesta {{count}} provisiones.",
+    "willStarve": "No hay provisiones suficientes: el casco recibirá 1 de daño.",
+    "landfall": "Arribada",
+    "portArrival": "Llegas a {{name}}.",
+    "repaired": "Casco reparado: +{{count}}",
+    "restocked": "Provisiones: +{{count}}",
+    "reloaded": "Balas de cañón repuestas: +{{count}}",
+    "chooseUpgrade": "Elige una mejora",
+    "takeUpgrade": "Elegir mejora",
+    "briefingTitle": "Batalla a la vista",
+    "bossBattle": "Batalla de jefe",
+    "bossBlurb": "Un buque insignia vigila estas aguas. Hunde para poder seguir.",
+    "youSail": "Navegas en",
+    "against": "Contra",
+    "cannonsSide_one": "{{count}} cañón por banda",
+    "victoryTitle": "¡Travesía completada!",
+    "victoryBody": "Derrotaste al último jefe y cruzaste todos los mares.",
+    "defeatTitle": "Fin de la travesía",
+    "defeatReason": {
+      "sunk": "Tu barco se hundió.",
+      "starved": "La bodega se vació y el barco se hundió.",
+      "abandoned": "Abandonaste la travesía."
+    },
+    "statBattles": "Batallas ganadas",
+    "statLegs": "Tramos navegados",
+    "statUpgrades": "Mejoras",
+    "statArea": "Zona alcanzada",
+    "statShip": "Barco final",
+    "mainMenu": "Menú principal",
+    "seeResult": "Ver el resultado",
+    "eventStarved": "La bodega se vació: casco -{{count}}.",
+    "eventBattleWon": "¡Victoria! Provisiones: +{{count}}.",
+    "eventAreaCleared": "¡Zona {{n}} superada!",
+    "eventRefit": "¡Tu {{from}} se transforma en {{to}}!",
+    "eventUpgraded": "Mejora elegida: {{name}}.",
+    "upgrades": {
+      "reinforceHull": {
+        "name": "Reforzar el casco",
+        "blurb": "+1 de casco máximo y repara 1. Un casco lo bastante grande transforma tu barco en una clase mayor."
+      },
+      "addCannon": {
+        "name": "Añadir un cañón",
+        "blurb": "+1 cañón por banda."
+      },
+      "cannonDamage": {
+        "name": "Munición pesada",
+        "blurb": "Cada cañón hace +1 de daño."
+      },
+      "cannonballs": {
+        "name": "Pañol de pólvora",
+        "blurb": "+2 balas de cañón ahora y en cada reposición."
+      },
+      "repair": {
+        "name": "Carpintero",
+        "blurb": "Repara 2 de casco."
+      },
+      "provisions": {
+        "name": "Provisiones",
+        "blurb": "+4 provisiones."
+      }
+    },
+    "cannonsSide_other": "{{count}} cañones por banda"
   }
 }

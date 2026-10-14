@@ -18,12 +18,15 @@ export function GameOverDialog({
   canRestart,
   onRestart,
   onExit,
+  onContinue,
 }: {
   result: MatchResult | null;
   note: EndNote;
   canRestart: boolean;
   onRestart: () => void;
   onExit: () => void;
+  /** In a solo voyage: the one way on. The voyage decides what the result means. */
+  onContinue?: () => void;
 }) {
   const { t } = useTranslation();
   const title =
@@ -49,14 +52,21 @@ export function GameOverDialog({
         </DialogHeader>
         <ResultSummary />
         <div className="flex flex-col gap-2">
-          {canRestart && (
+          {onContinue && (
+            <Button size="lg" onClick={onContinue}>
+              {result === 'win' ? t('voyage.continue') : t('voyage.seeResult')}
+            </Button>
+          )}
+          {!onContinue && canRestart && (
             <Button size="lg" onClick={onRestart}>
               {t('result.sailAgain')}
             </Button>
           )}
-          <Button variant={canRestart ? 'secondary' : 'default'} size={canRestart ? 'default' : 'lg'} onClick={onExit}>
-            {canRestart ? t('result.mainMenu') : t('result.backToMenu')}
-          </Button>
+          {!onContinue && (
+            <Button variant={canRestart ? 'secondary' : 'default'} size={canRestart ? 'default' : 'lg'} onClick={onExit}>
+              {canRestart ? t('result.mainMenu') : t('result.backToMenu')}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

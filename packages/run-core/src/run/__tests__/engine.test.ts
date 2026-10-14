@@ -131,6 +131,41 @@ describe('travel', () => {
   });
 });
 
+describe('the path through an area', () => {
+  it('records each stop, starting at the landfall, and starts again in the next area', () => {
+    const policy = (state: RunState) => state.offer![0]!;
+    const seen = playWithWins(startRun(SEED), policy);
+    expect(seen[0]!.path).toEqual([seen[0]!.nodeId]);
+    for (let i = 1; i < seen.length; i += 1) {
+      const before = seen[i - 1]!;
+      const now = seen[i]!;
+      expect(now.path[now.path.length - 1]).toBe(now.nodeId);
+      if (now.areaIndex !== before.areaIndex) {
+        expect(now.path).toEqual([now.nodeId]);
+      } else if (now.nodeId !== before.nodeId) {
+        expect(now.path).toEqual([...before.path, now.nodeId]);
+      }
+    }
+    const lastOfFirstArea = seen.filter((s) => s.areaIndex === 0).pop()!;
+    const graph = graphFor(lastOfFirstArea);
+    expect(lastOfFirstArea.path[0]).toBe(graph.startId);
+    expect(lastOfFirstArea.path[lastOfFirstArea.path.length - 1]).toBe(graph.bossId);
+    expect(lastOfFirstArea.path.length).toBe(graph.layers);
+  });
+});
+
+describe('leaving a battle after being sunk', () => {
+  it('ends the run as sunk, but only from a battle', () => {
+    const run = startRun(SEED);
+    expect(applyAction(run, { type: 'loseBattle' }).ok).toBe(false);
+    const inBattle: RunState = { ...run, phase: 'battle', offer: undefined };
+    const lost = step(inBattle, { type: 'loseBattle' });
+    expect(lost.state.phase).toBe('defeat');
+    expect(lost.state.defeatReason).toBe('sunk');
+    expect(lost.events).toEqual([{ type: 'defeat', reason: 'sunk' }]);
+  });
+});
+
 describe('ports', () => {
   /** A middle port of area 0, reached on its own. */
   function ports(seed = SEED) {

@@ -2,6 +2,9 @@ import { objectiveFor, type ObjectiveChoice } from '../ui/menu/objectiveChoices'
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
+import type { MatchResult } from '@pirate/game-core/domain/MatchResult';
+import type { BattleSetup } from '@pirate/run-core/run/battle';
+import { runStore } from '../run/runStore';
 import { GameScreen } from './GameScreen';
 import { matchConfigFromSearch } from './matchFromUrl';
 import {
@@ -39,6 +42,18 @@ export default function App() {
   const [offline, setOffline] = useState<OfflineMatch | null>(offlineFromUrl);
   const offlineRef = useRef<OfflineMatch | null>(offline);
   offlineRef.current = offline;
+  // The battle of the solo voyage that is being fought, if any.
+  const [runBattle, setRunBattle] = useState<OfflineMatch | null>(null);
+  const runBattleRef = useRef<OfflineMatch | null>(null);
+  runBattleRef.current = runBattle;
+  // After a voyage battle the menu opens on the voyage again, not the home screen.
+  const [menuStart, setMenuStart] = useState<'home' | 'voyage'>('home');
+  // It is used once, when the menu opens, so the next visit starts at home again.
+  useEffect(() => {
+    if (menuStart === 'voyage') {
+      setMenuStart('home');
+    }
+  }, [menuStart]);
 
   // Pick the remembered seat back up after a refresh.
   useEffect(() => {
@@ -47,6 +62,19 @@ export default function App() {
 
   // Stop the in-page host if the page goes away.
   useEffect(() => () => offlineRef.current?.dispose(), []);
+  useEffect(() => () => runBattleRef.current?.dispose(), []);
+
+  const startRunBattle = useCallback((setup: BattleSetup) => {
+    setRunBattle(startOfflineMatch(setup.config));
+  }, []);
+
+  /** The fight is over: hand its result to the voyage (a missing result counts as a loss) and go back to it. */
+  const endRunBattle = useCallback((result: MatchResult | null) => {
+    runBattleRef.current?.dispose();
+    runStore.getState().apply(result ? { type: 'finishBattle', result } : { type: 'loseBattle' });
+    setRunBattle(null);
+    setMenuStart('voyage');
+  }, []);
 
   const playOffline = useCallback(
     (
@@ -87,6 +115,19 @@ export default function App() {
     return <KitBoard />;
   }
 
+  if (runBattle) {
+    return (
+      <GameScreen
+        key="run-battle"
+        client={runBattle.client}
+        canRestart={false}
+        // Leaving a fight after being sunk loses the voyage.
+        onExit={() => endRunBattle(null)}
+        runBattle={{ onFinished: endRunBattle }}
+      />
+    );
+  }
+
   if (offline) {
     return (
       <GameScreen
@@ -115,5 +156,12 @@ export default function App() {
     return <LobbyScreen lobby={session.lobby} />;
   }
 
-  return <MainMenu initialRoomCode={roomFromUrl()} onPlayOffline={playOffline} />;
+  return (
+    <MainMenu
+      initialRoomCode={roomFromUrl()}
+      initialScreen={menuStart}
+      onStartRunBattle={startRunBattle}
+      onPlayOffline={playOffline}
+    />
+  );
 }

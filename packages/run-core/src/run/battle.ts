@@ -3,6 +3,7 @@ import {
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
+import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { CarryOver, Modifier } from '@pirate/game-core/domain/CarryOver';
 import { DEFAULT_OBJECTIVES } from '@pirate/game-core/domain/Objective';
@@ -21,6 +22,13 @@ export interface BattleSetup {
   readonly heroPlayerId: string;
   readonly kind: BattleKind | 'boss';
   readonly nodeId: string;
+  /** What the player is told before the fight: the hero's class and who is against it. */
+  readonly briefing: {
+    readonly heroShipTypeId: string;
+    readonly enemyShipTypeIds: readonly string[];
+    readonly aiDifficulty: AiDifficulty;
+    readonly sea: MapStyle;
+  };
   /** How far through the whole run this battle is, 0 to 1; it sets how hard the enemy is. */
   readonly depth: number;
 }
@@ -131,5 +139,17 @@ export function buildBattle(state: RunState, specs: readonly AreaSpec[] = AREAS)
         : participants,
     carryOver: { ...base.carryOver, ...flagshipCarry, [hero.playerId]: carry },
   };
-  return { config, heroPlayerId: hero.playerId, kind, nodeId: node.id, depth };
+  return {
+    config,
+    heroPlayerId: hero.playerId,
+    kind,
+    nodeId: node.id,
+    depth,
+    briefing: {
+      heroShipTypeId: shipTypeIds[0]!,
+      enemyShipTypeIds: fleet.shipTypeIds,
+      aiDifficulty: fleet.aiDifficulty,
+      sea: graph.sea,
+    },
+  };
 }

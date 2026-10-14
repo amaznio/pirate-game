@@ -730,8 +730,8 @@ Map art: islands, shallow water, docks for ports, fort pieces for fortress nodes
   grows". The pool is bigger than one run uses, and a port offers 1 of 3 drawn
   from it.
 - Entry: the Voyage tile on Choose a mode opens "New voyage" or "Continue
-  voyage" (the screen from the UI work in `ui/voyage/VoyagePreviewScreen.tsx`,
-  which today shows illustrative data). Starting a run goes straight to the map.
+  voyage" (slice D: `ui/voyage/VoyageFlow.tsx`). Starting a run goes straight to
+  the first landfall, which offers an upgrade.
 
 
 **How the ship grows (decided with the user).** The run starts with the Sloop's
@@ -870,11 +870,40 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
       - **Not seen:** how the art looks with three cannons on a Sloop or four on
         the flagship (the art spaces cannons 24 px apart along the hull, so it
         should fit); a real match with a grown ship was not played in a browser.
-- [ ] D. Client: a run store, the real Voyage screen (one area at a time, with
+- [x] D. Client: a run store, the real Voyage screen (one area at a time, with
       the area number) replacing the preview's illustrative data, a node card, the
       Port screen, an area-cleared screen, and a hook in
       `GameScreen` so a run's game-over shows Continue (or Abandon after a loss)
-      instead of Sail again.
+      instead of Sail again. Done:
+      - `apps/client/src/run/runStore.ts`: a zustand store over `run-core`, saved
+        in `localStorage` (`pirate:run:v1`) after every step and read back through
+        `parseRun`; a save it cannot read is ignored. A finished voyage stays
+        saved until the player starts a new one or goes to the main menu.
+      - `ui/voyage/`: `VoyageFlow` picks the screen for the voyage's phase:
+        an intro (no voyage), `VoyageMapScreen` (the whole area as rows of
+        `MapNode`s, the stops in reach pressable, a card with the leg's supply
+        cost and a warning when the hold cannot pay), `PortScreen` (what the port
+        did, then 1 of 3 upgrades with their effects shown), `BattleBriefingScreen`
+        (the objective, your class and cannons, the enemy fleet, skill and sea) and
+        `VoyageEndScreen` (victory or defeat, with the numbers). Banners tell the
+        player what the last step did (supplies, starvation, a refit, an area
+        cleared). Abandoning asks first.
+      - A voyage battle runs through `App.tsx`: `startRunBattle` starts the match
+        from `buildBattle`, and `GameScreen` takes a `runBattle` prop so its
+        game-over dialog offers only Continue (or See the result after a loss) and
+        hands the `MatchResult` back; leaving after being sunk loses the voyage
+        (a new `loseBattle` action). The menu then opens on the voyage again.
+      - Small `run-core` additions: `path` (the stops visited in the area, so the
+        map can show cleared ones; saved), `loseBattle`, and a `briefing` on
+        `BattleSetup`.
+      - **Not seen:** a battle played through to a real win or loss inside a
+        voyage (the in-app browser needs rendered frames to advance a turn, so I
+        checked the game-over, Continue, map, refresh and abandon paths by setting
+        the game's store to a finished state), the screens at phone width, and the
+        Spanish and Polish texts (machine-drafted).
+      - **Known:** refreshing the page during a battle, before pressing Continue,
+        replays the battle (the voyage is only changed when the result is
+        handed in), so a lost fight can be retried by reloading.
 - [ ] E. Balance harness: the AI plays whole runs offline, to tune supply costs,
       rewards, upgrade strength, port counts, area sizes and difficulty by
       completion rate, and measures how long a run takes, before the user plays it.

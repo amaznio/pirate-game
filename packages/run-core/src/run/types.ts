@@ -45,6 +45,8 @@ export interface RunState {
   readonly areaIndex: number;
   /** The stop the ship is at. */
   readonly nodeId: string;
+  /** The stops visited in this area, in order, the current one last. */
+  readonly path: readonly string[];
   readonly phase: RunPhase;
   readonly defeatReason?: DefeatReason;
 
@@ -73,6 +75,8 @@ export type RunAction =
   | { readonly type: 'travel'; readonly to: string }
   | { readonly type: 'chooseUpgrade'; readonly upgrade: UpgradeId }
   | { readonly type: 'finishBattle'; readonly result: MatchResult }
+  /** The hero was sunk and left the fight before it ended. */
+  | { readonly type: 'loseBattle' }
   | { readonly type: 'abandon' };
 
 /** Things that happened, for the screens to tell the player about. */

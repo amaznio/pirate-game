@@ -68,6 +68,16 @@ describe('a save that cannot be trusted gives nothing', () => {
     expect(parseRun(tweak({ upgrades: ['nonsense'] }))).toBeNull();
   });
 
+  it('refuses a path that is empty, off the map or does not end where the ship is', () => {
+    expect(parseRun(tweak({ path: [] }))).toBeNull();
+    expect(parseRun(tweak({ path: ['a0:99:9'] }))).toBeNull();
+    expect(parseRun(tweak({ path: ['a0:1:0'] }))).toBeNull();
+    expect(parseRun(tweak({ path: 'nope' }))).toBeNull();
+    const without = JSON.parse(good);
+    delete without.path;
+    expect(parseRun(JSON.stringify(without))).toBeNull();
+  });
+
   it('refuses a defeat with no reason', () => {
     expect(parseRun(tweak({ phase: 'defeat', hull: 0 }))).toBeNull();
     expect(parseRun(tweak({ phase: 'defeat', hull: 0, defeatReason: 'sunk', offer: undefined }))).not.toBeNull();

@@ -157,6 +157,21 @@ describe('buildBattle', () => {
     expect(setup.config.objective).toBeUndefined();
   });
 
+  it('tells the player who they are up against before the fight', () => {
+    const graph = generateArea(SEED, 3);
+    const boss = buildBattle(standingAt(3, graph.bossId, { hullLevel: 2, hull: 6 }));
+    expect(boss.briefing).toEqual({
+      heroShipTypeId: 'brigantine',
+      enemyShipTypeIds: bossFleetFor(3).shipTypeIds,
+      aiDifficulty: 'hard',
+      sea: AREAS[3]!.sea,
+    });
+    const node = battleNodes(generateArea(SEED, 0), 'standard')[0]!;
+    const first = buildBattle(standingAt(0, node.id));
+    expect(first.briefing.heroShipTypeId).toBe('sloop');
+    expect(first.briefing.enemyShipTypeIds.length).toBeGreaterThan(0);
+  });
+
   it('plays on the sea of the area', () => {
     for (const [areaIndex, spec] of AREAS.entries()) {
       const graph = generateArea(SEED, areaIndex);

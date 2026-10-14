@@ -73,6 +73,16 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
   if (!node) {
     return null;
   }
+  // The path is the stops visited in this area: each on the map, ending where the ship is.
+  const path = s.path;
+  if (
+    !Array.isArray(path) ||
+    path.length === 0 ||
+    path[path.length - 1] !== s.nodeId ||
+    !path.every((id) => typeof id === 'string' && graph.nodes.some((candidate) => candidate.id === id))
+  ) {
+    return null;
+  }
   if (phase === 'port') {
     if (node.kind !== 'port' || !Array.isArray(s.offer) || s.offer.length === 0) {
       return null;

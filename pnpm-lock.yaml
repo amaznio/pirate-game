@@ -16,6 +16,9 @@ importers:
       '@pirate/game-core':
         specifier: workspace:*
         version: link:../../packages/game-core
+      '@pirate/run-core':
+        specifier: workspace:*
+        version: link:../../packages/run-core
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1

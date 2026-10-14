@@ -47,6 +47,7 @@ export function startRun(seed: number, options: StartOptions = {}): RunState {
     areaCount,
     areaIndex: 0,
     nodeId: graph.startId,
+    path: [graph.startId],
     phase: 'map',
     hullLevel: 0,
     hull: maxHullFor(0),
@@ -104,6 +105,10 @@ export function applyAction(state: RunState, action: RunAction, specs: readonly 
       return chooseUpgrade(state, action.upgrade);
     case 'finishBattle':
       return finishBattle(state, action.result, specs);
+    case 'loseBattle':
+      return state.phase === 'battle'
+        ? ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk' }, [{ type: 'defeat', reason: 'sunk' }])
+        : fail('There is no battle to leave');
   }
 }
 
@@ -119,7 +124,13 @@ function travel(state: RunState, to: string, specs: readonly AreaSpec[]): RunSte
   const cost = supplyUseFor(state.hullLevel) * edge.cost;
   const paid = Math.min(state.supplies, cost);
   const events: RunEvent[] = [{ type: 'travelled', to, suppliesSpent: paid }];
-  let next: RunState = { ...state, nodeId: to, supplies: state.supplies - paid, legs: state.legs + 1 };
+  let next: RunState = {
+    ...state,
+    nodeId: to,
+    path: [...state.path, to],
+    supplies: state.supplies - paid,
+    legs: state.legs + 1,
+  };
 
   // A hold that cannot pay for the leg costs hull instead of ending the run.
   if (paid < cost) {
@@ -218,6 +229,6 @@ function finishBattle(
   const nextArea: RunState = { ...afterFight, areaIndex: state.areaIndex + 1 };
   const graph: RouteGraph = graphFor(nextArea, specs);
   const landfall = nodeById(graph, graph.startId);
-  const arrived = arrive({ ...nextArea, nodeId: landfall.id }, landfall);
+  const arrived = arrive({ ...nextArea, nodeId: landfall.id, path: [landfall.id] }, landfall);
   return ok(arrived.state, [...events, ...arrived.events]);
 }

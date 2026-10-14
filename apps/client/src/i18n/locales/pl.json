@@ -353,8 +353,6 @@
     "ambushProgress": "Najeźdźcy: {{afloat}} na wodzie, {{coming}} w drodze · tura {{turn}} z {{turns}}"
   },
   "voyage": {
-    "preview": "Podgląd",
-    "previewBanner": "Wyprawa pojawi się wkrótce. To podgląd mapy.",
     "supplies": "Zapasy",
     "hull": "Kadłub",
     "cannonballs": "Kule armatnie",
@@ -369,6 +367,84 @@
     "cleared": "ukończone",
     "here": "jesteś tutaj",
     "locked": "zablokowane",
-    "notTaken": "niewybrane"
+    "notTaken": "w zasięgu",
+    "new": "Nowa wyprawa",
+    "continue": "Kontynuuj wyprawę",
+    "introBlurb": "Poprowadź slup przez pięć mórz. Wygrywaj bitwy, naprawiaj statek w portach i rozwijaj go ulepszeniami. Przegrana bitwa kończy wyprawę.",
+    "area": "Obszar {{n}} z {{total}}",
+    "abandon": "Porzuć wyprawę",
+    "abandonTitle": "Porzucić tę wyprawę?",
+    "abandonBody": "Stracisz statek i wszystko, co zdobyłeś.",
+    "keepSailing": "Płyń dalej",
+    "chooseNext": "Wybierz, dokąd płynąć",
+    "sailHere": "Płyń tutaj",
+    "cancel": "Anuluj",
+    "legCost_one": "Ten odcinek kosztuje {{count}} zapas.",
+    "legCost_few": "Ten odcinek kosztuje {{count}} zapasy.",
+    "legCost_many": "Ten odcinek kosztuje {{count}} zapasów.",
+    "legCost_other": "Ten odcinek kosztuje {{count}} zapasu.",
+    "willStarve": "Za mało zapasów: kadłub dostanie 1 obrażenie.",
+    "landfall": "Zawinięcie do portu",
+    "portArrival": "Docierasz do portu: {{name}}.",
+    "repaired": "Kadłub naprawiony: +{{count}}",
+    "restocked": "Zapasy: +{{count}}",
+    "reloaded": "Kule armatnie uzupełnione: +{{count}}",
+    "chooseUpgrade": "Wybierz ulepszenie",
+    "takeUpgrade": "Weź ulepszenie",
+    "briefingTitle": "Bitwa przed nami",
+    "bossBattle": "Bitwa z bossem",
+    "bossBlurb": "Okręt flagowy strzeże tych wód. Zatop go, by płynąć dalej.",
+    "youSail": "Płyniesz",
+    "against": "Przeciwko",
+    "cannonsSide_one": "{{count}} działo na burtę",
+    "victoryTitle": "Wyprawa zakończona!",
+    "victoryBody": "Pokonałeś ostatniego bossa i przepłynąłeś wszystkie morza.",
+    "defeatTitle": "Koniec wyprawy",
+    "defeatReason": {
+      "sunk": "Twój statek zatonął.",
+      "starved": "Ładownia opustoszała i statek poszedł na dno.",
+      "abandoned": "Porzuciłeś wyprawę."
+    },
+    "statBattles": "Wygrane bitwy",
+    "statLegs": "Przebyte odcinki",
+    "statUpgrades": "Ulepszenia",
+    "statArea": "Osiągnięty obszar",
+    "statShip": "Statek na końcu",
+    "mainMenu": "Menu główne",
+    "seeResult": "Zobacz wynik",
+    "eventStarved": "Ładownia opustoszała: kadłub -{{count}}.",
+    "eventBattleWon": "Zwycięstwo! Zapasy: +{{count}}.",
+    "eventAreaCleared": "Obszar {{n}} ukończony!",
+    "eventRefit": "Twój statek ({{from}}) zostaje przebudowany na: {{to}}!",
+    "eventUpgraded": "Wybrane ulepszenie: {{name}}.",
+    "upgrades": {
+      "reinforceHull": {
+        "name": "Wzmocnij kadłub",
+        "blurb": "+1 maksymalnego kadłuba i naprawa 1. Wystarczająco duży kadłub przebudowuje statek na większą klasę."
+      },
+      "addCannon": {
+        "name": "Dodaj działo",
+        "blurb": "+1 działo na każdą burtę."
+      },
+      "cannonDamage": {
+        "name": "Cięższe pociski",
+        "blurb": "Każde działo zadaje +1 obrażeń."
+      },
+      "cannonballs": {
+        "name": "Skład prochu",
+        "blurb": "+2 kule armatnie teraz i przy każdym uzupełnieniu."
+      },
+      "repair": {
+        "name": "Cieśla",
+        "blurb": "Napraw 2 kadłuba."
+      },
+      "provisions": {
+        "name": "Prowiant",
+        "blurb": "+4 zapasy."
+      }
+    },
+    "cannonsSide_other": "{{count}} dział na burtę",
+    "cannonsSide_few": "{{count}} działa na burtę",
+    "cannonsSide_many": "{{count}} dział na burtę"
   }
 }

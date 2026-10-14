@@ -40,10 +40,13 @@ export function ChoiceRow({
   value,
   title,
   rule,
+  showRule = false,
 }: {
   value: string;
   title: string;
   rule: string;
+  /** Show the rule under the title instead of behind an info button. */
+  showRule?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -58,8 +61,14 @@ export function ChoiceRow({
         >
           <Check className="size-4 opacity-0 group-data-[state=checked]:opacity-100" />
         </span>
-        <span className="min-w-0 text-base font-bold text-foreground">{title}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-base font-bold text-foreground">{title}</span>
+          {showRule && <span className="text-sm text-muted-foreground">{rule}</span>}
+        </span>
       </RadioGroup.Item>
+      {showRule ? (
+        <span className="w-2 shrink-0" aria-hidden />
+      ) : (
       <Popover>
         <PopoverTrigger asChild>
           <button
@@ -75,6 +84,7 @@ export function ChoiceRow({
           <p className="mt-1 text-muted-foreground">{rule}</p>
         </PopoverContent>
       </Popover>
+      )}
     </div>
   );
 }
