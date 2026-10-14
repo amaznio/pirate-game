@@ -11,7 +11,7 @@ import { generateArea } from '../graph/generateArea';
 import { nodeById } from '../graph/query';
 import type { BattleKind, RouteGraph, RouteNode } from '../graph/types';
 import { createRng } from '../rng';
-import { classForHullLevel } from './rules';
+import { bossLoadout, classForHullLevel, maxHullFor } from './rules';
 import type { RunState } from './types';
 
 /** A battle ready to start, and what is needed to read its result afterwards. */
@@ -61,11 +61,10 @@ export function bossFleetFor(areaIndex: number): Fleet {
  * The battle for the node the ship is at. It is built from the state alone, so it
  * is the same every time it is asked for, and nothing about it needs saving.
  *
- * The hero sails the class its hull level gives and brings its hull, cannonballs
- * and extra cannon damage. Its hull level (and so its maximum hull) and its
- * cannon count are not carried into the match yet: the match rules need two
- * small additions for that (roadmap phase 7, slice C), so until then the class's
- * own hull and cannons apply.
+ * The hero sails the class its hull level gives, with the maximum hull and the
+ * cannons per side the run has grown to (these replace the class's own), and
+ * brings its current hull, cannonballs and extra cannon damage. A boss's flagship
+ * is a Galleon grown past its class in the same way (see `bossLoadout`).
  */
 export function buildBattle(state: RunState, specs: readonly AreaSpec[] = AREAS): BattleSetup {
   if (state.phase !== 'battle') {
@@ -112,20 +111,25 @@ export function buildBattle(state: RunState, specs: readonly AreaSpec[] = AREAS)
   const mine: Modifier[] = state.cannonDamage > 0 ? [{ kind: 'cannonDamage', bonus: state.cannonDamage }] : [];
   const carry: CarryOver = {
     ...existing,
+    maxHull: maxHullFor(state.hullLevel),
+    cannonsPerSide: state.cannonsPerSide,
     hull: state.hull,
     ammo: state.ammo,
     modifiers: [...(existing?.modifiers ?? []), ...mine],
   };
+  const flagship = kind === 'boss' ? participants.find((participant) => participant.controller === 'ai') : undefined;
+  const flagshipCarry: Record<string, CarryOver> =
+    flagship === undefined ? {} : { [flagship.playerId]: { ...base.carryOver?.[flagship.playerId], ...bossLoadout(state.areaIndex) } };
 
   const config: MatchConfig = {
     ...base,
     participants:
       kind === 'boss'
-        ? participants.map((participant, index) =>
-            index === 1 ? { ...participant, name: 'Flagship' } : participant,
+        ? participants.map((participant) =>
+            participant === flagship ? { ...participant, name: 'Flagship' } : participant,
           )
         : participants,
-    carryOver: { ...base.carryOver, [hero.playerId]: carry },
+    carryOver: { ...base.carryOver, ...flagshipCarry, [hero.playerId]: carry },
   };
   return { config, heroPlayerId: hero.playerId, kind, nodeId: node.id, depth };
 }

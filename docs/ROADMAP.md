@@ -843,11 +843,8 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
       `legCost`) and `save.ts` (`serializeRun`, `parseRun`, version 1). The run
       opens at the first landfall with an upgrade to pick. Actions: `travel`,
       `chooseUpgrade`, `finishBattle` (takes a `MatchResult`) and `abandon`.
-      - **Not yet in real battles (slice C):** the hero's hull level (maximum hull)
-        and cannon count are kept in the run state but the match cannot take them
-        yet, so a battle uses the class's own hull and cannons. Hull, cannonballs
-        and cannon damage already carry. The boss is a Galleon flagship with
-        escorts and no extra strength until C.
+      - **Hull level and cannon count** are kept in the run state and reach real
+        battles through slice C (below).
       - **First numbers, all in `rules.ts` and `battle.ts`:** supply rewards 2 to 4
         a won battle; ports repair 2 and restock 3 (a landfall repairs 4 and fills
         the hold); the enemy fleet grows from one Sloop (easy) to three Galleons
@@ -855,9 +852,24 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
         battles and 21 to 25 upgrades, and reaches the fully upgraded ship, but
         **supplies never ran low** (the lowest hold was 6), so supplies add no
         tension yet and the run is very long: slice E has to settle both.
-- [ ] C. Small `game-core` additions, optional fields only: carry-over `maxHull`
+- [x] C. Small `game-core` additions, optional fields only: carry-over `maxHull`
       and `cannonsPerSide` (read in `createGame.ts` and shown in the view and
-      HUD), and a boss config helper.
+      HUD), and a boss config helper. Done: `CarryOver` gains `maxHull` (1 to 20)
+      and `cannonsPerSide` (1 to 4), held to those limits by `carriedMaxHull` and
+      `carriedCannons`; `createShip` takes optional overrides and `createGame`
+      reads them from the carry-over, and the carried hull is still held between 1
+      and the ship's own maximum. Absent fields change nothing (the golden
+      snapshots are unchanged). The view, the plan checks, the AI, the HUD and the
+      ship art already read cannon counts from each ship's mounts and hull from
+      `maxHp`, so nothing else needed changing. `run-core`'s `buildBattle` now
+      passes the hero's `maxHull` (`4 + hull level`) and `cannonsPerSide`.
+      - **No game-core boss helper:** the boss strength lives in `run-core`
+        (`bossLoadout(areaIndex)` in `run/rules.ts`: flagship hull `6 + 2 * area`,
+        3 cannons a side, 4 from area 4) and is passed as the flagship's
+        carry-over, since a carry-over works for any ship, not only the hero's.
+      - **Not seen:** how the art looks with three cannons on a Sloop or four on
+        the flagship (the art spaces cannons 24 px apart along the hull, so it
+        should fit); a real match with a grown ship was not played in a browser.
 - [ ] D. Client: a run store, the real Voyage screen (one area at a time, with
       the area number) replacing the preview's illustrative data, a node card, the
       Port screen, an area-cleared screen, and a hook in

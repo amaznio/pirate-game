@@ -258,6 +258,27 @@ CRLF/timestamp artefact, `git add` clears it.
    battle were checked in a browser (the WebGL board cannot run in the in-app
    browser).
 
+## 7a. Roadmap phase 7, the solo run (in progress; slices A to C done)
+
+Planned in ROADMAP.md phase 7 (read it: it holds the decisions). New package
+`packages/run-core` (pure, depends on `game-core` for types and for building
+matches; `game-core` knows nothing of runs). Done so far:
+- **A:** `graph/` generates one area of the route as a seeded layered graph
+  (`generateArea`, `generateAreas`), `config/areas.ts` holds the five area specs
+  (10 to 18 layers, calm to stormy).
+- **B:** `run/engine.ts` (`startRun`, `applyAction`: travel, chooseUpgrade,
+  finishBattle, abandon), `run/rules.ts` (every number), `run/upgrades.ts`,
+  `run/battle.ts` (`buildBattle` makes a `MatchConfig` from the node and the
+  hero's state) and `run/save.ts` (`serializeRun`, `parseRun`).
+- **C:** `game-core` carry-over takes `maxHull` and `cannonsPerSide`, so a run's
+  hull level and cannon upgrades take effect in battle.
+Next: **D** (client: a run store, the real Voyage screen replacing the preview,
+a node card, the Port screen, a `GameScreen` hook so a run's game-over says
+Continue or Abandon) and **E** (a balance harness: the AI plays whole runs).
+Known open issues for E: a scripted always-win run is about 65 legs and 45 to 49
+battles and never runs short of supplies, so supplies add no tension and the run
+may be too long.
+
 ## 7b. UI next steps
 
 1. The user has looked at the screens listed under "Not seen in a browser"

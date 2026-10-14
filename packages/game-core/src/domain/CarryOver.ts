@@ -13,8 +13,19 @@ export type Modifier = { readonly kind: 'cannonDamage'; readonly bonus: number }
  * their way into a head start.
  */
 export interface CarryOver {
-  /** Starting hull, kept between 1 and the class maximum. */
+  /** Starting hull, kept between 1 and the ship's maximum hull. */
   readonly hull?: number;
+  /**
+   * The ship's maximum hull, in place of its class's own (a whole number from 1
+   * to `CARRY_MAX_HULL`). A solo voyage grows a ship this way. Absent, the class
+   * decides.
+   */
+  readonly maxHull?: number;
+  /**
+   * Cannons on each side, in place of the class's own (a whole number from 1 to
+   * `CARRY_MAX_CANNONS`). Absent, the class decides.
+   */
+  readonly cannonsPerSide?: number;
   /** Starting cannonballs (never below 0). */
   readonly ammo?: number;
   readonly modifiers?: readonly Modifier[];
@@ -26,4 +37,18 @@ export function cannonDamageBonus(modifiers: readonly Modifier[] | undefined): n
     (total, modifier) => (modifier.kind === 'cannonDamage' ? total + Math.max(0, modifier.bonus) : total),
     0,
   );
+}
+
+/** The most hull a carried ship can have, and the most cannons on a side. */
+export const CARRY_MAX_HULL = 20;
+export const CARRY_MAX_CANNONS = 4;
+
+/** A carried maximum hull held to what the game allows: a whole number from 1 to the limit. */
+export function carriedMaxHull(value: number | undefined): number | undefined {
+  return value === undefined ? undefined : Math.min(CARRY_MAX_HULL, Math.max(1, Math.round(value)));
+}
+
+/** A carried cannon count held to what the game allows: a whole number from 1 to the limit. */
+export function carriedCannons(value: number | undefined): number | undefined {
+  return value === undefined ? undefined : Math.min(CARRY_MAX_CANNONS, Math.max(1, Math.round(value)));
 }

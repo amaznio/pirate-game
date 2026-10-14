@@ -86,3 +86,12 @@ export function supplyUseFor(level: number): number {
 export function cargoCapFor(level: number): number {
   return classForHullLevel(level).cargoCap;
 }
+
+/**
+ * The boss flagship is a Galleon grown past its class: more hull and cannons in
+ * each later area. Starting guesses (a Galleon is 6 hull and 3 cannons a side;
+ * a fully upgraded hero has 10 hull and 3 cannons).
+ */
+export function bossLoadout(areaIndex: number): { maxHull: number; cannonsPerSide: number } {
+  return { maxHull: 6 + 2 * areaIndex, cannonsPerSide: areaIndex >= 3 ? 4 : 3 };
+}

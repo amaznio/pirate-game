@@ -9,7 +9,7 @@ import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
 import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import { createBoard } from '../domain/Board';
-import { cannonDamageBonus } from '../domain/CarryOver';
+import { cannonDamageBonus, carriedCannons, carriedMaxHull } from '../domain/CarryOver';
 import {
   cloneInventory,
   emptyCannonQueue,
@@ -25,6 +25,12 @@ export function shipIdFor(playerId: PlayerId): EntityId {
   return `${playerId}-ship`;
 }
 
+/** What a ship has in place of its class's own hull and cannons (from a carry-over). */
+export interface ShipOverrides {
+  readonly maxHp?: number;
+  readonly cannonsPerSide?: number;
+}
+
 export function createShip(
   id: EntityId,
   ownerId: PlayerId,
@@ -32,13 +38,16 @@ export function createShip(
   position: Position,
   heading: Direction,
   shipTypeId: string,
+  overrides: ShipOverrides = {},
 ): Ship {
   const type = getShipType(shipTypeId);
+  const maxHp = overrides.maxHp ?? type.maxHp;
+  const cannonsPerSide = overrides.cannonsPerSide ?? cannonsPerSideOf(type);
   const weapons: WeaponMount[] = [];
   for (const weaponSide of BROADSIDE_ORDER) {
     const weaponTypeId = type.broadsides[weaponSide];
     if (weaponTypeId) {
-      for (let i = 0; i < cannonsPerSideOf(type); i += 1) {
+      for (let i = 0; i < cannonsPerSide; i += 1) {
         weapons.push({ weaponTypeId, side: weaponSide });
       }
     }
@@ -51,8 +60,8 @@ export function createShip(
     teamId,
     shipTypeId,
     heading,
-    hp: type.maxHp,
-    maxHp: type.maxHp,
+    hp: maxHp,
+    maxHp,
     position: { ...position },
     weapons,
   };
@@ -78,6 +87,9 @@ export function createGame(
   const players: Record<PlayerId, PlayerState> = {};
   for (const participant of config.participants) {
     const id = shipIdFor(participant.playerId);
+    const carried = config.carryOver?.[participant.playerId];
+    const maxHp = carriedMaxHull(carried?.maxHull);
+    const cannonsPerSide = carriedCannons(carried?.cannonsPerSide);
     ships[id] = createShip(
       id,
       participant.playerId,
@@ -85,9 +97,12 @@ export function createGame(
       participant.spawn.position,
       participant.spawn.heading,
       participant.shipTypeId,
+      {
+        ...(maxHp === undefined ? {} : { maxHp }),
+        ...(cannonsPerSide === undefined ? {} : { cannonsPerSide }),
+      },
     );
     const shipType = getShipType(participant.shipTypeId);
-    const carried = config.carryOver?.[participant.playerId];
     const bonusDamage = cannonDamageBonus(carried?.modifiers);
     const carriedShip = ships[id];
     ships[id] = {

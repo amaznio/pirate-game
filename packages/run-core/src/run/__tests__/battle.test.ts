@@ -3,12 +3,13 @@ import { createGame } from '@pirate/game-core/simulation/createGame';
 import { DEFAULT_OBJECTIVES } from '@pirate/game-core/domain/Objective';
 import { runMatch } from '@pirate/game-core/testing/matchRunner';
 import { buildMatchResult } from '@pirate/game-core/simulation/matchResult';
+import { cannonCountsOf } from '@pirate/game-core/domain/Ship';
 import { AREAS } from '../../config/areas';
 import { generateArea } from '../../graph/generateArea';
 import type { BattleKind, RouteGraph } from '../../graph/types';
 import { buildBattle, bossFleetFor, depthOf, fleetFor, graphFor } from '../battle';
 import { applyAction, startRun } from '../engine';
-import { maxHullFor } from '../rules';
+import { bossLoadout, maxHullFor } from '../rules';
 import type { RunState } from '../types';
 import { step } from './helpers';
 
@@ -90,6 +91,26 @@ describe('buildBattle', () => {
     expect(ship.bonusDamage).toBe(2);
   });
 
+  it('brings the hull level and the cannons the run has grown to, whatever the class', () => {
+    const graph = generateArea(SEED, 0);
+    const node = battleNodes(graph, 'standard')[0]!;
+    const grown = standingAt(0, node.id, { hullLevel: 4, hull: 8, cannonsPerSide: 3 });
+    const setup = buildBattle(grown);
+    const game = createGame(setup.config);
+    const ship = Object.values(game.ships).find((s) => s.ownerId === setup.heroPlayerId)!;
+    expect(ship.shipTypeId).toBe('galleon');
+    expect(ship.maxHp).toBe(maxHullFor(4));
+    expect(ship.hp).toBe(8);
+    expect(cannonCountsOf(ship)).toEqual({ left: 3, right: 3 });
+
+    // A Sloop with the upgrades keeps its own class but fires more cannons.
+    const sloop = createGame(buildBattle(standingAt(0, node.id, { cannonsPerSide: 2 })).config);
+    const small = Object.values(sloop.ships).find((s) => s.ownerId === 'player')!;
+    expect(small.shipTypeId).toBe('sloop');
+    expect(small.maxHp).toBe(maxHullFor(0));
+    expect(cannonCountsOf(small)).toEqual({ left: 2, right: 2 });
+  });
+
   it('puts the whole enemy fleet on one side, against the hero', () => {
     const graph = generateArea(SEED, 3);
     const node = battleNodes(graph, 'standard')[0] ?? battleNodes(graph, 'survive')[0]!;
@@ -123,6 +144,15 @@ describe('buildBattle', () => {
     const ais = setup.config.participants.filter((p) => p.controller === 'ai');
     expect(ais[0]!.shipTypeId).toBe('galleon');
     expect(ais[0]!.name).toBe('Flagship');
+    const game = createGame(setup.config);
+    const flagship = Object.values(game.ships).find((s) => s.ownerId === ais[0]!.playerId)!;
+    expect(flagship.maxHp).toBe(bossLoadout(2).maxHull);
+    expect(cannonCountsOf(flagship).left).toBe(bossLoadout(2).cannonsPerSide);
+    // The escorts are plain ships of their class.
+    for (const escort of ais.slice(1)) {
+      const ship = Object.values(game.ships).find((s) => s.ownerId === escort.playerId)!;
+      expect(ship.maxHp).toBe(5);
+    }
     expect(ais).toHaveLength(bossFleetFor(2).shipTypeIds.length);
     expect(setup.config.objective).toBeUndefined();
   });
@@ -158,6 +188,13 @@ describe('the enemy gets harder as the run goes on', () => {
     const mid = graphN.nodes[Math.floor(graphN.nodes.length / 2)]!;
     expect(depthOf(last, graphN, mid)).toBeLessThan(1);
     expect(depthOf(last, graphN, mid)).toBeGreaterThan(0.8);
+  });
+
+  it('makes later bosses harder to sink', () => {
+    for (let area = 1; area < AREAS.length; area += 1) {
+      expect(bossLoadout(area).maxHull).toBeGreaterThan(bossLoadout(area - 1).maxHull);
+      expect(bossLoadout(area).cannonsPerSide).toBeGreaterThanOrEqual(bossLoadout(area - 1).cannonsPerSide);
+    }
   });
 
   it('keeps the boss fleet growing across areas', () => {
