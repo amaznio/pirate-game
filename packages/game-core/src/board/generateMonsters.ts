@@ -24,7 +24,8 @@ export interface GenerateMonstersOptions {
   readonly spawns: readonly Position[];
   readonly obstacles: readonly ObstacleConfig[];
   readonly terrain: TerrainMap;
-  readonly typeId?: MonsterTypeId;
+  /** Which monsters to place, in order; the giant squid alone when left out. */
+  readonly typeIds?: readonly MonsterTypeId[];
 }
 
 /** Closest a monster's body may sit to a ship's start (Chebyshev distance). */
@@ -33,9 +34,9 @@ const TRIES = 600;
 
 /** How hard to look for room: first towards the middle with water to spare, then anywhere it fits. */
 const ATTEMPTS = [
-  { clearance: SPAWN_CLEARANCE, breathingRoom: 1, middle: true },
-  { clearance: SPAWN_CLEARANCE, breathingRoom: 0, middle: true },
-  { clearance: 3, breathingRoom: 0, middle: false },
+  { clearance: SPAWN_CLEARANCE, breathingRoom: 1, middle: true, apart: 2 },
+  { clearance: SPAWN_CLEARANCE, breathingRoom: 0, middle: true, apart: 2 },
+  { clearance: 3, breathingRoom: 0, middle: false, apart: 1 },
 ] as const;
 
 function distance(a: Position, b: Position): number {
@@ -43,48 +44,57 @@ function distance(a: Position, b: Position): number {
 }
 
 /**
- * Places one monster on open water, preferably towards the middle of the board
- * with free water round it: never on a rock, wind or whirlpool and never near a
- * ship's start. If the sea is too crowded for that, it looks again with less
- * room to spare, then anywhere. Pure and deterministic from the seed, with its
- * own random stream, so a monster never changes the rocks, winds or loot of a
- * seed. Returns nothing only when the board has no room at all.
+ * Places each monster on open water, one after another: preferably towards the
+ * middle of the board with free water round it, never on a rock, wind or
+ * whirlpool, never near a ship's start and never touching another monster. If
+ * the sea is too crowded for that, it looks again with less room to spare, then
+ * anywhere. Pure and deterministic from the seed, with its own random stream, so a
+ * monster never changes the rocks, winds or loot of a seed. A monster that finds no
+ * room at all is left out.
  */
 export function generateMonsters(options: GenerateMonstersOptions): MonsterSpawn[] {
   const { width, height, seed, spawns } = options;
-  const typeId = options.typeId ?? 'giant-squid';
-  const type = getMonsterType(typeId);
   const rng = createRng(seed, 0, 'monster');
   const rocks = new Set(options.obstacles.map((o) => `${o.x},${o.y}`));
+  const placed: MonsterSpawn[] = [];
+  const taken: Position[] = [];
 
-  for (const attempt of ATTEMPTS) {
-    for (let tries = 0; tries < TRIES; tries += 1) {
-      const x = attempt.middle ? Math.floor(width / 3 + rng() * (width / 3)) : Math.floor(rng() * width);
-      const y = attempt.middle ? Math.floor(height / 3 + rng() * (height / 3)) : Math.floor(rng() * height);
-      const heading = DIRECTIONS[Math.floor(rng() * DIRECTIONS.length)];
-      const body = monsterCells({ position: { x, y }, heading }, type.length);
+  (options.typeIds ?? ['giant-squid']).forEach((typeId, index) => {
+    const type = getMonsterType(typeId);
+    for (const attempt of ATTEMPTS) {
+      for (let tries = 0; tries < TRIES; tries += 1) {
+        const x = attempt.middle ? Math.floor(width / 3 + rng() * (width / 3)) : Math.floor(rng() * width);
+        const y = attempt.middle ? Math.floor(height / 3 + rng() * (height / 3)) : Math.floor(rng() * height);
+        const heading = DIRECTIONS[Math.floor(rng() * DIRECTIONS.length)];
+        const body = monsterCells({ position: { x, y }, heading }, type.length);
 
-      const fits = body.every((cell) => {
-        if (cell.x < 0 || cell.y < 0 || cell.x >= width || cell.y >= height) {
-          return false;
-        }
-        if (spawns.some((spawn) => distance(spawn, cell) < attempt.clearance)) {
-          return false;
-        }
-        for (let dy = -attempt.breathingRoom; dy <= attempt.breathingRoom; dy += 1) {
-          for (let dx = -attempt.breathingRoom; dx <= attempt.breathingRoom; dx += 1) {
-            const near = { x: cell.x + dx, y: cell.y + dy };
-            if (rocks.has(`${near.x},${near.y}`) || options.terrain[cellKey(near)]) {
-              return false;
+        const fits = body.every((cell) => {
+          if (cell.x < 0 || cell.y < 0 || cell.x >= width || cell.y >= height) {
+            return false;
+          }
+          if (spawns.some((spawn) => distance(spawn, cell) < attempt.clearance)) {
+            return false;
+          }
+          if (taken.some((other) => distance(other, cell) < attempt.apart)) {
+            return false;
+          }
+          for (let dy = -attempt.breathingRoom; dy <= attempt.breathingRoom; dy += 1) {
+            for (let dx = -attempt.breathingRoom; dx <= attempt.breathingRoom; dx += 1) {
+              const near = { x: cell.x + dx, y: cell.y + dy };
+              if (rocks.has(`${near.x},${near.y}`) || options.terrain[cellKey(near)]) {
+                return false;
+              }
             }
           }
+          return true;
+        });
+        if (fits) {
+          placed.push({ id: `monster-${index + 1}`, typeId, position: { x, y }, heading });
+          taken.push(...body);
+          return;
         }
-        return true;
-      });
-      if (fits) {
-        return [{ id: 'monster-1', typeId, position: { x, y }, heading }];
       }
     }
-  }
-  return [];
+  });
+  return placed;
 }

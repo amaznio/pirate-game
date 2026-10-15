@@ -97,7 +97,7 @@ export default function App() {
       loot: boolean,
       ships: OfflineShips,
       objective: ObjectiveChoice,
-      monster: MonsterTypeId | null,
+      monsters: readonly MonsterTypeId[],
       monsterWarnings: boolean,
     ) => {
       setOffline(
@@ -110,7 +110,7 @@ export default function App() {
           ships,
           loot,
           objectiveFor(objective),
-          monster ?? undefined,
+          monsters,
           monsterWarnings,
         )),
       );

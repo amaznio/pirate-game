@@ -140,7 +140,7 @@ describe('monsters: the lash', () => {
 });
 
 describe('monsters: planning the turn', () => {
-  const config = createDuelConfig({ seed: 7, sea: 'normal', monster: 'giant-squid' });
+  const config = createDuelConfig({ seed: 7, sea: 'normal', monsters: ['giant-squid'] });
 
   it('a match with a monster marks its lashes before turn 1', () => {
     const state = createGame(config);
@@ -185,7 +185,7 @@ describe('monsters: planning the turn', () => {
 describe('monsters: placing one', () => {
   it('sits on open water, clear of the ships and the rocks, and is the same for a seed', () => {
     for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
-      const config = createDuelConfig({ seed, sea: 'stormy', monster: 'giant-squid' });
+      const config = createDuelConfig({ seed, sea: 'stormy', monsters: ['giant-squid'] });
       const [spawn] = config.monsters ?? [];
       if (!spawn) {
         continue; // a crowded sea may have no room, which is allowed
@@ -216,16 +216,29 @@ describe('monsters: placing one', () => {
     for (const sea of ['calm', 'normal', 'stormy'] as const) {
       for (const typeId of ['giant-squid', 'shark'] as const) {
         for (let seed = 1; seed <= 25; seed += 1) {
-          const config = createDuelConfig({ seed, sea, monster: typeId });
+          const config = createDuelConfig({ seed, sea, monsters: [typeId] });
           expect(config.monsters, `${typeId} ${sea} seed ${seed}`).toHaveLength(1);
         }
       }
     }
   });
 
+  it('places every kind of monster, apart from each other, when asked for all of them', () => {
+    for (let seed = 1; seed <= 10; seed += 1) {
+      const config = createDuelConfig({ seed, sea: 'normal', monsters: ['giant-squid', 'squid', 'shark'] });
+      expect(config.monsters?.map((m) => m.typeId), `seed ${seed}`).toEqual(['giant-squid', 'squid', 'shark']);
+      const cells = (config.monsters ?? []).flatMap((m) => monsterCells(m, getMonsterType(m.typeId).length));
+      expect(new Set(cells.map((c) => `${c.x},${c.y}`)).size).toBe(cells.length);
+    }
+    // And the same seed gives the same sea.
+    expect(createDuelConfig({ seed: 4, sea: 'normal', monsters: ['giant-squid', 'shark'] }).monsters).toEqual(
+      createDuelConfig({ seed: 4, sea: 'normal', monsters: ['giant-squid', 'shark'] }).monsters,
+    );
+  });
+
   it('never changes the rocks and winds of a seed', () => {
     const plain = createDuelConfig({ seed: 5, sea: 'stormy' });
-    const withMonster = createDuelConfig({ seed: 5, sea: 'stormy', monster: 'giant-squid' });
+    const withMonster = createDuelConfig({ seed: 5, sea: 'stormy', monsters: ['giant-squid'] });
     expect(withMonster.obstacles).toEqual(plain.obstacles);
     expect(withMonster.terrain).toEqual(plain.terrain);
   });
@@ -233,7 +246,7 @@ describe('monsters: placing one', () => {
 
 describe('monsters: the view', () => {
   it('shows the monster but hides what it will strike, unless the match warns players', () => {
-    const hidden = createGame(createDuelConfig({ seed: 7, sea: 'normal', monster: 'giant-squid' }));
+    const hidden = createGame(createDuelConfig({ seed: 7, sea: 'normal', monsters: ['giant-squid'] }));
     const monster = Object.values(hidden.monsters ?? {})[0];
     expect(monster.attacks.length).toBeGreaterThan(0); // planned in the state, as for any ship
 
@@ -243,7 +256,7 @@ describe('monsters: the view', () => {
   });
 
   it('shows the marks when the match warns players, and they survive the trip to the preview state', () => {
-    const state = createGame(createDuelConfig({ seed: 7, sea: 'normal', monster: 'giant-squid', monsterWarnings: true }));
+    const state = createGame(createDuelConfig({ seed: 7, sea: 'normal', monsters: ['giant-squid'], monsterWarnings: true }));
     expect(state.monsterWarnings).toBe(true);
     const view = redactState(state, 'player', null);
     const real = Object.values(state.monsters ?? {})[0];
@@ -271,7 +284,7 @@ describe('monsters: whole matches', () => {
     let lashes = 0;
     let hits = 0;
     for (const seed of [1, 2, 3, 4]) {
-      const config = createDuelConfig({ seed, sea: 'normal', monster: 'giant-squid', aiDifficulty: 'normal' });
+      const config = createDuelConfig({ seed, sea: 'normal', monsters: ['giant-squid'], aiDifficulty: 'normal' });
       const a = runMatch(config);
       const b = runMatch(config);
       expect(a.hash).toBe(b.hash);
@@ -444,7 +457,7 @@ describe('monsters: one that sails', () => {
     let sailed = 0;
     let turns = 0;
     for (const seed of [1, 3, 4, 5, 6, 7]) {
-      const record = runMatch(createDuelConfig({ seed, sea: 'normal', monster: 'shark' }));
+      const record = runMatch(createDuelConfig({ seed, sea: 'normal', monsters: ['shark'] }));
       turns += record.turns;
       const movingTurns = new Set(
         record.events.reduce<number[]>((all, event, index) => {
@@ -462,7 +475,7 @@ describe('monsters: one that sails', () => {
 
   it('a match with a shark or a squid plays through, deterministically', () => {
     for (const [seed, kind] of [[1, 'shark'], [2, 'squid'], [3, 'shark'], [4, 'squid']] as const) {
-      const config = createDuelConfig({ seed, sea: 'normal', monster: kind });
+      const config = createDuelConfig({ seed, sea: 'normal', monsters: [kind] });
       const a = runMatch(config);
       const b = runMatch(config);
       expect(a.hash).toBe(b.hash);
@@ -584,7 +597,7 @@ describe('monsters: tentacles', () => {
   it('a match with a giant squid surfaces tentacles and plays through, deterministically', () => {
     let surfaced = 0;
     for (const seed of [1, 2, 3]) {
-      const config = createDuelConfig({ seed, sea: 'normal', monster: 'giant-squid' });
+      const config = createDuelConfig({ seed, sea: 'normal', monsters: ['giant-squid'] });
       const a = runMatch(config);
       const b = runMatch(config);
       expect(a.hash).toBe(b.hash);

@@ -167,17 +167,17 @@ function seaFor(
 
 /** A monster placed on the water the sea was made of, when the match has one. */
 function monstersFor(
-  typeId: MonsterTypeId | undefined,
+  typeIds: readonly MonsterTypeId[] | undefined,
   width: number,
   height: number,
   seed: number,
   spawns: readonly Position[],
   water: { obstacles: readonly ObstacleConfig[]; terrain: TerrainMap },
 ): { monsters?: readonly MonsterSpawn[] } {
-  if (!typeId) {
+  if (!typeIds || typeIds.length === 0) {
     return {};
   }
-  const monsters = generateMonsters({ width, height, seed, spawns, obstacles: water.obstacles, terrain: water.terrain, typeId });
+  const monsters = generateMonsters({ width, height, seed, spawns, obstacles: water.obstacles, terrain: water.terrain, typeIds });
   return monsters.length === 0 ? {} : { monsters };
 }
 
@@ -303,8 +303,8 @@ export function createDuelConfig(
     loot?: boolean;
     /** A way for the match to end besides last team standing. */
     objective?: Objective;
-    /** A sea monster on the water. */
-    monster?: MonsterTypeId;
+    /** The sea monsters on the water. */
+    monsters?: readonly MonsterTypeId[];
     /** Warn players which cells the monster will strike. */
     monsterWarnings?: boolean;
     /** Ship types for [player, enemy]; sloops when left out. */
@@ -334,8 +334,8 @@ export function createDuelConfig(
     seed,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
     ...water,
-    ...monstersFor(overrides.monster, BOARD_WIDTH, BOARD_HEIGHT, seed, allSpawns, water),
-    ...(overrides.monster && overrides.monsterWarnings ? { monsterWarnings: true } : {}),
+    ...monstersFor(overrides.monsters, BOARD_WIDTH, BOARD_HEIGHT, seed, allSpawns, water),
+    ...(overrides.monsters?.length && overrides.monsterWarnings ? { monsterWarnings: true } : {}),
     ...(overrides.objective === undefined ? {} : { objective: overrides.objective }),
     participants: [
       {
@@ -379,8 +379,8 @@ export interface SkirmishOptions {
   readonly loot?: boolean;
   /** A way for the match to end besides last team standing. None when left out. */
   readonly objective?: Objective;
-  /** A sea monster on the water (none when left out). */
-  readonly monster?: MonsterTypeId;
+  /** The sea monsters on the water (none when left out). */
+  readonly monsters?: readonly MonsterTypeId[];
   /** Warn players which cells the monster will strike (hidden when left out). */
   readonly monsterWarnings?: boolean;
   /** Ship types in seat order (humans first); sloops when left out. */
@@ -512,8 +512,8 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
       seed,
       board: { width, height },
       ...sea,
-      ...monstersFor(options.monster, width, height, seed, allSpawns, sea),
-      ...(options.monster && options.monsterWarnings ? { monsterWarnings: true } : {}),
+      ...monstersFor(options.monsters, width, height, seed, allSpawns, sea),
+      ...(options.monsters?.length && options.monsterWarnings ? { monsterWarnings: true } : {}),
       ...(options.objective === undefined ? {} : { objective: options.objective }),
       participants,
       rules: options.rules ?? DEFAULT_RULES,

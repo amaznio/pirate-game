@@ -19,10 +19,8 @@
     "lootOff": "No",
     "lootOn": "Sí",
     "lootBlurb": "Barriles, cajas y tablones flotan en el agua. Termina un movimiento sobre uno para cogerlo: balas de cañón, fichas o un casco reparado.",
-    "monster": "Monstruo marino",
-    "monsterOff": "Ninguno",
-    "monsterNames": { "tentacle": "Tentáculo", "squid": "Calamar", "giant-squid": "Calamar gigante", "shark": "Tiburón" },
-    "monsterBlurb": "Un monstruo marino se une a la batalla. El calamar gigante no se mueve, pero azota las casillas junto a su proa y delante de ella. El calamar y el tiburón te cazan: el calamar azota la casilla de enfrente con sus largos tentáculos y el tiburón la muerde. Húndelo o mantente lejos.",
+    "monster": "Monstruos marinos",
+    "monsterBlurb": "Todo tipo de monstruo marino se une a la batalla: un calamar gigante que no se mueve, pero azota junto a su proa y delante de ella y hace surgir tentáculos, y un calamar y un tiburón que te cazan. Húndelos o mantente lejos.",
     "monsterWarnings": "Avisos del monstruo",
     "monsterWarningsBlurb": "Marca las casillas que el monstruo azotará este turno. Desactivado, ataca sin aviso, como el plan de cualquier barco."
   },

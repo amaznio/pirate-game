@@ -27,7 +27,7 @@ interface MainMenuProps {
     loot: boolean,
     ships: OfflineShips,
     objective: ObjectiveChoice,
-    monster: MonsterTypeId | null,
+    monsters: readonly MonsterTypeId[],
     monsterWarnings: boolean,
   ) => void;
 }
@@ -59,7 +59,7 @@ export function MainMenu({
             s.loot,
             s.ships,
             s.objective,
-            s.monster,
+            s.monsters,
             s.monsterWarnings,
           )
         }
