@@ -195,7 +195,7 @@ describe('hunt: treasure', () => {
     const next = structuredClone(dying) as GameState;
     damageMonster(next, HUNT_BOSS_ID, 5, 0);
     const chests = Object.values(next.pickups ?? {});
-    expect(chests).toHaveLength(4);
+    expect(chests).toHaveLength(getMonsterType('giant-squid').boss!.drop.chests);
     expect(chests.every((c) => c.kind === 'chest' && c.value === 5)).toBe(true);
     expect(cells.every((c) => next.pickups?.[cellKey(c)])).toBe(true);
 
@@ -216,6 +216,48 @@ describe('hunt: treasure', () => {
     const sunk = withHero(loaded, { hp: 0 });
     const lost = { ...sunk, outcome: evaluateOutcome(sunk, true), status: 'game_over' as const };
     expect(buildMatchResult(lost)?.hunt?.haul).toBe(0);
+  });
+});
+
+describe('hunt: the boss', () => {
+  it('is the giant squid, flagged, with the boss hull, and nothing else is a boss', () => {
+    const monsters = hunt().monsters!;
+    const boss = getMonsterType('giant-squid').boss!;
+    expect(monsters[HUNT_BOSS_ID]).toMatchObject({ boss: true, hp: boss.maxHp, maxHp: boss.maxHp });
+    expect(boss.maxHp).toBeGreaterThan(getMonsterType('giant-squid').maxHp);
+    expect(Object.values(monsters).filter((m) => m.boss)).toHaveLength(1);
+  });
+
+  it('takes its hull from the hunt options, and only the boss does', () => {
+    const state = createGame(createHuntConfig({ seed: 1, bossHull: 22 }));
+    expect(state.monsters![HUNT_BOSS_ID]).toMatchObject({ hp: 22, maxHp: 22 });
+    const squid = Object.values(state.monsters!).find((m) => m.monsterTypeId === 'squid')!;
+    expect(squid.maxHp).toBe(getMonsterType('squid').maxHp);
+  });
+
+  it('is not a boss outside a hunt', () => {
+    const config = { ...createHuntConfig({ seed: 1 }), objective: { kind: 'survive' as const, turns: 10 } };
+    const boss = createGame(config).monsters![HUNT_BOSS_ID];
+    expect(boss.boss).toBeUndefined();
+    expect(boss.maxHp).toBe(getMonsterType('giant-squid').maxHp);
+  });
+
+  it('drops more than any other monster, and sinking it does not end the hunt', () => {
+    const state = hunt();
+    const drops = (id: string): number => {
+      const next = structuredClone({ ...state, pickups: {} }) as GameState;
+      damageMonster(next, id, 99, 0);
+      return Object.values(next.pickups ?? {}).length;
+    };
+    const others = Object.keys(state.monsters!).filter((id) => id !== HUNT_BOSS_ID);
+    for (const id of others) {
+      expect(drops(HUNT_BOSS_ID)).toBeGreaterThan(drops(id));
+    }
+    const dead = {
+      ...state,
+      monsters: { ...state.monsters, [HUNT_BOSS_ID]: { ...state.monsters![HUNT_BOSS_ID], hp: 0 } },
+    };
+    expect(evaluateOutcome(dead, true)).toBeNull();
   });
 });
 

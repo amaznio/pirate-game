@@ -302,6 +302,8 @@ export interface HuntOptions {
   readonly monsters?: readonly MonsterTypeId[];
   /** Warn the hero which cells the monsters will strike (hidden when left out). */
   readonly monsterWarnings?: boolean;
+  /** The boss's hull, in place of its kind's own (a voyage sets it per area). */
+  readonly bossHull?: number;
   readonly rules?: MatchRules;
   readonly name?: string;
 }
@@ -327,7 +329,15 @@ export function createHuntConfig(options: HuntOptions = {}): MatchConfig {
 
   const water = seaFor(width, height, seed, spawns, options.sea);
   const typeIds = options.monsters ?? ['giant-squid', ...SELECTABLE_MONSTER_TYPE_IDS.filter((id) => id !== 'giant-squid')];
-  const monsters = monstersFor(typeIds, width, height, seed, spawns, water);
+  const placed = monstersFor(typeIds, width, height, seed, spawns, water);
+  const monsters =
+    options.bossHull === undefined || placed.monsters === undefined
+      ? placed
+      : {
+          monsters: placed.monsters.map((spawn) =>
+            spawn.id === HUNT_BOSS_ID ? { ...spawn, maxHp: Math.max(1, Math.floor(options.bossHull!)) } : spawn,
+          ),
+        };
   const pickups = generateTreasure({
     width,
     height,

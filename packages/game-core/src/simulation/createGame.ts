@@ -147,14 +147,18 @@ export function createGame(
   const monsters: Record<EntityId, Monster> = {};
   for (const spawn of config.monsters ?? []) {
     const type = getMonsterType(spawn.typeId);
+    const boss =
+      config.objective?.kind === 'hunt' && config.objective.bossId === spawn.id && type.boss !== undefined;
+    const maxHp = spawn.maxHp ?? (boss ? type.boss!.maxHp : type.maxHp);
     monsters[spawn.id] = {
       id: spawn.id,
       kind: 'monster',
       monsterTypeId: spawn.typeId,
       position: { ...spawn.position },
       heading: spawn.heading,
-      hp: type.maxHp,
-      maxHp: type.maxHp,
+      hp: maxHp,
+      maxHp,
+      ...(boss ? { boss: true as const } : {}),
       attacks: [],
     };
   }

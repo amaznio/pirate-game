@@ -573,7 +573,8 @@ export function damageMonster(
  * monster still afloat. The same sinking always leaves the same chests.
  */
 function dropLoot(state: MutableGameState, monster: Monster): void {
-  const drop = getMonsterType(monster.monsterTypeId).drop;
+  const type = getMonsterType(monster.monsterTypeId);
+  const drop = monster.boss && type.boss ? type.boss.drop : type.drop;
   if (state.objective?.kind !== 'hunt' || !drop) {
     return;
   }

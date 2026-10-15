@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { createPhaserGame, type PhaserHandle } from '../phaser/PhaserGame';
 import { bindGameClient, useGameUIStore } from '../store/useGameUIStore';
 import { BattleHUD } from '../ui/BattleHUD';
+import { BossBar, BossMoment } from '../ui/BossBar';
 import { MobilePlanningSheet } from '../ui/MobilePlanningSheet';
 import { DesktopSidebar } from '../ui/DesktopSidebar';
 import { PreviewToggle } from '../ui/PreviewToggle';
@@ -126,6 +127,11 @@ export function GameScreen({
         <div ref={containerRef} className="absolute inset-0" />
 
         {!desktop && <BattleHUD onHeightChange={onHudHeight} />}
+        <BossBar
+          className="absolute left-1/2 z-10 -translate-x-1/2"
+          style={{ top: desktop ? 12 : hudHeight + 8 }}
+        />
+        <BossMoment />
 
         <div
           className="absolute right-3 z-20 flex flex-col gap-2"

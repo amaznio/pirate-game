@@ -14,6 +14,8 @@ export interface MonsterSpawn {
   /** The stern cell; the body continues along `heading`. */
   readonly position: Position;
   readonly heading: Direction;
+  /** Hull in place of the type's own (a boss with a hull set for the area). */
+  readonly maxHp?: number;
 }
 
 export interface GenerateMonstersOptions {

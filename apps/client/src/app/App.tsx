@@ -22,7 +22,7 @@ import { MainMenu } from '../ui/menu/MainMenu';
 /** `?ais=3` and friends start an offline match straight away (handy for testing). */
 function offlineFromUrl(): OfflineMatch | null {
   const params = new URLSearchParams(window.location.search);
-  if (!params.has('ais') && !params.has('humans')) {
+  if (!params.has('ais') && !params.has('humans') && !params.has('hunt')) {
     return null;
   }
   return startOfflineMatch(matchConfigFromSearch(window.location.search));

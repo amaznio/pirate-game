@@ -84,7 +84,38 @@ export class MonsterField {
   private readonly views = new Map<string, MonsterView>();
   private readonly marks = new Map<string, Mark>();
 
-  constructor(private readonly scene: Phaser.Scene) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly hooks: { onBossSlain?: (title: string) => void } = {},
+  ) {}
+
+  /** The boss on the board and the middle of its body, or null when there is none afloat. */
+  boss(): { id: string; title: string; x: number; y: number } | null {
+    for (const [id, view] of this.views) {
+      const title = getMonsterType(view.monster.monsterTypeId).boss?.title;
+      if (view.monster.boss && title) {
+        return { id, title, ...this.centre(view.monster) };
+      }
+    }
+    return null;
+  }
+
+  /** Keeps a monster under the water, ready to rise (see `rise`). */
+  hide(id: string): void {
+    const view = this.views.get(id);
+    if (view) {
+      view.surfacing = true;
+      view.container.setAlpha(0);
+    }
+  }
+
+  /** The boss comes up out of the water with a wide ring of foam and a shudder of the camera. */
+  async rise(id: string): Promise<void> {
+    const view = this.views.get(id);
+    if (view) {
+      await this.surface(view, true);
+    }
+  }
 
   /** Makes the monsters, and the marks of what they will do, the ones in the state. */
   sync(monsters: MonsterMap | undefined): void {
@@ -277,10 +308,16 @@ export class MonsterField {
     view.whip?.setVisible(false);
     view.bar.clear();
     this.dropMarksOf(event.monsterId);
+    const boss = view.monster.boss === true;
+    if (boss) {
+      this.scene.cameras.main.shake(700, 0.006);
+      this.deathRing(view);
+      this.hooks.onBossSlain?.(getMonsterType(view.monster.monsterTypeId).boss?.title ?? '');
+    }
     for (let frame = 0; frame < view.art.death; frame += 1) {
       view.sprite.setFrame(monsterFrame('death', frame));
       view.ring?.setFrame(monsterFrame('ring', Math.min(frame + 1, 3)));
-      await wait(this.scene, DEATH_FRAME_MS);
+      await wait(this.scene, boss ? DEATH_FRAME_MS * 2.2 : DEATH_FRAME_MS);
     }
     await new Promise<void>((resolve) =>
       this.scene.tweens.add({ targets: view.container, alpha: 0, duration: 320, onComplete: () => resolve() }),
@@ -336,31 +373,57 @@ export class MonsterField {
     };
     this.views.set(monster.id, view);
     if (rising) {
-      this.surface(view);
+      void this.surface(view);
     }
     return view;
   }
 
   /** It rises: the body grows up out of a ring of foam that spreads and fades. */
-  private surface(view: MonsterView): void {
+  private surface(view: MonsterView, big = false): Promise<void> {
     const { x, y } = this.centre(view.monster);
-    view.container.setAlpha(0).setScale(0.55);
-    this.scene.tweens.add({
-      targets: view.container,
-      alpha: 1,
-      scale: 1,
-      duration: 520,
-      ease: 'Back.easeOut',
-      onComplete: () => {
-        view.surfacing = false;
-      },
-    });
-    const ring = this.scene.add.circle(x, y, 10).setStrokeStyle(3, 0xe8f6ff, 0.9).setDepth(DEPTH + 0.5);
+    view.container.setAlpha(0).setScale(big ? 0.35 : 0.55);
+    if (big) {
+      this.scene.cameras.main.shake(900, 0.005);
+    }
+    const done = new Promise<void>((resolve) =>
+      this.scene.tweens.add({
+        targets: view.container,
+        alpha: 1,
+        scale: 1,
+        duration: big ? 1100 : 520,
+        ease: 'Back.easeOut',
+        onComplete: () => {
+          view.surfacing = false;
+          resolve();
+        },
+      }),
+    );
+    // The big rise sends out two rings, one after the other.
+    for (const [delay, reach] of big ? [[0, 6.5], [260, 4.5]] : [[0, 3.4]]) {
+      const ring = this.scene.add.circle(x, y, 10).setStrokeStyle(big ? 4 : 3, 0xe8f6ff, 0.9).setDepth(DEPTH + 0.5).setAlpha(0);
+      this.scene.tweens.add({
+        targets: ring,
+        scale: reach,
+        alpha: { from: 0.9, to: 0 },
+        delay,
+        duration: big ? 1100 : 650,
+        ease: 'Quad.easeOut',
+        onStart: () => ring.setAlpha(0.9),
+        onComplete: () => ring.destroy(),
+      });
+    }
+    return done;
+  }
+
+  /** A last wide ring of foam where the boss goes down. */
+  private deathRing(view: MonsterView): void {
+    const { x, y } = this.centre(view.monster);
+    const ring = this.scene.add.circle(x, y, 10).setStrokeStyle(5, 0xffffff, 0.9).setDepth(DEPTH + 0.5);
     this.scene.tweens.add({
       targets: ring,
-      scale: 3.4,
+      scale: 8,
       alpha: 0,
-      duration: 650,
+      duration: 1400,
       ease: 'Quad.easeOut',
       onComplete: () => ring.destroy(),
     });
@@ -395,6 +458,9 @@ export class MonsterField {
   private drawBar(view: MonsterView): void {
     const { monster, bar } = view;
     bar.clear();
+    if (monster.boss) {
+      return; // the boss has its wide bar in the HUD
+    }
     const { x: cx, y: cy } = this.centre(monster);
     const length = getMonsterType(monster.monsterTypeId).length;
     // How far its body reaches above its centre: the whole length when upright, one cell on its side.

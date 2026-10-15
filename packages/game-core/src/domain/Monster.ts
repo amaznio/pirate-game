@@ -57,6 +57,8 @@ export interface Monster extends Entity {
   readonly heading: Direction;
   readonly hp: number;
   readonly maxHp: number;
+  /** The boss of a hunt: bigger hull, a title, and the biggest drop. Absent for every other monster. */
+  readonly boss?: true;
   /** The monster that surfaced this one; it sinks when that one does. None for a monster that began the match. */
   readonly parentId?: EntityId;
   /** The turn this monster rose out of the water; it does not act that turn, so everyone sees it first. */

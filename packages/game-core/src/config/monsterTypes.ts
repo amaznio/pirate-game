@@ -46,6 +46,15 @@ export interface MonsterType {
   readonly spawns?: MonsterSpawnRule;
   /** The treasure chests it leaves when it is sunk in a hunt: how many, and what each is worth. */
   readonly drop?: { readonly chests: number; readonly value: number };
+  /**
+   * What it is when it is the boss of a hunt: its title, its hull and what it drops
+   * (in place of `maxHp` and `drop`). Absent means it cannot be a boss.
+   */
+  readonly boss?: {
+    readonly title: string;
+    readonly maxHp: number;
+    readonly drop: { readonly chests: number; readonly value: number };
+  };
   /** Only ever surfaced by another monster; never chosen for a match. */
   readonly summoned?: boolean;
 }
@@ -66,6 +75,7 @@ export const MONSTER_TYPES: Readonly<Record<MonsterTypeId, MonsterType>> = {
     lashSides: ['left', 'right', 'front'],
     movesPerTurn: 0,
     drop: { chests: 4, value: 5 },
+    boss: { title: 'The Kraken', maxHp: 15, drop: { chests: 8, value: 5 } },
     spawns: {
       typeId: 'tentacle',
       everyTurns: 3,

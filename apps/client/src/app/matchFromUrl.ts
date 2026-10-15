@@ -1,5 +1,6 @@
 import {
   createDuelConfig,
+  createHuntConfig,
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
@@ -40,6 +41,7 @@ function intParam(params: URLSearchParams, name: string): number | null {
  *   ?map=stormy            the sea: calm, normal, stormy, or open (empty water)
  *   ?seed=123              rebuild the same board again (otherwise a new one)
  *   ?loot=on               float barrels, crates and planks to pick up
+ *   ?hunt=on               a hunt: sea monsters and a boss, no enemy ships (add &warn=on to see their strikes)
  *   ?ship=galleon          your ship class (sloop, brigantine or galleon)
  *   ?enemy=sloop           the class the other ships sail (yours unless given)
  *   ?humans=2&ais=2        extra humans are placeholders until multiplayer
@@ -59,6 +61,9 @@ export function matchConfigFromSearch(search: string): MatchConfig {
   const seed = intParam(params, 'seed') ?? randomSeed();
   const loot = params.get('loot') === 'on';
   const yours = shipParam(params, 'ship') ?? DEFAULT_SHIP_TYPE_ID;
+  if (params.has('hunt')) {
+    return createHuntConfig({ seed, sea, shipTypeId: yours, monsterWarnings: params.get('warn') === 'on' });
+  }
   const theirs = shipParam(params, 'enemy') ?? yours;
   if (ais === null && humans === null) {
     return createDuelConfig({ aiDifficulty, sea, seed, shipTypeIds: [yours, theirs], loot });

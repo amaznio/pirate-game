@@ -11,6 +11,8 @@ import type {
 } from '@pirate/game-core/domain/Action';
 import type { PlayerId } from '@pirate/game-core/domain/Entity';
 import { getShipType, tokenEconomyOf } from '@pirate/game-core/config/shipTypes';
+import { getMonsterType } from '@pirate/game-core/config/monsterTypes';
+import type { GameView } from '@pirate/game-core/view/GameView';
 import { assignTeamStyles } from '../presentation/teamStyle';
 import { NO_HAZARDS, seaHazards, type SeaHazards } from '../presentation/seaHazards';
 import type { MatchResult as BattleResult } from '@pirate/game-core/domain/MatchResult';
@@ -63,6 +65,8 @@ export interface GameUISnapshot {
   leaving: boolean;
   /** The treasure in the hold (a hunt). */
   haul: number;
+  /** The boss of a hunt, while it is on the board (hull 0 once it is slain). */
+  boss: { title: string; hp: number; maxHp: number } | null;
   tokens: TokenInventory;
   queue: ActionSlot[];
   cannonQueue: CannonQueue;
@@ -173,6 +177,7 @@ function snapshot({
     canLeave: view.objective?.kind === 'hunt',
     leaving: !!draft.leave,
     haul: self.haul ?? 0,
+    boss: bossOf(view),
     tokens: tokensLeft,
     queue: [...draft.movement],
     cannonQueue: draft.cannons,
@@ -202,6 +207,13 @@ function snapshot({
   };
 }
 
+/** The boss of a hunt, if the view has one. */
+function bossOf(view: GameView): GameUISnapshot['boss'] {
+  const boss = Object.values(view.monsters ?? {}).find((monster) => monster.boss);
+  const title = boss ? getMonsterType(boss.monsterTypeId).boss?.title : undefined;
+  return boss && title ? { title, hp: boss.hp, maxHp: boss.maxHp } : null;
+}
+
 /** What the UI shows before any match is bound (it is never visible). */
 const EMPTY: GameUISnapshot = {
   turn: 1,
@@ -217,6 +229,7 @@ const EMPTY: GameUISnapshot = {
   canLeave: false,
   leaving: false,
   haul: 0,
+  boss: null,
   tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 },
   queue: [null, null, null, null],
   cannonQueue: [],

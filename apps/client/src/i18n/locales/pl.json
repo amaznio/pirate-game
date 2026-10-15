@@ -352,6 +352,12 @@
     "createFailed": "Nie udało się utworzyć pokoju.",
     "unknown": "Coś poszło nie tak."
   },
+  "boss": {
+    "barLabel": "{{title}}: kadłub {{hp}} z {{max}}",
+    "slain": "Pokonany",
+    "rises": "wynurza się",
+    "isSlain": "został pokonany"
+  },
   "objective": {
     "surviveProgress": "Przetrwaj: tura {{turn}} z {{turns}}",
     "salvageProgress": "Ładunek: ty {{yours}} · rywale {{rival}} · pierwszy do {{target}}",

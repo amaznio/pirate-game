@@ -28,6 +28,7 @@ import { PlanPreviewView } from '../views/PlanPreviewView';
 import { PickupField } from '../views/PickupField';
 import { MonsterField } from '../views/MonsterField';
 import { usePreviewSettings } from '../../store/previewSettings';
+import { useBossMoment } from '../../store/bossMoment';
 import { getPhaserContext } from '../PhaserGame';
 import { pixelRatio } from '../pixelRatio';
 
@@ -95,7 +96,9 @@ export class BattleScene extends Phaser.Scene {
     createTerrainViews(this, state.terrain);
     this.drawExit(state, worldWidth, worldHeight);
     this.pickups = new PickupField(this);
-    this.monsters = new MonsterField(this);
+    this.monsters = new MonsterField(this, {
+      onBossSlain: (title) => useBossMoment.getState().show({ kind: 'slain', title }, 3200),
+    });
 
     this.views = new EntityViewRegistry();
     this.animator = new EventAnimator(this, this.views, {
@@ -147,7 +150,10 @@ export class BattleScene extends Phaser.Scene {
       this.playPendingTurn();
     }
 
+    void this.introduceBoss();
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      useBossMoment.getState().clear();
       this.unsubscribeState?.();
       this.unsubscribeEvents?.();
       this.unsubscribePreviewSetting?.();
@@ -288,6 +294,33 @@ export class BattleScene extends Phaser.Scene {
     if (!this.cameraController.userMoved) {
       this.recenterOnPlayer();
     }
+  }
+
+  /**
+   * At the start of a hunt the camera swings to the boss, it surfaces and its name
+   * shows, then the camera comes back to the hero. Planning is open the whole time.
+   */
+  private async introduceBoss(): Promise<void> {
+    const view = this.client.getView();
+    const boss = this.monsters.boss();
+    if (view.objective?.kind !== 'hunt' || view.turn !== 1 || !boss || this.cameraController.userMoved) {
+      return;
+    }
+    const pause = (ms: number) => new Promise<void>((resolve) => this.time.delayedCall(ms, resolve));
+    this.monsters.hide(boss.id);
+    this.cameraController.panTo(boss.x, boss.y);
+    await pause(600);
+    useBossMoment.getState().show({ kind: 'rise', title: boss.title }, 2600);
+    await this.monsters.rise(boss.id);
+    await pause(1500);
+    const player = this.client.getView().ships[this.client.getView().self.shipId];
+    if (player) {
+      const { x, y } = gridToWorld(player.position);
+      this.cameraController.panTo(x, y);
+    }
+    await pause(450);
+    // The camera is the hero’s again, as before the intro.
+    this.cameraController.userMoved = false;
   }
 
   private panToShip(shipId: string): void {

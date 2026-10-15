@@ -342,6 +342,12 @@
     "createFailed": "The room could not be created.",
     "unknown": "Something went wrong."
   },
+  "boss": {
+    "barLabel": "{{title}}: hull {{hp}} of {{max}}",
+    "slain": "Slain",
+    "rises": "rises",
+    "isSlain": "is slain"
+  },
   "objective": {
     "surviveProgress": "Survive: turn {{turn}} of {{turns}}",
     "salvageProgress": "Cargo: you {{yours}} · rivals {{rival}} · first to {{target}}",

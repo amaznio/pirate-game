@@ -342,6 +342,12 @@
     "createFailed": "No se pudo crear la sala.",
     "unknown": "Algo salió mal."
   },
+  "boss": {
+    "barLabel": "{{title}}: casco {{hp}} de {{max}}",
+    "slain": "Abatido",
+    "rises": "emerge",
+    "isSlain": "ha caído"
+  },
   "objective": {
     "surviveProgress": "Sobrevive: turno {{turn}} de {{turns}}",
     "salvageProgress": "Carga: tú {{yours}} · rivales {{rival}} · el primero en {{target}}",
