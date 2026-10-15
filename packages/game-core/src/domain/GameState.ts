@@ -50,6 +50,8 @@ export interface PlayerState {
   /** Cannon queue; each slot fires left, right, or both. */
   readonly cannonQueue: CannonQueue;
   readonly tokenGeneration: TokenGenerationConfig;
+  /** The plan says to leave the hunt at the end of the turn (cleared when the next turn begins). */
+  readonly leaving?: boolean;
   /** Treasure in the hold (only in a hunt); banked when the ship leaves, lost if it is sunk. */
   readonly haul?: number;
   /** The last turn resolved with no movement planned (earns the rest bonus). */

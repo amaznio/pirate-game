@@ -265,8 +265,9 @@ export function beginNextTurn(state: GameState): NextTurnResult {
       first[id] = made[0];
     }
 
+    const { leaving: _leaving, ...fresh } = player;
     players[id] = {
-      ...player,
+      ...fresh,
       tokens,
       ammo: reloadedAmmo(player.ammo, state.turn, reload),
       queue: emptyQueue(),

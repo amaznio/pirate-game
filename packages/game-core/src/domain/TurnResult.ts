@@ -17,6 +17,11 @@ export interface PhaseResult {
 export interface PlayerActions {
   readonly movement: ActionQueue;
   readonly cannons: CannonQueue;
+  /**
+   * In a hunt, the ship sails off the board at the end of the turn if it is in the
+   * exit area then, banking its haul. Left out (or false) it stays.
+   */
+  readonly leave?: boolean;
 }
 
 /** Plans by player. A player with no entry passes the turn. */

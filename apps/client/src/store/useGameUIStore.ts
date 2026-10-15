@@ -57,6 +57,12 @@ export interface GameUISnapshot {
   hazards: SeaHazards;
   /** Whether any barrel, crate or plank is still afloat (so the legend explains them). */
   loot: boolean;
+  /** A hunt: the plan may choose to leave through the exit. */
+  canLeave: boolean;
+  /** The plan says to leave at the end of the turn. */
+  leaving: boolean;
+  /** The treasure in the hold (a hunt). */
+  haul: number;
   tokens: TokenInventory;
   queue: ActionSlot[];
   cannonQueue: CannonQueue;
@@ -102,6 +108,7 @@ interface GameUIStore extends GameUISnapshot {
   /** Sets how many cannons a side fires in a phase. */
   setCannonShots: (phase: number, side: CannonSide, shots: number) => void;
   clearPlayerActions: () => void;
+  setLeave: (leave: boolean) => void;
   setAuto: (auto: boolean) => void;
   setRequested: (token: MovementAction) => void;
   lockIn: () => void;
@@ -163,6 +170,9 @@ function snapshot({
     others,
     hazards: seaHazards(view.terrain),
     loot: Object.keys(view.pickups ?? {}).length > 0,
+    canLeave: view.objective?.kind === 'hunt',
+    leaving: !!draft.leave,
+    haul: self.haul ?? 0,
     tokens: tokensLeft,
     queue: [...draft.movement],
     cannonQueue: draft.cannons,
@@ -204,6 +214,9 @@ const EMPTY: GameUISnapshot = {
   others: [],
   hazards: NO_HAZARDS,
   loot: false,
+  canLeave: false,
+  leaving: false,
+  haul: 0,
   tokens: { FORWARD: 0, TURN_LEFT: 0, TURN_RIGHT: 0 },
   queue: [null, null, null, null],
   cannonQueue: [],
@@ -272,6 +285,7 @@ export const useGameUIStore = create<GameUIStore>(() => ({
     currentClient?.clearDraft();
     useGameUIStore.setState({ activeSlot: null });
   },
+  setLeave: (leave) => currentClient?.setLeave(leave),
   setAuto: (auto) => currentClient?.setTokenGeneration({ auto }),
   setRequested: (token) => currentClient?.setTokenGeneration({ requested: token }),
   lockIn: () => currentClient?.lockIn(),

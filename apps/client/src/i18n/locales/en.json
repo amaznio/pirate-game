@@ -233,6 +233,9 @@
     "seaGuide": "Sea guide"
   },
   "plan": {
+    "leave": "Leave the hunt",
+    "leavingWith": "Leaving with {{count}} treasure (tap to stay)",
+    "leaveHint": "Sail off the board at the end of the turn, if your ship is in the shallows then. You keep what is in the hold.",
     "nextToken": "Next turn token",
     "auto": "AUTO",
     "on": "ON",

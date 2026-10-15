@@ -19,6 +19,7 @@ import {
   setCannonShots,
   toggleCannon,
   emptyDraft,
+  setLeave,
   type PlanDraft,
 } from './draft';
 
@@ -152,6 +153,13 @@ export class GameClient {
     }
   }
 
+  /** In a hunt, chooses whether to sail off the board at the end of the turn (from the exit area). */
+  setLeave(leave: boolean): void {
+    if (this.snapshot.canEdit) {
+      this.setDraft(setLeave(this.snapshot.draft, leave));
+    }
+  }
+
   clearDraft(): void {
     if (this.snapshot.canEdit) {
       this.setDraft(emptyDraft());
@@ -192,6 +200,7 @@ export class GameClient {
       ? copyDraft({
           movement: view.self.queue,
           cannons: view.self.cannonQueue,
+          ...(view.self.leaving ? { leave: true } : {}),
         })
       : this.snapshot.draft;
 
@@ -205,7 +214,11 @@ export class GameClient {
     initial: boolean,
   ): ClientSnapshot {
     const seed = initial
-      ? copyDraft({ movement: view.self.queue, cannons: view.self.cannonQueue })
+      ? copyDraft({
+          movement: view.self.queue,
+          cannons: view.self.cannonQueue,
+          ...(view.self.leaving ? { leave: true } : {}),
+        })
       : draft;
     return {
       view,

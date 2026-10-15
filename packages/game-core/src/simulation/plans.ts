@@ -56,7 +56,8 @@ export function applyPlayerPlan(
         slot.left >= 0 &&
         slot.right >= 0,
     );
-  if (!wellFormed) {
+  // Leaving is only a thing in a hunt.
+  if (!wellFormed || (plan.leave && state.objective?.kind !== 'hunt')) {
     return { ok: false, reason: 'malformed_plan' };
   }
 
@@ -87,7 +88,8 @@ export function applyPlayerPlan(
       players: {
         ...state.players,
         [playerId]: {
-          ...player,
+          ...omitLeaving(player),
+          ...(plan.leave ? { leaving: true } : {}),
           queue: [...plan.movement],
           cannonQueue: plan.cannons.map((slot) => ({
             left: slot.left,
@@ -97,4 +99,9 @@ export function applyPlayerPlan(
       },
     },
   };
+}
+
+function omitLeaving<T extends { leaving?: boolean }>(player: T): Omit<T, 'leaving'> {
+  const { leaving: _leaving, ...rest } = player;
+  return rest;
 }

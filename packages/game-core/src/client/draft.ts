@@ -28,11 +28,22 @@ export function copyDraft(plan: PlayerActions): PlanDraft {
   return {
     movement: [...plan.movement],
     cannons: plan.cannons.map((slot) => ({ ...slot })),
+    ...(plan.leave ? { leave: true } : {}),
   };
+}
+
+/** The draft with the choice to leave the hunt set or cleared. */
+export function setLeave(draft: PlanDraft, leave: boolean): PlanDraft {
+  if (!!draft.leave === leave) {
+    return draft;
+  }
+  const { leave: _leave, ...rest } = draft;
+  return leave ? { ...rest, leave: true } : rest;
 }
 
 export function draftIsEmpty(draft: PlanDraft): boolean {
   return (
+    !draft.leave &&
     draft.movement.every((slot) => slot === null) &&
     draft.cannons.every((slot) => !slot.left && !slot.right)
   );

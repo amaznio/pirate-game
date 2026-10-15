@@ -38,7 +38,7 @@ export function resolvePhase(
     }
     events.push(...applyMovementWithMonsters(state, intents, phase));
     events.push(...collectPickups(state, phase));
-    events.push(...resolveEscapes(state, phase));
+    events.push(...resolveEscapes(state, phase, submitted));
     events.push(...resolveMonsterAttacks(state, phase));
 
     const firePlans: FirePlan[] = [];

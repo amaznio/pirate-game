@@ -26,6 +26,7 @@ export function PlanningControls({ compact = false }: { compact?: boolean }) {
   const status = useGameUIStore((state) => state.status);
   const hasPlan = useGameUIStore(
     (state) =>
+      state.leaving ||
       state.queue.some((slot) => slot !== null) ||
       state.cannonQueue.some((slot) => slot.left || slot.right),
   );
@@ -34,6 +35,10 @@ export function PlanningControls({ compact = false }: { compact?: boolean }) {
   const setAuto = useGameUIStore((state) => state.setAuto);
   const setRequested = useGameUIStore((state) => state.setRequested);
   const lockIn = useGameUIStore((state) => state.lockIn);
+  const canLeave = useGameUIStore((state) => state.canLeave);
+  const leaving = useGameUIStore((state) => state.leaving);
+  const haul = useGameUIStore((state) => state.haul);
+  const setLeave = useGameUIStore((state) => state.setLeave);
   const clearPlayerActions = useGameUIStore((state) => state.clearPlayerActions);
 
   const planning = status === 'planning';
@@ -89,6 +94,21 @@ export function PlanningControls({ compact = false }: { compact?: boolean }) {
         )}
         <PlannedMoves />
       </div>
+
+      {canLeave && (
+        <div className="flex flex-col gap-1.5">
+          <Button
+            variant={leaving ? 'default' : 'secondary'}
+            size={compact ? 'sm' : 'default'}
+            aria-pressed={leaving}
+            disabled={!canPlan}
+            onClick={() => setLeave(!leaving)}
+          >
+            {leaving ? t('plan.leavingWith', { count: haul }) : t('plan.leave', { count: haul })}
+          </Button>
+          {!compact && <p className="text-xs text-muted-foreground">{t('plan.leaveHint')}</p>}
+        </div>
+      )}
 
       {/* Pinned, so Lock In stays reachable when the plan is taller than the panel. */}
       <div className="sticky bottom-0 flex gap-2 bg-card pt-2 pb-1">

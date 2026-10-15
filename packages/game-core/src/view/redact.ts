@@ -130,6 +130,7 @@ export function viewToState(view: GameView, draft?: PlayerActions): GameState {
             ...view.self,
             queue: draft ? draft.movement : view.self.queue,
             cannonQueue: draft ? draft.cannons : view.self.cannonQueue,
+            ...(draft ? (draft.leave ? { leaving: true } : { leaving: undefined }) : {}),
           }
         : {
             id: pub.id,

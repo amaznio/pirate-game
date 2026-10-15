@@ -233,6 +233,9 @@
     "seaGuide": "Guía del mar"
   },
   "plan": {
+    "leave": "Abandonar la caza",
+    "leavingWith": "Te vas con {{count}} de tesoro (toca para quedarte)",
+    "leaveHint": "Sales del tablero al final del turno, si tu barco está en las aguas someras. Te quedas con lo que lleva la bodega.",
     "nextToken": "Ficha del próximo turno",
     "auto": "AUTO",
     "on": "SÍ",

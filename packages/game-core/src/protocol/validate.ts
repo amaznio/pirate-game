@@ -87,7 +87,14 @@ export function parsePlayerActions(value: unknown): PlayerActions | null {
     parsedCannons.push({ left, right });
   }
 
-  return { movement: parsedMovement, cannons: parsedCannons };
+  if (value.leave !== undefined && typeof value.leave !== 'boolean') {
+    return null;
+  }
+  return {
+    movement: parsedMovement,
+    cannons: parsedCannons,
+    ...(value.leave === true ? { leave: true } : {}),
+  };
 }
 
 /** A change to how the next movement token is chosen. */

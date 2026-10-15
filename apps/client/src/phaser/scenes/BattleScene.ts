@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { vectorFor } from '@pirate/game-core/domain/Direction';
+import { vectorFor, type Direction } from '@pirate/game-core/domain/Direction';
+import { EXIT_DEPTH } from '@pirate/game-core/domain/Objective';
 import type { GameView } from '@pirate/game-core/view/GameView';
 import type { ClientSnapshot, GameClient } from '@pirate/game-core/client/GameClient';
 import type { GameEvent } from '@pirate/game-core/domain/GameEvent';
@@ -111,7 +112,7 @@ export class BattleScene extends Phaser.Scene {
       onEscaped: (shipId) => this.removeHud(shipId),
       exitDirection: () => {
         const objective = this.client.getView().objective;
-        return objective?.kind === 'merchant' ? objective.exit : undefined;
+        return objective?.kind === 'merchant' || objective?.kind === 'hunt' ? objective.exit : undefined;
       },
     });
     this.cameraController = new BattleCameraController(this, worldWidth, worldHeight, {
@@ -338,6 +339,10 @@ export class BattleScene extends Phaser.Scene {
    */
   private drawExit(state: GameView, worldWidth: number, worldHeight: number): void {
     const objective = state.objective;
+    if (objective?.kind === 'hunt' && objective.exit) {
+      this.drawShallows(state, objective.exit, worldWidth, worldHeight);
+      return;
+    }
     if (objective?.kind !== 'merchant' || !objective.exit) {
       return;
     }
@@ -362,6 +367,67 @@ export class BattleScene extends Phaser.Scene {
       const left = { x: cx - way.x * size + way.y * size, y: cy - way.y * size - way.x * size };
       const right = { x: cx - way.x * size - way.y * size, y: cy - way.y * size + way.x * size };
       g.fillTriangle(tip.x, tip.y, left.x, left.y, right.x, right.y);
+    }
+  }
+
+  /**
+   * In a hunt, the exit area: the outer rows along the exit edge turn to pale
+   * turquoise shallows with a slow shimmer, a row of buoys along the inner edge
+   * and chevrons pointing off the board. Ships that end a turn here may leave.
+   */
+  private drawShallows(state: GameView, exit: Direction, worldWidth: number, worldHeight: number): void {
+    const way = vectorFor(exit);
+    const horizontal = way.x !== 0;
+    const depth = EXIT_DEPTH * TILE_SIZE;
+    const x0 = way.x > 0 ? worldWidth - depth : 0;
+    const y0 = way.y > 0 ? worldHeight - depth : 0;
+    const w = horizontal ? depth : worldWidth;
+    const h = horizontal ? worldHeight : depth;
+
+    const shallows = this.add.graphics().setDepth(2);
+    shallows.fillStyle(0x8fe6d8, 0.32);
+    shallows.fillRect(x0, y0, w, h);
+    // A lighter band at the edge, where the water is shallowest.
+    shallows.fillStyle(0xd8fff4, 0.2);
+    shallows.fillRect(
+      way.x > 0 ? worldWidth - TILE_SIZE * 0.5 : way.x < 0 ? 0 : x0,
+      way.y > 0 ? worldHeight - TILE_SIZE * 0.5 : way.y < 0 ? 0 : y0,
+      horizontal ? TILE_SIZE * 0.5 : w,
+      horizontal ? h : TILE_SIZE * 0.5,
+    );
+    this.tweens.add({ targets: shallows, alpha: 0.65, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    const marks = this.add.graphics().setDepth(3);
+    const cells = horizontal ? state.board.height : state.board.width;
+    // Buoys along the inner edge of the area, one every third cell.
+    const inner = horizontal
+      ? way.x > 0 ? x0 : x0 + depth
+      : way.y > 0 ? y0 : y0 + depth;
+    for (let i = 1; i < cells; i += 3) {
+      const along = (i + 0.5) * TILE_SIZE;
+      const bx = horizontal ? inner : along;
+      const by = horizontal ? along : inner;
+      marks.fillStyle(0xffffff, 0.95);
+      marks.fillCircle(bx, by, 6);
+      marks.fillStyle(0xe5533d, 1);
+      marks.fillCircle(bx, by - 2, 4);
+      marks.fillStyle(0xffffff, 0.9);
+      marks.fillRect(bx - 3, by - 1, 6, 2);
+    }
+    // Chevrons pointing off the board, every other cell along the outer row.
+    marks.fillStyle(0xffffff, 0.5);
+    for (let i = 0; i < cells; i += 2) {
+      const cx = horizontal ? x0 + depth - TILE_SIZE * (way.x > 0 ? 0.5 : 1.5) : (i + 0.5) * TILE_SIZE;
+      const cy = horizontal ? (i + 0.5) * TILE_SIZE : y0 + depth - TILE_SIZE * (way.y > 0 ? 0.5 : 1.5);
+      const size = 9;
+      marks.fillTriangle(
+        cx + way.x * size,
+        cy + way.y * size,
+        cx - way.x * size + way.y * size,
+        cy - way.y * size - way.x * size,
+        cx - way.x * size - way.y * size,
+        cy - way.y * size + way.x * size,
+      );
     }
   }
 

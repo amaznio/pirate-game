@@ -13,6 +13,8 @@ import { inExitArea } from '../escapes';
 import { buildMatchResult } from '../matchResult';
 import { evaluateOutcome, resolveTurn } from '../resolveTurn';
 import { damageMonster } from '../monsters';
+import { applyPlayerPlan } from '../plans';
+import { parsePlayerActions } from '../../protocol/validate';
 import { runMatch } from '../../testing/matchRunner';
 import { submitted } from './testUtils';
 
@@ -214,5 +216,49 @@ describe('hunt: treasure', () => {
     const sunk = withHero(loaded, { hp: 0 });
     const lost = { ...sunk, outcome: evaluateOutcome(sunk, true), status: 'game_over' as const };
     expect(buildMatchResult(lost)?.hunt?.haul).toBe(0);
+  });
+});
+
+describe('hunt: leaving', () => {
+  const inExit = (state: GameState): GameState =>
+    withHero(state, { position: { x: state.ships['player-ship'].position.x, y: BOARD_HEIGHT - 1 } });
+  const withHaul = (state: GameState, haul: number): GameState => ({
+    ...state,
+    players: { ...state.players, player: { ...state.players['player'], haul } },
+  });
+  const leaving = { movement: [null, null, null, null], cannons: [], leave: true } as never;
+
+  it('sails off with the haul when the hero chose to leave and ends the turn in the exit area', () => {
+    const state = withHaul(inExit(hunt()), 6);
+    const result = resolveTurn(state, { player: leaving });
+    expect(result.events.some((e) => e.type === 'SHIP_ESCAPED')).toBe(true);
+    expect(result.nextState.outcome).toEqual({ kind: 'win', teamId: 'player', reason: 'left' });
+    expect(buildMatchResult(result.nextState)?.hunt).toMatchObject({ ending: 'left', haul: 6 });
+  });
+
+  it('can leave with an empty hold', () => {
+    const result = resolveTurn(inExit(hunt()), { player: leaving });
+    expect(buildMatchResult(result.nextState)?.hunt).toMatchObject({ ending: 'left', haul: 0 });
+  });
+
+  it('stays when it did not choose to leave, or is not in the exit area', () => {
+    const stays = resolveTurn(inExit(hunt()), submitted());
+    expect(stays.nextState.outcome).toBeNull();
+    const outside = resolveTurn(hunt(), { player: leaving });
+    expect(outside.nextState.outcome).toBeNull();
+    expect(outside.events.some((e) => e.type === 'SHIP_ESCAPED')).toBe(false);
+  });
+
+  it('is only a valid plan in a hunt, and the flag is cleared for the next turn', () => {
+    const plan = { movement: [null, null, null, null], cannons: [], leave: true } as never;
+    const emptyCannons = Array.from({ length: 4 }, () => ({ left: 0, right: 0 }));
+    const real = { movement: [null, null, null, null], cannons: emptyCannons, leave: true } as never;
+    expect(applyPlayerPlan(hunt(), 'player', plan).ok).toBe(false);
+    const ok = applyPlayerPlan(hunt(), 'player', real);
+    expect(ok.ok && ok.state.players['player'].leaving).toBe(true);
+    const normal = createGame({ ...createHuntConfig({ seed: 1 }), objective: undefined, monsters: [] });
+    expect(applyPlayerPlan(normal, 'player', real)).toEqual({ ok: false, reason: 'malformed_plan' });
+    expect(parsePlayerActions({ movement: [null, null, null, null], cannons: emptyCannons, leave: true })?.leave).toBe(true);
+    expect(parsePlayerActions({ movement: [null, null, null, null], cannons: emptyCannons, leave: 'yes' })).toBeNull();
   });
 });

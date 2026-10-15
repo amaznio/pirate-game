@@ -327,7 +327,11 @@ export class GameController {
               this.state,
               player.id,
             )
-          : { movement: player.queue, cannons: player.cannonQueue };
+          : {
+              movement: player.queue,
+              cannons: player.cannonQueue,
+              ...(player.leaving ? { leave: true } : {}),
+            };
       submitted[player.id] = actions;
       players[player.id] = {
         ...player,

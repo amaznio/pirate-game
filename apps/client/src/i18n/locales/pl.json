@@ -243,6 +243,9 @@
     "seaGuide": "Przewodnik po morzu"
   },
   "plan": {
+    "leave": "Opuść łowy",
+    "leavingWith": "Odpływasz z {{count}} skarbu (dotknij, aby zostać)",
+    "leaveHint": "Odpływasz z planszy na koniec tury, jeśli twój statek jest wtedy na płyciźnie. Zachowujesz to, co jest w ładowni.",
     "nextToken": "Żeton na następną turę",
     "auto": "AUTO",
     "on": "WŁ.",
