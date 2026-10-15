@@ -8,6 +8,7 @@ import {
   registerWaterFrames,
 } from '../assets/scallywag';
 import { buildSurfTextures } from '../assets/surfTextures';
+import { MONSTER_ART_LIST, registerMonsterFrames } from '../assets/monsterArt';
 import { useCrispFiltering } from '../assets/crispTextures';
 import { currentArtStyle } from '../../presentation/artStyle';
 import { TILE_SIZE } from '../Grid';
@@ -34,6 +35,10 @@ export class BootScene extends Phaser.Scene {
     // The pickups come from these two sheets whatever the art, so they always load.
     this.load.image(ScallywagKeys.water, 'assets/scallywag/water-islands.png');
     this.load.image(ScallywagKeys.fort, 'assets/scallywag/fort.png');
+    // The sea monsters are drawn the same whatever the ship art.
+    for (const art of MONSTER_ART_LIST) {
+      this.load.image(art.key, art.path);
+    }
     if (currentArtStyle() === 'scallywag') {
       this.load.image(ScallywagKeys.shipsRaw, 'assets/scallywag/ships.png');
     }
@@ -43,6 +48,10 @@ export class BootScene extends Phaser.Scene {
     generateTerrainTextures(this);
     this.makeRockTexture();
     registerPickupFrames(this.textures);
+    registerMonsterFrames(this.textures);
+    for (const art of MONSTER_ART_LIST) {
+      this.textures.get(art.key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
     for (const key of [ScallywagKeys.water, ScallywagKeys.fort]) {
       this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }

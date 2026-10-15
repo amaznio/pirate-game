@@ -25,6 +25,7 @@ import { EventAnimator } from '../animation/EventAnimator';
 import { BattleCameraController } from '../camera/BattleCameraController';
 import { PlanPreviewView } from '../views/PlanPreviewView';
 import { PickupField } from '../views/PickupField';
+import { MonsterField } from '../views/MonsterField';
 import { usePreviewSettings } from '../../store/previewSettings';
 import { getPhaserContext } from '../PhaserGame';
 import { pixelRatio } from '../pixelRatio';
@@ -35,6 +36,7 @@ export class BattleScene extends Phaser.Scene {
   private cameraController!: BattleCameraController;
   private preview!: PlanPreviewView;
   private pickups!: PickupField;
+  private monsters!: MonsterField;
   /** The pixel-art sea, when it is drawn (it drifts a little every frame). */
   private sea: SeaView | null = null;
   /** Foam round the rocks, with the pixel art. */
@@ -92,6 +94,7 @@ export class BattleScene extends Phaser.Scene {
     createTerrainViews(this, state.terrain);
     this.drawExit(state, worldWidth, worldHeight);
     this.pickups = new PickupField(this);
+    this.monsters = new MonsterField(this);
 
     this.views = new EntityViewRegistry();
     this.animator = new EventAnimator(this, this.views, {
@@ -101,6 +104,10 @@ export class BattleScene extends Phaser.Scene {
       },
       onDestroyed: (shipId) => this.removeHud(shipId),
       onPickup: (event) => this.pickups.collect(event),
+      onMonsterMoved: (event) => this.monsters.moved(event),
+      onMonsterAttack: (event) => this.monsters.attack(event),
+      onMonsterDamaged: (event) => this.monsters.hurt(event),
+      onMonsterDestroyed: (event) => this.monsters.destroyed(event),
       onEscaped: (shipId) => this.removeHud(shipId),
       exitDirection: () => {
         const objective = this.client.getView().objective;
@@ -145,6 +152,7 @@ export class BattleScene extends Phaser.Scene {
       this.unsubscribePreviewSetting?.();
       this.preview.clear();
       this.pickups.destroy();
+      this.monsters.destroy();
       this.indicators.destroy();
       this.huds.forEach((hud) => hud.destroy());
       this.huds.clear();
@@ -389,6 +397,7 @@ export class BattleScene extends Phaser.Scene {
    */
   private syncViews(state: GameView): void {
     this.pickups.sync(state.pickups);
+    this.monsters.sync(state.monsters);
     const styles = assignTeamStyles(state);
     for (const ship of Object.values(state.ships)) {
       if (ship.hp <= 0) {

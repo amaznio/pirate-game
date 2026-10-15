@@ -10,6 +10,7 @@ import {
 import { DEFAULT_MAP_STYLE, type MapStyle } from '@pirate/game-core/board/generateBoard';
 import { randomSeed } from '@pirate/game-core/config/seed';
 import type { Objective } from '@pirate/game-core/domain/Objective';
+import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
 import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 import {
   DEFAULT_AI_DIFFICULTY,
@@ -58,13 +59,15 @@ export function offlineConfig(
   ships: OfflineShips = {},
   loot = false,
   objective?: Objective,
+  monsters?: readonly MonsterTypeId[],
+  monsterWarnings = false,
 ): MatchConfig {
   const yours = ships.yours ?? DEFAULT_SHIP_TYPE_ID;
   const theirs = ships.theirs ?? yours;
   const shipTypeIds = [yours, ...Array.from({ length: Math.max(1, opponents) }, () => theirs)];
   const base =
     opponents <= 1
-      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed, shipTypeIds, loot, objective })
+      ? createDuelConfig({ aiDifficulty, sea: mapStyle, seed, shipTypeIds, loot, objective, monsters, monsterWarnings })
       : createSkirmishConfig({
           humans: 1,
           ais: opponents,
@@ -73,6 +76,8 @@ export function offlineConfig(
           sea: mapStyle,
           loot,
           objective,
+          monsters,
+          monsterWarnings,
           seed,
           shipTypeIds,
         });

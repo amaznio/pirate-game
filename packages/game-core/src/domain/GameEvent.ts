@@ -6,6 +6,7 @@ import type { WeaponSide } from './Ship';
 import type { Outcome } from './GameState';
 import type { Spin } from './Terrain';
 import type { PickupKind } from './Pickup';
+import type { LashSide } from './Monster';
 
 export type ProjectileSide = WeaponSide;
 
@@ -115,6 +116,37 @@ export type GameEvent =
       phase: number;
     }
   | { type: 'SHIP_DESTROYED'; shipId: EntityId; phase: number }
+  | {
+      /** A monster lashed a cell it had marked. `targetId` is the ship that was there, if one was. */
+      type: 'MONSTER_ATTACKED';
+      monsterId: EntityId;
+      side: LashSide;
+      /** The way a monster with no front struck; absent for one that strikes relative to its heading. */
+      aim?: Direction;
+      cell: Position;
+      targetId?: EntityId;
+      damage?: number;
+      phase: number;
+    }
+  | {
+      type: 'MONSTER_DAMAGED';
+      monsterId: EntityId;
+      amount: number;
+      hp: number;
+      maxHp: number;
+      phase: number;
+    }
+  | { type: 'MONSTER_DESTROYED'; monsterId: EntityId; phase: number }
+  | {
+      /** A sailing monster ended up in a new cell, by its own moves or carried by wind or a whirlpool. */
+      type: 'MONSTER_MOVED';
+      monsterId: EntityId;
+      from: Position;
+      to: Position;
+      heading: Direction;
+      cause: 'sail' | 'wind' | 'whirlpool';
+      phase: number;
+    }
   | {
       /** A ship reached the edge it was making for and left the match. */
       type: 'SHIP_ESCAPED';

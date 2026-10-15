@@ -11,6 +11,8 @@ import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
+import { generateMonsters, type MonsterSpawn } from '../board/generateMonsters';
+import type { MonsterTypeId } from '../domain/Monster';
 import {
   AMBUSH_TEAM_ID,
   ambushLayout,
@@ -78,6 +80,10 @@ export interface MatchConfig {
   readonly pickups?: PickupMap;
   /** The kind of sea the board was made for; shown in how the water looks. */
   readonly sea?: SeaChoice;
+  /** Creatures on the water at the start. None when left out. */
+  readonly monsters?: readonly MonsterSpawn[];
+  /** Show players what the monsters will strike (hidden when left out). */
+  readonly monsterWarnings?: boolean;
   readonly participants: readonly ParticipantConfig[];
   /** A way for the match to end besides last team standing. None when left out. */
   readonly objective?: Objective;
@@ -157,6 +163,22 @@ function seaFor(
   }
   const pickups = generatePickups({ width, height, seed, spawns, ...water, ...(count === undefined ? {} : { count, fair: true }) });
   return { ...water, ...chosen, pickups };
+}
+
+/** A monster placed on the water the sea was made of, when the match has one. */
+function monstersFor(
+  typeIds: readonly MonsterTypeId[] | undefined,
+  width: number,
+  height: number,
+  seed: number,
+  spawns: readonly Position[],
+  water: { obstacles: readonly ObstacleConfig[]; terrain: TerrainMap },
+): { monsters?: readonly MonsterSpawn[] } {
+  if (!typeIds || typeIds.length === 0) {
+    return {};
+  }
+  const monsters = generateMonsters({ width, height, seed, spawns, obstacles: water.obstacles, terrain: water.terrain, typeIds });
+  return monsters.length === 0 ? {} : { monsters };
 }
 
 /** The merchant's start, when the match has a merchant objective (kept clear of rocks and hazards). */
@@ -281,6 +303,10 @@ export function createDuelConfig(
     loot?: boolean;
     /** A way for the match to end besides last team standing. */
     objective?: Objective;
+    /** The sea monsters on the water. */
+    monsters?: readonly MonsterTypeId[];
+    /** Warn players which cells the monster will strike. */
+    monsterWarnings?: boolean;
     /** Ship types for [player, enemy]; sloops when left out. */
     shipTypeIds?: readonly string[];
   } = {},
@@ -290,22 +316,26 @@ export function createDuelConfig(
     { x: 9, y: 14 },
     { x: 9, y: 5 },
   ];
+  const allSpawns = [
+    ...duelSpawns,
+    ...merchantSpawns(BOARD_HEIGHT, overrides.objective),
+    ...ambushSpawns(BOARD_WIDTH, BOARD_HEIGHT, duelSpawns[0], 1, overrides.objective),
+  ];
+  const water = seaFor(
+    BOARD_WIDTH,
+    BOARD_HEIGHT,
+    seed,
+    allSpawns,
+    overrides.sea,
+    overrides.loot,
+    overrides.objective,
+  );
   const config: MatchConfig = {
     seed,
     board: { width: BOARD_WIDTH, height: BOARD_HEIGHT },
-    ...seaFor(
-      BOARD_WIDTH,
-      BOARD_HEIGHT,
-      seed,
-      [
-        ...duelSpawns,
-        ...merchantSpawns(BOARD_HEIGHT, overrides.objective),
-        ...ambushSpawns(BOARD_WIDTH, BOARD_HEIGHT, duelSpawns[0], 1, overrides.objective),
-      ],
-      overrides.sea,
-      overrides.loot,
-      overrides.objective,
-    ),
+    ...water,
+    ...monstersFor(overrides.monsters, BOARD_WIDTH, BOARD_HEIGHT, seed, allSpawns, water),
+    ...(overrides.monsters?.length && overrides.monsterWarnings ? { monsterWarnings: true } : {}),
     ...(overrides.objective === undefined ? {} : { objective: overrides.objective }),
     participants: [
       {
@@ -349,6 +379,10 @@ export interface SkirmishOptions {
   readonly loot?: boolean;
   /** A way for the match to end besides last team standing. None when left out. */
   readonly objective?: Objective;
+  /** The sea monsters on the water (none when left out). */
+  readonly monsters?: readonly MonsterTypeId[];
+  /** Warn players which cells the monster will strike (hidden when left out). */
+  readonly monsterWarnings?: boolean;
   /** Ship types in seat order (humans first); sloops when left out. */
   readonly shipTypeIds?: readonly string[];
 }
@@ -466,25 +500,20 @@ export function createSkirmishConfig(options: SkirmishOptions): MatchConfig {
   });
 
   const seed = options.seed ?? 1;
-  const sea = seaFor(
-    width,
-    height,
-    seed,
-    [
-      ...spawns.map((spawn) => spawn.position),
-      ...merchantSpawns(height, options.objective),
-      ...ambushSpawns(width, height, spawns[0].position, options.ais, options.objective),
-    ],
-    options.sea,
-    options.loot,
-    options.objective,
-  );
+  const allSpawns = [
+    ...spawns.map((spawn) => spawn.position),
+    ...merchantSpawns(height, options.objective),
+    ...ambushSpawns(width, height, spawns[0].position, options.ais, options.objective),
+  ];
+  const sea = seaFor(width, height, seed, allSpawns, options.sea, options.loot, options.objective);
 
   return withAiDifficulty(
     withAmbush(withMerchant({
       seed,
       board: { width, height },
       ...sea,
+      ...monstersFor(options.monsters, width, height, seed, allSpawns, sea),
+      ...(options.monsters?.length && options.monsterWarnings ? { monsterWarnings: true } : {}),
       ...(options.objective === undefined ? {} : { objective: options.objective }),
       participants,
       rules: options.rules ?? DEFAULT_RULES,

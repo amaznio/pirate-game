@@ -42,6 +42,22 @@ export function planActivity(plan: PlayerActions): number {
 }
 
 /**
+ * The monsters as players may see them. What a monster will strike is planned
+ * like a ship's plan, so it stays hidden unless the match warns players; the
+ * lashes themselves are still seen when they land (as events).
+ */
+function monstersSeenBy(state: GameState): NonNullable<GameState['monsters']> {
+  const monsters = state.monsters ?? {};
+  // The plan itself is never shown; with warnings the forecast of its lashes is.
+  return Object.fromEntries(
+    Object.entries(monsters).map(([id, monster]) => {
+      const { plan: _plan, ...rest } = monster;
+      return [id, state.monsterWarnings ? rest : { ...rest, attacks: [] }];
+    }),
+  );
+}
+
+/**
  * Builds the view one player is allowed to see. Other players' queues, tokens,
  * cannonballs and token settings are dropped; only a public summary remains.
  * Pure: a server calls this once per connected player after every change.
@@ -85,6 +101,7 @@ export function redactState(
     obstacles: state.obstacles,
     terrain: state.terrain,
     ...(state.pickups === undefined ? {} : { pickups: state.pickups }),
+    ...(state.monsters === undefined ? {} : { monsters: monstersSeenBy(state) }),
     ...(state.pickupsTaken === undefined ? {} : { pickupsTaken: state.pickupsTaken }),
     ...(state.objective === undefined ? {} : { objective: state.objective }),
     ...(state.sea === undefined ? {} : { sea: state.sea }),
@@ -139,6 +156,7 @@ export function viewToState(view: GameView, draft?: PlayerActions): GameState {
     obstacles: view.obstacles,
     terrain: view.terrain,
     ...(view.pickups === undefined ? {} : { pickups: view.pickups }),
+    ...(view.monsters === undefined ? {} : { monsters: view.monsters }),
     ...(view.pickupsTaken === undefined ? {} : { pickupsTaken: view.pickupsTaken }),
     ...(view.objective === undefined ? {} : { objective: view.objective }),
     ...(view.sea === undefined ? {} : { sea: view.sea }),

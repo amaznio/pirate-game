@@ -1,3 +1,4 @@
+import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
 import { objectiveFor, type ObjectiveChoice } from '../ui/menu/objectiveChoices';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
@@ -96,6 +97,8 @@ export default function App() {
       loot: boolean,
       ships: OfflineShips,
       objective: ObjectiveChoice,
+      monsters: readonly MonsterTypeId[],
+      monsterWarnings: boolean,
     ) => {
       setOffline(
         startOfflineMatch(offlineConfig(
@@ -107,6 +110,8 @@ export default function App() {
           ships,
           loot,
           objectiveFor(objective),
+          monsters,
+          monsterWarnings,
         )),
       );
     },

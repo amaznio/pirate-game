@@ -30,6 +30,13 @@ export interface AnimatorHooks {
   exitDirection?(): Direction | undefined;
   /** A ship took a pickup (or two ships met on one and it was lost). */
   onPickup?(event: Extract<GameEvent, { type: 'PICKUP_COLLECTED' | 'PICKUP_LOST' }>): void;
+  /** A sailing monster moves, by its own plan or carried by wind or a whirlpool (resolves when it has arrived). */
+  onMonsterMoved?(event: Extract<GameEvent, { type: 'MONSTER_MOVED' }>): Promise<void>;
+  /** A monster lashes a cell (resolves when its whip has finished). */
+  onMonsterAttack?(event: Extract<GameEvent, { type: 'MONSTER_ATTACKED' }>): Promise<void>;
+  onMonsterDamaged?(event: Extract<GameEvent, { type: 'MONSTER_DAMAGED' }>): Promise<void>;
+  /** A monster is sunk (resolves when it has gone). */
+  onMonsterDestroyed?(event: Extract<GameEvent, { type: 'MONSTER_DESTROYED' }>): Promise<void>;
 }
 
 /** Milliseconds between one cannon of a side and the next. */
@@ -104,6 +111,13 @@ export class EventAnimator {
         movement.map((event) => (event as { shipId: string }).shipId),
       ),
     ];
+    // A sailing monster moves at the same time as the ships.
+    const monsterMoved = events.filter(
+      (event): event is Extract<GameEvent, { type: 'MONSTER_MOVED' }> => event.type === 'MONSTER_MOVED',
+    );
+    const monsterSailing = monsterMoved
+      .filter((event) => event.cause === 'sail')
+      .map((event) => this.hooks.onMonsterMoved?.(event) ?? Promise.resolve());
     await Promise.all(
       shipIds.map(async (shipId) => {
         const own = movement.filter(
@@ -121,6 +135,8 @@ export class EventAnimator {
         }
       }),
     );
+
+    await Promise.all(monsterSailing);
 
     // Then the sea acts on the ships: wind carries them, whirlpools turn them.
     // Ships go in parallel; one ship's pushes and spin play in order.
@@ -140,6 +156,13 @@ export class EventAnimator {
       }),
     );
 
+    // ...and on a monster that sails.
+    await Promise.all(
+      monsterMoved
+        .filter((event) => event.cause !== 'sail')
+        .map((event) => this.hooks.onMonsterMoved?.(event) ?? Promise.resolve()),
+    );
+
     // Pickups are taken where the ships have ended up, before anyone fires.
     for (const event of events) {
       if (event.type === 'PICKUP_COLLECTED' || event.type === 'PICKUP_LOST') {
@@ -154,6 +177,19 @@ export class EventAnimator {
         await this.animateEscaped(event);
       }
     }
+
+    // A monster lashes the cells it marked, once the ships have settled and before anyone fires.
+    const lashes = events.filter(
+      (event): event is Extract<GameEvent, { type: 'MONSTER_ATTACKED' }> => event.type === 'MONSTER_ATTACKED',
+    );
+    await Promise.all(
+      lashes.map(async (event) => {
+        await this.hooks.onMonsterAttack?.(event);
+        if (event.targetId) {
+          this.flashShip(event.targetId);
+        }
+      }),
+    );
 
     for (const event of events) {
       if (event.type === 'CANNON_BLOCKED') {
@@ -182,6 +218,19 @@ export class EventAnimator {
         this.hooks.onDamage?.(event.shipId, event.hp);
       }
     }
+
+    await Promise.all(
+      events.map((event) =>
+        event.type === 'MONSTER_DAMAGED' ? this.hooks.onMonsterDamaged?.(event) : undefined,
+      ),
+    );
+
+    // A monster that sinks takes what it surfaced with it, and they go down together.
+    await Promise.all(
+      events.map((event) =>
+        event.type === 'MONSTER_DESTROYED' ? this.hooks.onMonsterDestroyed?.(event) : undefined,
+      ),
+    );
 
     for (const event of events) {
       if (event.type === 'SHIP_DESTROYED') {

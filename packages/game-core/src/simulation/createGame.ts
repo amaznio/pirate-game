@@ -9,6 +9,9 @@ import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
 import type { Direction } from '../domain/Direction';
 import type { Position } from '../domain/Position';
 import { createBoard } from '../domain/Board';
+import type { Monster, MonsterMap } from '../domain/Monster';
+import { getMonsterType } from '../config/monsterTypes';
+import { planMonsterTurn } from './monsters';
 import { cannonDamageBonus, carriedCannons, carriedMaxHull } from '../domain/CarryOver';
 import {
   cloneInventory,
@@ -141,7 +144,22 @@ export function createGame(
     }
   }
 
-  return {
+  const monsters: Record<EntityId, Monster> = {};
+  for (const spawn of config.monsters ?? []) {
+    const type = getMonsterType(spawn.typeId);
+    monsters[spawn.id] = {
+      id: spawn.id,
+      kind: 'monster',
+      monsterTypeId: spawn.typeId,
+      position: { ...spawn.position },
+      heading: spawn.heading,
+      hp: type.maxHp,
+      maxHp: type.maxHp,
+      attacks: [],
+    };
+  }
+
+  const state: GameState = {
     seed: config.seed,
     turn: 1,
     status: 'planning',
@@ -151,9 +169,14 @@ export function createGame(
     obstacles,
     terrain: config.terrain ?? {},
     ...(config.pickups === undefined ? {} : { pickups: config.pickups }),
+    ...(config.monsters === undefined || config.monsters.length === 0 ? {} : { monsters: monsters as MonsterMap }),
+    ...(config.monsterWarnings ? { monsterWarnings: true } : {}),
     ...(config.objective === undefined ? {} : { objective: config.objective }),
     ...(config.sea === undefined ? {} : { sea: config.sea }),
     players,
     outcome: null,
   };
+  // The monsters mark their first lashes before anyone plans turn 1.
+  const planned = planMonsterTurn(state);
+  return planned === undefined ? state : { ...state, monsters: planned };
 }

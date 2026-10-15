@@ -18,7 +18,11 @@
     "loot": "Botín",
     "lootOff": "No",
     "lootOn": "Sí",
-    "lootBlurb": "Barriles, cajas y tablones flotan en el agua. Termina un movimiento sobre uno para cogerlo: balas de cañón, fichas o un casco reparado."
+    "lootBlurb": "Barriles, cajas y tablones flotan en el agua. Termina un movimiento sobre uno para cogerlo: balas de cañón, fichas o un casco reparado.",
+    "monster": "Monstruos marinos",
+    "monsterBlurb": "Todo tipo de monstruo marino se une a la batalla: un calamar gigante que no se mueve, pero azota junto a su proa y delante de ella y hace surgir tentáculos, y un calamar y un tiburón que te cazan. Húndelos o mantente lejos.",
+    "monsterWarnings": "Avisos del monstruo",
+    "monsterWarningsBlurb": "Marca las casillas que el monstruo azotará este turno. Desactivado, ataca sin aviso, como el plan de cualquier barco."
   },
   "menu": {
     "yourName": "Tu nombre",

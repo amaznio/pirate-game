@@ -11,6 +11,7 @@ import type { Ship } from '../domain/Ship';
 import type { MatchRules } from '../domain/Rules';
 import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
+import type { MonsterMap } from '../domain/Monster';
 import type { MatchResult, PickupTally } from '../domain/MatchResult';
 import type { Objective } from '../domain/Objective';
 import type { SeaChoice } from '../board/generateBoard';
@@ -48,6 +49,8 @@ export interface GameView {
   readonly terrain: TerrainMap;
   /** Barrels, crates and planks afloat, taken by the ship that ends a phase on one. None when left out. */
   readonly pickups?: PickupMap;
+  /** Creatures on the water and what they have marked to strike this turn (public). None when absent. */
+  readonly monsters?: MonsterMap;
   /** What each player has picked up so far (public, it is a score). None when nobody has. */
   readonly pickupsTaken?: Readonly<Record<PlayerId, PickupTally>>;
   /** The match's objective, when it has one. */

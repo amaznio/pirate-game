@@ -1,5 +1,6 @@
 import type { Ship, WeaponMount, WeaponSide } from '../domain/Ship';
 import { isShip, mountsOnSide } from '../domain/Ship';
+import { isMonster } from '../domain/Monster';
 import type { CannonSlot } from '../domain/Action';
 import { CANNON_SIDES } from '../domain/Action';
 import type { EntityId } from '../domain/Entity';
@@ -9,6 +10,7 @@ import { leftBroadside, rightBroadside } from '../domain/Direction';
 import { getWeaponType } from '../config/weaponTypes';
 import { firstEntityAlongRay, rayEndpoint } from './collision';
 import { applyDamage } from './damage';
+import { damageMonster } from './monsters';
 
 function broadsideDirection(ship: Ship, side: WeaponSide) {
   return side === 'left'
@@ -25,6 +27,8 @@ export interface FirePlan {
 interface PendingDamage {
   readonly targetId: EntityId;
   readonly amount: number;
+  /** What the shot hit; ships by default. */
+  readonly kind?: 'ship' | 'monster';
 }
 
 /**
@@ -78,7 +82,11 @@ export function resolveFirePhase(
     }
   }
 
-  for (const { targetId, amount } of pending) {
+  for (const { targetId, amount, kind } of pending) {
+    if (kind === 'monster') {
+      events.push(...damageMonster(state, targetId, amount, phase));
+      continue;
+    }
     const target = state.ships[targetId];
     if (target) {
       events.push(...applyDamage(state, target, amount, phase));
@@ -138,7 +146,11 @@ function fireMount(
   }
 
   let damage = 0;
-  if (isShip(hit.entity)) {
+  if (isMonster(hit.entity)) {
+    // A monster has no team: every ship may shoot it.
+    damage = weapon.damage + (ship.bonusDamage ?? 0);
+    pending.push({ targetId: hit.entity.id, amount: damage, kind: 'monster' });
+  } else if (isShip(hit.entity)) {
     const friendly = hit.entity.teamId === ship.teamId;
     if (!friendly || state.rules.friendlyFire) {
       damage = weapon.damage + (ship.bonusDamage ?? 0);

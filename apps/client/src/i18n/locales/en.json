@@ -18,7 +18,11 @@
     "loot": "Loot",
     "lootOff": "Off",
     "lootOn": "On",
-    "lootBlurb": "Barrels, crates and planks float on the water. End a move on one to take it: cannonballs, tokens or a mended hull."
+    "lootBlurb": "Barrels, crates and planks float on the water. End a move on one to take it: cannonballs, tokens or a mended hull.",
+    "monster": "Sea monsters",
+    "monsterBlurb": "Every kind of sea monster joins the battle: a giant squid that never moves but lashes beside and ahead of its bow and surfaces tentacles, a squid and a shark that hunt you down. Sink them, or keep clear.",
+    "monsterWarnings": "Monster warnings",
+    "monsterWarningsBlurb": "Mark the cells the monster will lash this turn. Off, it strikes without warning, like any ship's plan."
   },
   "menu": {
     "yourName": "Your name",
