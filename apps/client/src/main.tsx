@@ -11,10 +11,9 @@ if (!container) {
 }
 
 // `?lab=art` shows the art test scene instead of the game (developer tool).
-const labName = new URLSearchParams(window.location.search).get('lab');
-if (labName === 'art' || labName === 'squid') {
+if (new URLSearchParams(window.location.search).get('lab') === 'art') {
   container.style.height = '100vh';
-  void import('./phaser/lab/mountArtLab').then((lab) => lab.mountArtLab(container, labName));
+  void import('./phaser/lab/mountArtLab').then((lab) => lab.mountArtLab(container));
 } else {
   createRoot(container).render(<App />);
 }
