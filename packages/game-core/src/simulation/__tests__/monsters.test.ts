@@ -8,6 +8,9 @@ import { createDuelConfig } from '../../config/matchConfig';
 import { generateMonsters } from '../../board/generateMonsters';
 import { runMatch } from '../../testing/matchRunner';
 import { createGame } from '../createGame';
+import { planAiActions } from '../../ai/simpleAI';
+import { previewPlayerPlan } from '../preview';
+import { resolveMovementOutcome } from '../movement';
 import { planMonsterTurn } from '../monsters';
 import { resolveTurn } from '../resolveTurn';
 import { beginNextTurn } from '../tokens';
@@ -692,5 +695,118 @@ describe('monsters: a tentacle has no front', () => {
   it('a tentacle is drawn upright: it never needs to be told which way it faces', () => {
     expect(getMonsterType('tentacle').omnidirectional).toBe(true);
     expect(getMonsterType('shark').omnidirectional).toBeUndefined();
+  });
+});
+
+describe('monsters: the ship AI', () => {
+  /** The player facing north at (10,12), a far-off enemy, and a giant squid out of the way. */
+  function standoff(overrides: Partial<GameState> = {}, monster: Partial<Monster> = {}): GameState {
+    const base = sea(
+      squid({ position: { x: 2, y: 2 }, ...monster }),
+      defaultPlayer({ position: { x: 10, y: 12 }, heading: 'NORTH' }),
+    );
+    return { ...base, ...overrides };
+  }
+
+  const marked = { phase: 0, cell: { x: 10, y: 11 }, side: 'front' as const };
+
+  it('keeps out of a cell it has been warned a monster will strike', () => {
+    const state = standoff();
+    const ship = state.ships['player-ship'];
+    const endOfFirstPhase = (plan: { movement: readonly (string | null)[] }) =>
+      plan.movement[0]
+        ? resolveMovementOutcome(state, 'player-ship', ship.position, ship.heading, plan.movement[0] as 'FORWARD').position
+        : ship.position;
+
+    // Wherever it would end the first phase when nobody warns it, mark that cell for a lash in that phase.
+    const quiet = planAiActions(state, 'player', 'normal');
+    const cell = endOfFirstPhase(quiet);
+    const warned = planAiActions(standoff({ monsterWarnings: true }, { attacks: [{ phase: 0, cell, side: 'front' }] }), 'player', 'normal');
+    expect(endOfFirstPhase(warned)).not.toEqual(cell);
+  });
+
+  it('does not read the monster plan when nobody is warned', () => {
+    const without = planAiActions(standoff(), 'player', 'normal');
+    const withHidden = planAiActions(standoff({}, { attacks: [marked] }), 'player', 'normal');
+    expect(withHidden).toEqual(without);
+  });
+
+  it('a hard AI is warier of a monster than an easy one', () => {
+    // A monster that sails keeps every cell near it a little dangerous even with no warning.
+    const shark: Monster = {
+      id: 'monster-1', kind: 'monster', monsterTypeId: 'shark', position: { x: 10, y: 9 }, heading: 'SOUTH',
+      hp: 4, maxHp: 4, attacks: [],
+    };
+    const state = { ...standoff(), monsters: { 'monster-1': shark } };
+    const easy = planAiActions(state, 'player', 'easy');
+    const hard = planAiActions(state, 'player', 'hard');
+    expect(hard).not.toEqual(easy);
+  });
+
+  it('fires on a monster that is in its line of fire when there is no ship to shoot', () => {
+    // The squid fills (10,6) and (10,7); from (7,7) facing north, the right broadside reaches (10,7).
+    const base = standoff({}, { position: { x: 10, y: 6 }, heading: 'SOUTH' });
+    const alone = {
+      ...base,
+      ships: { 'player-ship': { ...base.ships['player-ship'], position: { x: 7, y: 7 }, heading: 'NORTH' as const } },
+    };
+    const plan = planAiActions(alone, 'player', 'normal');
+    expect(plan.cannons.some((slot) => slot.right > 0)).toBe(true);
+  });
+
+  it('hunts the nearest monster when there is no enemy ship left', () => {
+    const base = standoff({}, { position: { x: 10, y: 6 }, heading: 'SOUTH' });
+    const alone = { ...base, ships: { 'player-ship': base.ships['player-ship'] } };
+    const plan = planAiActions(alone, 'player', 'normal');
+    expect(plan.movement.some((slot) => slot !== null)).toBe(true);
+  });
+
+  it('with monsters on, the AI duels still end decisively and the monsters now get shot', () => {
+    let sunk = 0;
+    for (const seed of [1, 2, 3, 4]) {
+      const record = runMatch(createDuelConfig({ seed, sea: 'normal', monsters: ['giant-squid', 'squid', 'shark'] }));
+      sunk += record.events.filter((e) => e.type === 'MONSTER_DESTROYED').length;
+    }
+    expect(sunk).toBeGreaterThan(0);
+  }, 30_000);
+});
+
+describe('monsters: the plan preview', () => {
+  const withCannons = (state: GameState, cannons: ReturnType<typeof cannon>[]): GameState => ({
+    ...state,
+    players: { ...state.players, player: { ...state.players.player, cannonQueue: cannons } },
+  });
+  const noFire = [cannon(0, 0), cannon(0, 0), cannon(0, 0), cannon(0, 0)];
+
+  it('draws a shot that would hit a monster as a hit on a monster', () => {
+    // The squid fills (10,6) and (10,7); from (7,7) facing north the right broadside reaches (10,7).
+    const state = withCannons(
+      sea(squid(), defaultPlayer({ position: { x: 7, y: 7 }, heading: 'NORTH' })),
+      [cannon(false, true), ...noFire.slice(1)],
+    );
+    const preview = previewPlayerPlan(state, 'player')!;
+    expect(preview.steps[0].shots[0]).toMatchObject({ outcome: 'monster', to: { x: 10, y: 7 } });
+  });
+
+  it('flags the phase in which the planned cell is one a monster is warned to strike', () => {
+    const lashes = [{ phase: 1, cell: { x: 11, y: 7 }, side: 'left' as const }];
+    const state = withCannons(
+      sea(squid({ attacks: lashes }), defaultPlayer({ position: { x: 11, y: 7 }, heading: 'NORTH' })),
+      noFire,
+    );
+    const preview = previewPlayerPlan(state, 'player')!;
+    expect(preview.steps.map((step) => step.lashed)).toEqual([false, true, false, false]);
+  });
+
+  it('shows nothing about a lash it was not told of: the hidden forecast is not in the view', () => {
+    const lashes = [{ phase: 1, cell: { x: 11, y: 7 }, side: 'left' as const }];
+    const real = withCannons(
+      sea(squid({ attacks: lashes }), defaultPlayer({ position: { x: 11, y: 7 }, heading: 'NORTH' })),
+      noFire,
+    );
+    // A player's own view of a match with no warnings carries no forecast, so the preview built from it flags nothing.
+    const view = redactState(real, 'player', null);
+    const preview = previewPlayerPlan(viewToState(view), 'player')!;
+    expect(preview.steps.every((step) => !step.lashed)).toBe(true);
   });
 });

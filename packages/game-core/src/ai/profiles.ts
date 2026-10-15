@@ -32,6 +32,10 @@ export interface AiProfile {
   readonly dangerWeight: number;
   /** Score lost for ending close to the edge of the board (a corner is a trap). */
   readonly edgeWeight: number;
+  /** Score lost per hull point a sea monster is expected to take off the final position of a phase. 0 ignores monsters. */
+  readonly monsterFear: number;
+  /** What a shot at a sea monster is worth next to a shot at an enemy ship (1 is the same). */
+  readonly monsterHitWeight: number;
   /**
    * Score for collecting a pickup that the ship badly needs (less for one it
    * needs less). 0 ignores loot altogether.
@@ -65,6 +69,8 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     tokenCost: 0,
     dangerWeight: 0,
     edgeWeight: 0,
+    monsterFear: 0,
+    monsterHitWeight: 0.25,
     lootWeight: 10,
     salvageWeight: 40,
     maxMoves: 2,
@@ -82,6 +88,8 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     tokenCost: 3,
     dangerWeight: 0,
     edgeWeight: 0,
+    monsterFear: 15,
+    monsterHitWeight: 0.5,
     lootWeight: 20,
     salvageWeight: 70,
     maxMoves: 4,
@@ -99,6 +107,8 @@ export const AI_PROFILES: Readonly<Record<AiDifficulty, AiProfile>> = {
     tokenCost: 4,
     dangerWeight: 25,
     edgeWeight: 5,
+    monsterFear: 30,
+    monsterHitWeight: 0.6,
     lootWeight: 25,
     salvageWeight: 90,
     maxMoves: 4,

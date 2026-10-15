@@ -37,6 +37,7 @@ function drawLine(
 
 const SHOT_COLORS: Record<PreviewShotOutcome, number> = {
   ship: 0xff5a4f,
+  monster: 0xffb347,
   obstacle: 0xd0d0d0,
   miss: 0xffffff,
 };
@@ -109,6 +110,24 @@ export class PlanPreviewView {
           .setOrigin(0.5);
         container.add([ghost, label]);
         previous = at;
+      }
+
+      // The cell this phase ends on is one a monster is warned to strike in it.
+      if (step.lashed) {
+        const warning = this.scene.add
+          .rectangle(at.x, at.y, TILE_SIZE - 6, TILE_SIZE - 6)
+          .setStrokeStyle(3, 0xff4b3a, 0.95);
+        const mark = this.scene.add
+          .text(at.x + TILE_SIZE * 0.3, at.y - TILE_SIZE * 0.3, '!', {
+            fontFamily: pixel ? '"Courier New", monospace' : 'Trebuchet MS, sans-serif',
+            fontSize: '26px',
+            fontStyle: 'bold',
+            color: '#ff8a7a',
+            stroke: '#4a0f0a',
+            strokeThickness: 4,
+          })
+          .setOrigin(0.5);
+        container.add([warning, mark]);
       }
 
       for (const shot of step.shots) {

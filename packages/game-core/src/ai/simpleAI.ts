@@ -16,12 +16,15 @@ import { inBounds } from '../domain/Board';
 import { DIRECTIONS, leftBroadside, rightBroadside, vectorFor } from '../domain/Direction';
 import { positionsEqual, translate } from '../domain/Position';
 import { isShip, mountsOnSide } from '../domain/Ship';
+import { isMonster, lashCell, type Monster } from '../domain/Monster';
+import { getMonsterType, isMobileType } from '../config/monsterTypes';
 import { cellKey } from '../domain/Terrain';
 import { heroTeams } from '../simulation/objectives';
 import { onExitEdge } from '../simulation/escapes';
 import { totalTokens } from '../domain/Action';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
-import { blockingEntityAt, getHostiles, getShipByOwner } from '../simulation/selectors';
+import { blockingEntityAt, getHostiles, getLivingMonsters, getShipByOwner } from '../simulation/selectors';
+import { bowCell } from '../simulation/monsters';
 import {
   resolveHoldOutcome,
   resolveMovementOutcome,
@@ -52,7 +55,16 @@ interface Candidate {
 /** One cannon that would fire, and the enemy ship its shot would hit (if any). */
 interface Shot {
   readonly victim: Ship | null;
+  /** A sea monster the shot would hit (every ship is its enemy); never set together with a ship. */
+  readonly monster?: Monster | null;
   readonly damage: number;
+}
+
+/** Whatever the AI is making for: an enemy ship, or, when there is none, a sea monster. */
+interface Target {
+  readonly id: string;
+  readonly position: Position;
+  readonly hp: number;
 }
 
 /** A pickup afloat, and what it is worth to this ship right now. */
@@ -65,12 +77,14 @@ interface Loot {
 interface Planning {
   readonly state: GameState;
   readonly me: Ship;
-  readonly target: Ship;
+  readonly target: Target;
   readonly hostiles: readonly Ship[];
   readonly profile: AiProfile;
   readonly outcomes: Map<string, MovementOutcome>;
   readonly volleys: Map<string, readonly Shot[]>;
   readonly threats: Map<string, number>;
+  /** The hull a sea monster is expected to take off a ship that ends a phase on a cell, by phase and cell. */
+  readonly monsterRisks: Map<string, number>;
   /** The pickups worth having, and the index of the one on each cell (by `"x,y"`). */
   readonly loot: readonly Loot[];
   readonly lootAt: ReadonlyMap<string, number>;
@@ -153,15 +167,58 @@ function volleyOf(
       hit && isShip(hit.entity) && hit.entity.hp > 0 && hit.entity.teamId !== plan.me.teamId
         ? hit.entity
         : null;
+    const monster = hit && isMonster(hit.entity) && hit.entity.hp > 0 ? hit.entity : null;
     for (const mount of mounts) {
       shots.push({
         victim,
+        monster,
         damage: getWeaponType(mount.weaponTypeId).damage + (plan.me.bonusDamage ?? 0),
       });
     }
   }
   plan.volleys.set(key, shots);
   return shots;
+}
+
+/**
+ * The hull a sea monster is expected to take off a ship that ends this phase on
+ * this cell. When the match warns, the AI reads the same forecast the players
+ * are shown. Otherwise it knows only what a player could guess: the cells a
+ * monster can strike, and how far a sailing one can get, each weighted by how
+ * often it strikes.
+ */
+function monsterLoss(plan: Planning, position: Position, phase: number): number {
+  const key = `${phase},${position.x},${position.y}`;
+  const cached = plan.monsterRisks.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+  let loss = 0;
+  for (const monster of getLivingMonsters(plan.state)) {
+    const type = getMonsterType(monster.monsterTypeId);
+    if (plan.state.monsterWarnings) {
+      for (const attack of monster.attacks) {
+        if (attack.phase === phase && positionsEqual(attack.cell, position)) {
+          loss += type.lashDamage;
+        }
+      }
+      continue;
+    }
+    const share = type.lashesPerTurn / ACTIONS_PER_TURN;
+    if (isMobileType(type)) {
+      // It may sail up to this many cells and strike what is beside it.
+      if (manhattan(position, monster.position) <= type.movesPerTurn + 1) {
+        loss += share * type.lashDamage * 0.5;
+      }
+    } else {
+      const bow = bowCell(monster);
+      if (type.lashSides.some((side) => positionsEqual(lashCell(monster.heading, bow, side), position))) {
+        loss += share * type.lashDamage;
+      }
+    }
+  }
+  plan.monsterRisks.set(key, loss);
+  return loss;
 }
 
 /** How many enemy cannons (as they are now) would cover this cell. */
@@ -233,7 +290,7 @@ function goalStepsOf(plan: Planning): Map<string, number> {
           ? onExitEdge(board, plan.exit, position)
           : CANNON_SIDES.some((side) =>
               volleyOf(plan, position, heading, side).some(
-                (shot) => shot.victim?.id === plan.target.id,
+                (shot) => (shot.victim?.id ?? shot.monster?.id) === plan.target.id,
               ),
             );
         if (atGoal) {
@@ -443,7 +500,7 @@ function search(
         break;
       }
       const shots = volleyOf(plan, nextPosition, nextHeading, side);
-      const victim = shots[0]?.victim;
+      const victim = shots[0]?.victim ?? shots[0]?.monster;
       if (!victim) {
         continue;
       }
@@ -451,19 +508,31 @@ function search(
       fires[side] = used;
       let dealt = 0;
       // Hits on the merchant are what the match is about.
-      const weight = victim.id === plan.preyId ? PREY_WEIGHT : 1;
+      // A monster that is not what it is hunting is worth less than a ship.
+      const weight =
+        victim.id === plan.preyId
+          ? PREY_WEIGHT
+          : shots[0].monster && victim.id !== plan.target.id
+            ? plan.profile.monsterHitWeight
+            : 1;
       for (const shot of shots.slice(0, used)) {
         ammo -= 1;
-        if (shot.victim) {
+        const struck = shot.victim ?? shot.monster;
+        if (struck) {
           // The cannons stack: the one that finishes the ship earns the kill bonus.
           const before = dealt;
           dealt += shot.damage;
           value +=
             weight *
             (plan.profile.hitValue +
-              (before < shot.victim.hp && dealt >= shot.victim.hp ? plan.profile.killBonus : 0));
+              (before < struck.hp && dealt >= struck.hp ? plan.profile.killBonus : 0));
         }
       }
+    }
+
+    // A sea monster may strike the cell this phase ends on.
+    if (plan.profile.monsterFear > 0) {
+      value -= plan.profile.monsterFear * monsterLoss(plan, nextPosition, phase);
     }
 
     // A merchant that ends a phase on its exit edge is away: nothing is worth more.
@@ -584,13 +653,14 @@ function forObjective(profile: AiProfile, state: GameState, me: Ship): AiProfile
 
 const SURVIVE_DANGER = 25;
 
-/** The nearest living hostile ship (ties broken by id for determinism). */
-function chooseTarget(state: GameState, me: Ship): Ship | undefined {
-  return getHostiles(state, me).sort(
-    (a, b) =>
-      manhattan(me.position, a.position) - manhattan(me.position, b.position) ||
-      a.id.localeCompare(b.id),
-  )[0];
+/**
+ * The nearest living hostile ship (ties broken by id for determinism) or, when no
+ * enemy ship is left, the nearest sea monster: the AI of a hunt has nobody else to fight.
+ */
+function chooseTarget(state: GameState, me: Ship): Target | undefined {
+  const byDistance = (a: Target, b: Target): number =>
+    manhattan(me.position, a.position) - manhattan(me.position, b.position) || a.id.localeCompare(b.id);
+  return getHostiles(state, me).sort(byDistance)[0] ?? getLivingMonsters(state).sort(byDistance)[0];
 }
 
 /**
@@ -628,6 +698,7 @@ export function planAiActions(
     outcomes: new Map(),
     volleys: new Map(),
     threats: new Map(),
+    monsterRisks: new Map(),
     ...lootFor(
       state,
       me,

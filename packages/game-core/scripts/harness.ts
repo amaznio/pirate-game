@@ -8,6 +8,7 @@
  *   pnpm harness --classes                           # every ship class pairing
  *   pnpm harness --loot                              # with barrels, crates and planks afloat
  *   pnpm harness --objective survive|salvage         # a battle objective (hero team is A's seat)
+ *   pnpm harness --monsters                          # every sea monster on the water, with a per-monster table
  *
  * Each pairing is played from both sides on every seed, so a side advantage
  * shows up as an uneven result for two identical opponents. "Starved" is the
@@ -22,7 +23,9 @@ import {
   type AiDifficulty,
 } from '../src/domain/GameState';
 import { DEFAULT_OBJECTIVES, OBJECTIVE_KINDS, type ObjectiveKind } from '../src/domain/Objective';
-import { runMatch } from '../src/testing/matchRunner';
+import { SELECTABLE_MONSTER_TYPE_IDS } from '../src/config/monsterTypes';
+import type { MonsterTypeId } from '../src/domain/Monster';
+import { runMatch, type MatchRecord } from '../src/testing/matchRunner';
 
 interface Options {
   seeds: number;
@@ -33,6 +36,7 @@ interface Options {
   shipB: string | null;
   classes: boolean;
   loot: boolean;
+  monsters: boolean;
   objective: ObjectiveKind | null;
 }
 
@@ -46,12 +50,13 @@ function parseArgs(argv: string[]): Options {
     shipB: null,
     classes: false,
     loot: false,
+    monsters: false,
     objective: null,
   };
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
-    if (flag === '--classes' || flag === '--loot') {
-      options[flag === '--loot' ? 'loot' : 'classes'] = true;
+    if (flag === '--classes' || flag === '--loot' || flag === '--monsters') {
+      options[flag === '--loot' ? 'loot' : flag === '--monsters' ? 'monsters' : 'classes'] = true;
       i -= 1;
       continue;
     }
@@ -118,6 +123,68 @@ interface Tally {
   byObjective: number;
 }
 
+/** What one kind of monster did, summed over every match played. */
+interface MonsterTally {
+  appearances: number;
+  attacks: number;
+  hits: number;
+  damage: number;
+  moves: number;
+  sunk: number;
+}
+
+const monsterTotals = new Map<MonsterTypeId, MonsterTally>();
+let matchesWithMonsters = 0;
+
+/** Reads a finished match for what its monsters did. */
+function recordMonsters(record: MatchRecord): void {
+  const monsters = record.finalState.monsters;
+  if (!monsters) {
+    return;
+  }
+  matchesWithMonsters += 1;
+  const tally = (id: string): MonsterTally | undefined => {
+    const type = monsters[id]?.monsterTypeId;
+    if (!type) {
+      return undefined;
+    }
+    let entry = monsterTotals.get(type);
+    if (!entry) {
+      entry = { appearances: 0, attacks: 0, hits: 0, damage: 0, moves: 0, sunk: 0 };
+      monsterTotals.set(type, entry);
+    }
+    return entry;
+  };
+  for (const id of Object.keys(monsters)) {
+    const entry = tally(id);
+    if (entry) {
+      entry.appearances += 1;
+    }
+  }
+  for (const event of record.events) {
+    if (event.type === 'MONSTER_ATTACKED') {
+      const entry = tally(event.monsterId);
+      if (entry) {
+        entry.attacks += 1;
+        if (event.targetId) {
+          entry.hits += 1;
+          entry.damage += event.damage ?? 0;
+        }
+      }
+    } else if (event.type === 'MONSTER_MOVED') {
+      const entry = tally(event.monsterId);
+      if (entry) {
+        entry.moves += 1;
+      }
+    } else if (event.type === 'MONSTER_DESTROYED') {
+      const entry = tally(event.monsterId);
+      if (entry) {
+        entry.sunk += 1;
+      }
+    }
+  }
+}
+
 /** `a` plays `player` on odd passes and `enemy` on even ones, so sides cancel out. */
 function play(
   a: AiDifficulty,
@@ -145,6 +212,7 @@ function play(
         seed,
         sea: options.sea,
         loot: options.loot,
+        ...(options.monsters ? { monsters: SELECTABLE_MONSTER_TYPE_IDS } : {}),
         ...(options.objective === null ? {} : { objective: DEFAULT_OBJECTIVES[options.objective] }),
         shipTypeIds: aIsPlayer ? [shipA, shipB] : [shipB, shipA],
       });
@@ -157,6 +225,7 @@ function play(
         })),
       };
       const record = runMatch(config);
+      recordMonsters(record);
       const aTeam = aIsPlayer ? 'player' : 'enemy';
       if (record.outcome?.kind === 'win') {
         if (record.outcome.teamId === aTeam) {
@@ -214,7 +283,7 @@ function main(): void {
   }
 
   console.log(
-    `Duels on the ${options.sea} sea${options.loot ? " with loot" : ""}${options.objective ? ` and the ${options.objective} objective` : ""}, ${options.seeds} seeds x 2 sides per pairing
+    `Duels on the ${options.sea} sea${options.loot ? " with loot" : ""}${options.monsters ? " with sea monsters" : ""}${options.objective ? ` and the ${options.objective} objective` : ""}, ${options.seeds} seeds x 2 sides per pairing
 `,
   );
   console.log(
@@ -249,6 +318,30 @@ function main(): void {
         : []),
     ];
     console.log(cells.join(' '));
+  }
+
+  if (matchesWithMonsters > 0) {
+    console.log(`\nSea monsters, over ${matchesWithMonsters} matches (all pairings together)\n`);
+    console.log(
+      ['monster'.padEnd(14), 'present', 'attacks', 'hits', 'hit rate', 'damage', 'moves', 'sunk']
+        .map((cell, index) => (index === 0 ? cell : cell.padStart(9)))
+        .join(' '),
+    );
+    for (const [type, t] of [...monsterTotals.entries()].sort()) {
+      console.log(
+        [
+          type.padEnd(14),
+          String(t.appearances).padStart(9),
+          String(t.attacks).padStart(9),
+          String(t.hits).padStart(9),
+          `${t.attacks === 0 ? 0 : ((100 * t.hits) / t.attacks).toFixed(0)}%`.padStart(9),
+          String(t.damage).padStart(9),
+          String(t.moves).padStart(9),
+          `${((100 * t.sunk) / t.appearances).toFixed(0)}%`.padStart(9),
+        ].join(' '),
+      );
+    }
+    console.log('\n(present = how many were on the water in total, tentacles included; sunk = the share of them that went down)');
   }
 }
 

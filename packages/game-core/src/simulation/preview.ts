@@ -7,7 +7,7 @@ import { ACTIONS_PER_TURN } from '../domain/Action';
 import { resolveTurn } from './resolveTurn';
 import { getShipByOwner } from './selectors';
 
-export type PreviewShotOutcome = 'miss' | 'ship' | 'obstacle';
+export type PreviewShotOutcome = 'miss' | 'ship' | 'monster' | 'obstacle';
 
 export interface PreviewShot {
   readonly side: WeaponSide;
@@ -25,6 +25,11 @@ export interface PreviewStep {
   readonly blocked: boolean;
   /** True when the player queued a move in this phase. */
   readonly hasMove: boolean;
+  /**
+   * True when the ship ends this phase on a cell a sea monster is warned to strike in it. It
+   * can only be true when the match warns: otherwise the view carries no forecast.
+   */
+  readonly lashed: boolean;
   readonly shots: readonly PreviewShot[];
 }
 
@@ -116,7 +121,7 @@ export function previewPlayerPlan(
             direction: directionBetween(event.from, event.to),
             from: event.from,
             to: event.to,
-            outcome: event.targetKind === 'ship' ? 'ship' : 'obstacle',
+            outcome: event.targetKind === 'ship' ? 'ship' : event.targetKind === 'monster' ? 'monster' : 'obstacle',
           });
           break;
         }
@@ -131,6 +136,13 @@ export function previewPlayerPlan(
       heading,
       blocked,
       hasMove: player.queue[phase] !== null,
+      lashed: Object.values(state.monsters ?? {}).some(
+        (monster) =>
+          monster.hp > 0 &&
+          monster.attacks.some(
+            (attack) => attack.phase === phase && attack.cell.x === position.x && attack.cell.y === position.y,
+          ),
+      ),
       shots,
     });
   }
