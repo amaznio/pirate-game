@@ -114,13 +114,15 @@ def add_streaks(layer, path, strength):
         width = 8.0 + (2.6 - 8.0) * t
         for side in (-1, 1):
             px = int(round(x + side * (width + 2 + (count % 4))))
-            for dy in range(0, int(3 + 5 * strength)):
+            for dy in range(0, int(4 + 8 * strength)):
                 py = int(round(y)) - dy  # trailing behind, toward the base (pre-flip: up the sheet)
+                if 0 <= px + side < CW and layer[py, px + side, 3] == 0 and dy % 2 == 0:
+                    layer[py, px + side] = (*FOAM_SHADE, 160)  # a fainter second line beside it
                 if 0 <= px < CW and 0 <= py < CH and layer[py, px, 3] == 0:
-                    layer[py, px] = (*FOAM, int(200 * (1 - dy / (3 + 5 * strength))))
+                    layer[py, px] = (*FOAM, int(255 * (1 - 0.6 * dy / (3 + 5 * strength))))
 
 
-def tentacle_frame(phase=0.0, extend=0.0, curl=1.0, droop=0.0, streaks=0.0):
+def tentacle_frame(phase=0.0, extend=0.0, curl=1.0, droop=0.0, streaks=0.0, splat=False):
     """One frame of the arm alone. extend straightens it and reaches it up: 0 is at rest, 1 is
     fully out, and below 0 it is drawn back and coiled, ready to strike. streaks (0 to 1) adds motion lines."""
     layer = blank(CW, CH)
@@ -142,15 +144,37 @@ def tentacle_frame(phase=0.0, extend=0.0, curl=1.0, droop=0.0, streaks=0.0):
         for u in [i / 10 for i in range(11)]
     ]
     mask = arm | arm_mask(curl_path, 2.6, 1.3)
+    if splat:
+        # Flung down hard: the tip spreads into a broad pad with two lobes either side.
+        tx, ty = curl_path[-1][0], curl_path[-1][1]
+        mask = mask | arm_mask([(tx, ty, 1.0)], 6.0, 6.0)
+        mask = mask | arm_mask([(tx - 6, ty - 3, 1.0)], 3.0, 3.0) | arm_mask([(tx + 6, ty - 3, 1.0)], 3.0, 3.0)
 
     body = shade(mask)
     add_suckers(body, mask, path)
     paste(layer, body)
     if streaks > 0:
         add_streaks(layer, path, streaks)
+    if splat:
+        # spray thrown off the tip
+        tx, ty = curl_path[-1][0], curl_path[-1][1]
+        for k, (dx, dy) in enumerate([(-10, 4), (-8, 9), (9, 5), (11, 10), (-3, 12), (4, 13), (0, 8)]):
+            px, py = int(round(tx + dx)), int(round(ty + dy))
+            if 0 <= px < CW and 0 <= py < CH and layer[py, px, 3] == 0:
+                layer[py, px] = (*(FOAM if k % 2 else FOAM_SHADE), 255)
+                if k % 3 == 0 and px + 1 < CW:
+                    layer[py, px + 1] = (*FOAM, 200)
     # Drawn pointing down, then turned over, so it rises up out of the foam ring (the cell's
     # centre row stays put). The strike frames reach up the same way.
     return np.roll(np.flipud(soften_outline(layer)), 1, axis=0)
+
+
+def with_ghost(frame, ghost):
+    """Lays a faded copy of an earlier pose behind a frame, so a fast move leaves a smear."""
+    out = ghost.copy()
+    out[..., 3] = (out[..., 3] * 0.38).astype(np.uint8)
+    paste(out, frame)
+    return out
 
 
 def death_frame(step):
@@ -173,9 +197,9 @@ def main():
     # The strike, in five beats: coil back, snap out, full reach, slam, and recoil.
     strike = [
         tentacle_frame(0.2, extend=-0.3, curl=1.9),
-        tentacle_frame(0.2, extend=0.55, curl=0.4, streaks=1.0),
-        tentacle_frame(0.2, extend=1.0, curl=0.2, streaks=0.7),
-        tentacle_frame(0.2, extend=1.0, curl=1.0),
+        with_ghost(tentacle_frame(0.2, extend=0.55, curl=0.4, streaks=1.0), tentacle_frame(0.2, extend=-0.1, curl=1.2)),
+        with_ghost(tentacle_frame(0.2, extend=0.94, curl=0.2, streaks=0.8), tentacle_frame(0.2, extend=0.45, curl=0.5)),
+        tentacle_frame(0.2, extend=0.82, curl=0.9, splat=True),
         tentacle_frame(0.2, extend=0.4, curl=1.3),
     ]
     hurt = [tint(tentacle_frame(0.0, curl=1.6), (255, 255, 255), 0.6), tentacle_frame(0.5, curl=1.6, droop=0.4)]
