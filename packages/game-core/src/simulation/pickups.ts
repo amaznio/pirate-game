@@ -33,6 +33,14 @@ function applyPickup(
       }
       return gained;
     }
+    case 'chest': {
+      // Treasure goes into the hold: it is the haul the hunt is for.
+      const gained = pickup.value ?? 1;
+      if (player) {
+        state.players[ship.ownerId] = { ...player, haul: (player.haul ?? 0) + gained };
+      }
+      return player ? gained : 0;
+    }
     case 'crate': {
       if (!player) {
         return 0;
@@ -94,11 +102,13 @@ export function collectPickups(
     }
     const gained = applyPickup(state, here[0], pickup);
     const owner = here[0].ownerId;
-    const tally = state.pickupsTaken?.[owner] ?? EMPTY_PICKUP_TALLY;
-    state.pickupsTaken = {
-      ...state.pickupsTaken,
-      [owner]: { ...tally, [pickup.kind]: tally[pickup.kind] + 1 },
-    };
+    if (pickup.kind !== 'chest') {
+      const tally = state.pickupsTaken?.[owner] ?? EMPTY_PICKUP_TALLY;
+      state.pickupsTaken = {
+        ...state.pickupsTaken,
+        [owner]: { ...tally, [pickup.kind]: tally[pickup.kind] + 1 },
+      };
+    }
     events.push({
       type: 'PICKUP_COLLECTED',
       shipId: here[0].id,

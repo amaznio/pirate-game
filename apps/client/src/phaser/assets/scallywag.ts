@@ -20,6 +20,8 @@ export const ScallywagKeys = {
   water: 'scallywagWater',
   /** The Fort sheet: the barrel. */
   fort: 'scallywagFort',
+  /** The hunt's treasure chest (drawn by tools/art/treasure.py). */
+  treasure: 'scallywagTreasure',
 } as const;
 
 export type HullSize = 'small' | 'medium' | 'large';
@@ -417,13 +419,14 @@ export const PICKUP_SPRITES: Readonly<
   barrel: { texture: ScallywagKeys.fort, rect: { x: 307, y: 83, w: 9, h: 11 } },
   crate: { texture: ScallywagKeys.water, rect: { x: 210, y: 51, w: 12, h: 10 } },
   plank: { texture: ScallywagKeys.water, rect: { x: 96, y: 133, w: 16, h: 6 } },
+  chest: { texture: ScallywagKeys.treasure, rect: { x: 0, y: 0, w: 16, h: 14 } },
 };
 
 export const pickupFrameName = (kind: PickupKind): string => `pickup/${kind}`;
 
 /** Registers the pickup frames on the loaded sheets. Safe to call more than once. */
 export function registerPickupFrames(textures: Phaser.Textures.TextureManager): void {
-  for (const kind of PICKUP_KINDS) {
+  for (const kind of [...PICKUP_KINDS, 'chest' as const]) {
     const { texture, rect } = PICKUP_SPRITES[kind];
     const sheet = textures.get(texture);
     const name = pickupFrameName(kind);

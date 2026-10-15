@@ -44,6 +44,8 @@ export interface MonsterType {
   readonly omnidirectional?: boolean;
   /** What it surfaces during the match, if anything. */
   readonly spawns?: MonsterSpawnRule;
+  /** The treasure chests it leaves when it is sunk in a hunt: how many, and what each is worth. */
+  readonly drop?: { readonly chests: number; readonly value: number };
   /** Only ever surfaced by another monster; never chosen for a match. */
   readonly summoned?: boolean;
 }
@@ -63,6 +65,7 @@ export const MONSTER_TYPES: Readonly<Record<MonsterTypeId, MonsterType>> = {
     lashesPerTurn: 2,
     lashSides: ['left', 'right', 'front'],
     movesPerTurn: 0,
+    drop: { chests: 4, value: 5 },
     spawns: {
       typeId: 'tentacle',
       everyTurns: 3,
@@ -82,6 +85,7 @@ export const MONSTER_TYPES: Readonly<Record<MonsterTypeId, MonsterType>> = {
     lashesPerTurn: 1,
     lashSides: ['front'],
     movesPerTurn: 2,
+    drop: { chests: 2, value: 2 },
   },
   tentacle: {
     id: 'tentacle',
@@ -94,6 +98,7 @@ export const MONSTER_TYPES: Readonly<Record<MonsterTypeId, MonsterType>> = {
     movesPerTurn: 1,
     omnidirectional: true,
     summoned: true,
+    drop: { chests: 1, value: 1 },
   },
   shark: {
     id: 'shark',
@@ -104,6 +109,7 @@ export const MONSTER_TYPES: Readonly<Record<MonsterTypeId, MonsterType>> = {
     lashesPerTurn: 2,
     lashSides: ['front'],
     movesPerTurn: 3,
+    drop: { chests: 1, value: 2 },
   },
 };
 

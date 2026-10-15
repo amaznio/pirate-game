@@ -17,6 +17,7 @@ import { applyDamage } from './damage';
 import { applyMovementPhase, resolveMovementOutcome, type MovementIntent } from './movement';
 import { getLivingMonsters, getLivingShips, monsterAt, obstacleAt, solidMonsterAt } from './selectors';
 import { cellKey } from '../domain/Terrain';
+import type { PickupMap } from '../domain/Pickup';
 
 /** The monster's bow cell: the last cell of its body, where its arms are. */
 export function bowCell(monster: Pick<Monster, 'position' | 'heading' | 'monsterTypeId'>): Position {
@@ -554,13 +555,63 @@ export function damageMonster(
   ];
   if (hp <= 0) {
     events.push({ type: 'MONSTER_DESTROYED', monsterId, phase });
+    dropLoot(state, monster);
     // What it surfaced goes down with it.
     for (const child of Object.values(state.monsters ?? {}).filter((m) => m.parentId === monsterId && m.hp > 0)) {
       state.monsters = { ...state.monsters, [child.id]: { ...child, hp: 0 } };
       events.push({ type: 'MONSTER_DESTROYED', monsterId: child.id, phase });
+      dropLoot(state, child);
     }
   }
   return events;
+}
+
+/**
+ * In a hunt, a monster that goes down leaves treasure chests on the water: on its own
+ * cells first, then on the nearest free water round it, until it has left what its
+ * kind drops. Free means no rock, wind, whirlpool, chest or other pickup, and no
+ * monster still afloat. The same sinking always leaves the same chests.
+ */
+function dropLoot(state: MutableGameState, monster: Monster): void {
+  const drop = getMonsterType(monster.monsterTypeId).drop;
+  if (state.objective?.kind !== 'hunt' || !drop) {
+    return;
+  }
+  const pickups: Record<string, PickupMap[string]> = { ...(state.pickups ?? {}) };
+  const here = monsterCells(monster, getMonsterType(monster.monsterTypeId).length);
+  const free = (cell: Position): boolean =>
+    inBounds(state.board, cell) &&
+    !pickups[cellKey(cell)] &&
+    !obstacleAt(state, cell) &&
+    !state.terrain[cellKey(cell)] &&
+    !getLivingMonsters(state).some((other) =>
+      monsterCells(other, getMonsterType(other.monsterTypeId).length).some((part) => part.x === cell.x && part.y === cell.y),
+    );
+
+  // Its own cells, then outward in rings (nearest first, in a fixed order).
+  const rings: Position[] = [...here];
+  for (let radius = 1; radius <= 4 && rings.length < here.length + drop.chests * 4; radius += 1) {
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) {
+          continue;
+        }
+        const origin = monster.position;
+        rings.push({ x: origin.x + dx, y: origin.y + dy });
+      }
+    }
+  }
+  let left = drop.chests;
+  for (const cell of rings) {
+    if (left <= 0) {
+      break;
+    }
+    if (free(cell)) {
+      pickups[cellKey(cell)] = { kind: 'chest', value: drop.value };
+      left -= 1;
+    }
+  }
+  state.pickups = pickups as PickupMap;
 }
 
 /** The turn is over: whatever the monsters planned is done, so the plan and the marks come off. */

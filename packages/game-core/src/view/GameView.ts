@@ -26,6 +26,8 @@ export interface PublicPlayerView {
   /** How well the AI sails this ship, or null while a human is in command. */
   readonly aiDifficulty: AiDifficulty | null;
   readonly lockedIn: boolean;
+  /** The treasure they carry (a score, so public). Only in a hunt. */
+  readonly haul?: number;
   /**
    * How busy their plan looks, from 0 (nothing planned) to 1 (full). It says
    * nothing about WHAT is planned.

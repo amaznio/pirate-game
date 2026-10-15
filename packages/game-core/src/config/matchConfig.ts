@@ -12,6 +12,7 @@ import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
 import { generateMonsters, type MonsterSpawn } from '../board/generateMonsters';
+import { generateTreasure } from '../board/generateTreasure';
 import type { MonsterTypeId } from '../domain/Monster';
 import { SELECTABLE_MONSTER_TYPE_IDS } from './monsterTypes';
 import {
@@ -326,12 +327,24 @@ export function createHuntConfig(options: HuntOptions = {}): MatchConfig {
 
   const water = seaFor(width, height, seed, spawns, options.sea);
   const typeIds = options.monsters ?? ['giant-squid', ...SELECTABLE_MONSTER_TYPE_IDS.filter((id) => id !== 'giant-squid')];
+  const monsters = monstersFor(typeIds, width, height, seed, spawns, water);
+  const pickups = generateTreasure({
+    width,
+    height,
+    seed,
+    start,
+    exitDepth: EXIT_DEPTH,
+    obstacles: water.obstacles,
+    terrain: water.terrain,
+    monsters: monsters.monsters ?? [],
+  });
 
   return {
     seed,
     board: { width, height },
     ...water,
-    ...monstersFor(typeIds, width, height, seed, spawns, water),
+    ...monsters,
+    pickups,
     ...(options.monsterWarnings ? { monsterWarnings: true } : {}),
     objective: { kind: 'hunt', exit: 'SOUTH', bossId: HUNT_BOSS_ID },
     participants: [

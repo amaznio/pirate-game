@@ -82,6 +82,7 @@ export function redactState(
       controller: player.controller,
       aiDifficulty: player.controller === 'ai' ? player.aiDifficulty : null,
       lockedIn: player.lockedIn,
+      ...(player.haul === undefined ? {} : { haul: player.haul }),
       activity: planActivity({
         movement: player.queue,
         cannons: player.cannonQueue,

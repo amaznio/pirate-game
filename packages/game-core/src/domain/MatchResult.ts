@@ -1,10 +1,10 @@
 import type { PlayerId, TeamId } from './Entity';
 import type { Outcome } from './GameState';
-import type { PickupKind } from './Pickup';
+import type { LootKind } from './Pickup';
 import type { ObjectiveKind } from './Objective';
 
 /** How many of each pickup a ship took during a match. */
-export type PickupTally = Readonly<Record<PickupKind, number>>;
+export type PickupTally = Readonly<Record<LootKind, number>>;
 
 export const EMPTY_PICKUP_TALLY: PickupTally = { barrel: 0, crate: 0, plank: 0 };
 
@@ -26,6 +26,8 @@ export interface ShipResult {
   /** Movement tokens left (they do not carry over: each battle starts fresh). */
   readonly tokens: number;
   readonly pickups: PickupTally;
+  /** The treasure it was carrying at the end (only in a hunt). */
+  readonly haul?: number;
 }
 
 /**
@@ -47,5 +49,7 @@ export interface MatchResult {
     readonly ending: 'left' | 'sunk';
     readonly bossSlain: boolean;
     readonly monstersSunk: number;
+    /** The treasure banked: what the hero carried out, or nothing if it was sunk. */
+    readonly haul: number;
   };
 }

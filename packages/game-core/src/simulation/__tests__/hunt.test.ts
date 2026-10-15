@@ -12,6 +12,7 @@ import { createGame } from '../createGame';
 import { inExitArea } from '../escapes';
 import { buildMatchResult } from '../matchResult';
 import { evaluateOutcome, resolveTurn } from '../resolveTurn';
+import { damageMonster } from '../monsters';
 import { runMatch } from '../../testing/matchRunner';
 import { submitted } from './testUtils';
 
@@ -134,7 +135,7 @@ describe('hunt: the result', () => {
   it('leaves the boss unslain when it is still afloat', () => {
     const left = withHero(hunt(), { hp: 0, escaped: true });
     const done = { ...left, outcome: evaluateOutcome(left, true), status: 'game_over' as const };
-    expect(buildMatchResult(done)?.hunt).toEqual({ ending: 'left', bossSlain: false, monstersSunk: 0 });
+    expect(buildMatchResult(done)?.hunt).toEqual({ ending: 'left', bossSlain: false, monstersSunk: 0, haul: 0 });
   });
 });
 
@@ -146,4 +147,72 @@ describe('hunt: played by the AI', () => {
     expect(a.hash).toBe(b.hash);
     expect(a.events.some((e) => e.type === 'MONSTER_ATTACKED' || e.type === 'PROJECTILE_HIT')).toBe(true);
   }, 60_000);
+});
+
+describe('hunt: treasure', () => {
+  it('scatters plenty of chests on open water, clear of rocks, monsters and the exit', () => {
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const config = createHuntConfig({ seed, sea: 'normal' });
+      const chests = Object.entries(config.pickups ?? {});
+      expect(chests.length, `seed ${seed}`).toBeGreaterThanOrEqual(8);
+      const monsterCellKeys = new Set(
+        (config.monsters ?? []).flatMap((m) => monsterCells(m, getMonsterType(m.typeId).length).map(cellKey)),
+      );
+      for (const [key, pickup] of chests) {
+        const [x, y] = key.split(',').map(Number);
+        expect(pickup.kind).toBe('chest');
+        expect(pickup.value ?? 0).toBeGreaterThan(0);
+        expect(y, `exit ${key}`).toBeLessThan(BOARD_HEIGHT - EXIT_DEPTH);
+        expect(config.obstacles.some((o) => o.x === x && o.y === y), `rock ${key}`).toBe(false);
+        expect(config.terrain?.[key], `hazard ${key}`).toBeUndefined();
+        expect(monsterCellKeys.has(key), `monster ${key}`).toBe(false);
+      }
+    }
+  });
+
+  it('adds a collected chest to the haul, not to the loot tally', () => {
+    const state = hunt();
+    const hero = state.ships['player-ship'];
+    const cell = { x: hero.position.x, y: hero.position.y - 1 };
+    const setup = {
+      ...state,
+      pickups: { [cellKey(cell)]: { kind: 'chest' as const, value: 3 } },
+    };
+    const sailing = resolveTurn(setup, submitted(['FORWARD', null, null, null]));
+    const player = sailing.nextState.players['player'];
+    expect(player.haul).toBe(3);
+    expect(sailing.nextState.pickups?.[cellKey(cell)]).toBeUndefined();
+    expect(sailing.nextState.pickupsTaken?.['player']).toBeUndefined();
+  });
+
+  it('drops chests where a monster is sunk, and only in a hunt', () => {
+    const state = hunt();
+    const boss = state.monsters![HUNT_BOSS_ID];
+    const dying = { ...state, pickups: {}, monsters: { [HUNT_BOSS_ID]: { ...boss, hp: 1 } } };
+    const cells = monsterCells(boss, getMonsterType('giant-squid').length);
+    const next = structuredClone(dying) as GameState;
+    damageMonster(next, HUNT_BOSS_ID, 5, 0);
+    const chests = Object.values(next.pickups ?? {});
+    expect(chests).toHaveLength(4);
+    expect(chests.every((c) => c.kind === 'chest' && c.value === 5)).toBe(true);
+    expect(cells.every((c) => next.pickups?.[cellKey(c)])).toBe(true);
+
+    const plain = structuredClone({ ...dying, objective: { kind: 'survive' as const, turns: 10 } }) as GameState;
+    damageMonster(plain, HUNT_BOSS_ID, 5, 0);
+    expect(Object.keys(plain.pickups ?? {})).toHaveLength(0);
+  });
+
+  it('banks the haul in the result when the hero leaves, and loses it when sunk', () => {
+    const base = hunt();
+    const loaded = {
+      ...base,
+      players: { ...base.players, player: { ...base.players['player'], haul: 7 } },
+    };
+    const left = withHero(loaded, { hp: 0, escaped: true });
+    const won = { ...left, outcome: evaluateOutcome(left, true), status: 'game_over' as const };
+    expect(buildMatchResult(won)?.hunt?.haul).toBe(7);
+    const sunk = withHero(loaded, { hp: 0 });
+    const lost = { ...sunk, outcome: evaluateOutcome(sunk, true), status: 'game_over' as const };
+    expect(buildMatchResult(lost)?.hunt?.haul).toBe(0);
+  });
 });

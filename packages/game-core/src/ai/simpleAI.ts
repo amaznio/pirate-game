@@ -348,7 +348,14 @@ function goalStepsOf(plan: Planning): Map<string, number> {
  * by how much the ship needs what is in it. A full hull wants no plank, and a
  * full hold no crate.
  */
-function lootValue(state: GameState, me: Ship, playerId: PlayerId, kind: string, weight: number): number {
+function lootValue(
+  state: GameState,
+  me: Ship,
+  playerId: PlayerId,
+  kind: string,
+  weight: number,
+  value = 1,
+): number {
   const player = state.players[playerId];
   if (!player || weight <= 0) {
     return 0;
@@ -357,6 +364,8 @@ function lootValue(state: GameState, me: Ship, playerId: PlayerId, kind: string,
     return weight; // in a race every pickup counts the same, full hold or not
   }
   switch (kind) {
+    case 'chest':
+      return weight * value; // treasure is what a hunt is for
     case 'barrel':
       return weight * (player.ammo <= 1 ? 2 : player.ammo <= 3 ? 1.2 : player.ammo <= 6 ? 0.6 : 0.3);
     case 'plank': {
@@ -582,7 +591,7 @@ function lootFor(
   const loot: Loot[] = [];
   const lootAt = new Map<string, number>();
   for (const key of Object.keys(state.pickups ?? {}).sort()) {
-    const value = lootValue(state, me, playerId, state.pickups![key].kind, weight);
+    const value = lootValue(state, me, playerId, state.pickups![key].kind, weight, state.pickups![key].value);
     if (value > 0 && loot.length < 30) {
       const [x, y] = key.split(',').map(Number);
       lootAt.set(key, loot.length);

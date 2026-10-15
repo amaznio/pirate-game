@@ -35,6 +35,7 @@ export class BootScene extends Phaser.Scene {
     // The pickups come from these two sheets whatever the art, so they always load.
     this.load.image(ScallywagKeys.water, 'assets/scallywag/water-islands.png');
     this.load.image(ScallywagKeys.fort, 'assets/scallywag/fort.png');
+    this.load.image(ScallywagKeys.treasure, 'assets/scallywag/treasure.png');
     // The sea monsters are drawn the same whatever the ship art.
     for (const art of MONSTER_ART_LIST) {
       this.load.image(art.key, art.path);
@@ -52,7 +53,7 @@ export class BootScene extends Phaser.Scene {
     for (const art of MONSTER_ART_LIST) {
       this.textures.get(art.key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
-    for (const key of [ScallywagKeys.water, ScallywagKeys.fort]) {
+    for (const key of [ScallywagKeys.water, ScallywagKeys.fort, ScallywagKeys.treasure]) {
       this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
     if (currentArtStyle() === 'scallywag') {

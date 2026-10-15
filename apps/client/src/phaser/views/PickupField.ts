@@ -16,6 +16,7 @@ const GAIN_COLOURS: Record<PickupKind, string> = {
   barrel: '#ffb347',
   crate: '#ffe27a',
   plank: '#8fe388',
+  chest: '#ffd24a',
 };
 
 interface PickupView {

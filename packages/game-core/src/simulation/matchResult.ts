@@ -28,6 +28,12 @@ export function buildMatchResult(state: GameState): MatchResult | null {
             bossSlain:
               state.objective.bossId !== undefined && (state.monsters?.[state.objective.bossId]?.hp ?? 1) <= 0,
             monstersSunk: Object.values(state.monsters ?? {}).filter((monster) => monster.hp <= 0).length,
+            haul:
+              outcome.kind === 'win' && heroes.has(outcome.teamId)
+                ? Object.values(state.players)
+                    .filter((player) => heroes.has(player.teamId))
+                    .reduce((total, player) => total + (player.haul ?? 0), 0)
+                : 0,
           },
         }
       : {}),
@@ -46,6 +52,7 @@ export function buildMatchResult(state: GameState): MatchResult | null {
         ammo: player.ammo,
         tokens: totalTokens(player.tokens),
         pickups: state.pickupsTaken?.[player.id] ?? EMPTY_PICKUP_TALLY,
+        ...(player.haul === undefined ? {} : { haul: player.haul }),
       };
     }),
   };
