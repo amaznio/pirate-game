@@ -19,6 +19,23 @@ export function onExitEdge(board: Board, exit: Direction, position: Position): b
 }
 
 /**
+ * Whether a cell is in the exit area: the `depth` outermost rows along the edge
+ * a ship is leaving by. A hero in a hunt leaves from here.
+ */
+export function inExitArea(board: Board, exit: Direction, position: Position, depth: number): boolean {
+  switch (exit) {
+    case 'EAST':
+      return position.x >= board.width - depth;
+    case 'WEST':
+      return position.x < depth;
+    case 'NORTH':
+      return position.y < depth;
+    case 'SOUTH':
+      return position.y >= board.height - depth;
+  }
+}
+
+/**
  * Lets the merchant leave the match when it ends a phase's movement on the edge
  * it is making for. It happens before anyone fires, so a merchant that reaches
  * the edge is out of reach in that same phase. Only matches with a merchant

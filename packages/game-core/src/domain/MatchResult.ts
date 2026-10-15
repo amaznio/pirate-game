@@ -42,4 +42,10 @@ export interface MatchResult {
   readonly ships: readonly ShipResult[];
   /** The objective the match had, and whether the hero team met it. Absent for a standard match. */
   readonly objective?: { readonly kind: ObjectiveKind; readonly met: boolean };
+  /** How a hunt went: how it ended, whether the boss was slain, how many monsters were sunk. Only in a hunt. */
+  readonly hunt?: {
+    readonly ending: 'left' | 'sunk';
+    readonly bossSlain: boolean;
+    readonly monstersSunk: number;
+  };
 }

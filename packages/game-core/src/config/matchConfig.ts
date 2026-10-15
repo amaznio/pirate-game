@@ -13,9 +13,12 @@ import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
 import { generateMonsters, type MonsterSpawn } from '../board/generateMonsters';
 import type { MonsterTypeId } from '../domain/Monster';
+import { SELECTABLE_MONSTER_TYPE_IDS } from './monsterTypes';
 import {
   AMBUSH_TEAM_ID,
   ambushLayout,
+  EXIT_DEPTH,
+  HUNT_PLAYER_ID,
   ESCORT_TEAM_ID,
   MERCHANT_PLAYER_ID,
   MERCHANT_SHIP_ID,
@@ -286,6 +289,64 @@ export function withMerchant(config: MatchConfig): MatchConfig {
       ),
       merchant,
     ],
+  };
+}
+
+export interface HuntOptions {
+  readonly seed?: number;
+  readonly sea?: SeaChoice;
+  /** The hero's ship class; the sloop when left out. */
+  readonly shipTypeId?: string;
+  /** Which monsters share the water, the boss first; every kind (the giant squid as boss) when left out. */
+  readonly monsters?: readonly MonsterTypeId[];
+  /** Warn the hero which cells the monsters will strike (hidden when left out). */
+  readonly monsterWarnings?: boolean;
+  readonly rules?: MatchRules;
+  readonly name?: string;
+}
+
+/** The monster that is the boss of a default hunt: the first one placed. */
+export const HUNT_BOSS_ID = 'monster-1';
+
+/**
+ * A hunt: one hero ship against the sea monsters, with no enemy ship. The hero
+ * starts just inside the south edge, beside the exit (the outer rows of that
+ * edge, kept clear of rocks, wind and whirlpools), and the monsters lie out in
+ * the water beyond, the boss among them. There is no turn limit: the hunt ends
+ * when the hero leaves with what it carries or is sunk (see `Objective`).
+ */
+export function createHuntConfig(options: HuntOptions = {}): MatchConfig {
+  const seed = options.seed ?? 1;
+  const width = BOARD_WIDTH;
+  const height = BOARD_HEIGHT;
+  const start = { x: Math.floor(width / 2), y: height - 1 - EXIT_DEPTH };
+  // Points along the exit edge make the generator keep that whole strip clear.
+  const exitStrip = [0, 4, 8, 12, 16, width - 1].map((x) => ({ x, y: height - 1 }));
+  const spawns = [start, ...exitStrip];
+
+  const water = seaFor(width, height, seed, spawns, options.sea);
+  const typeIds = options.monsters ?? ['giant-squid', ...SELECTABLE_MONSTER_TYPE_IDS.filter((id) => id !== 'giant-squid')];
+
+  return {
+    seed,
+    board: { width, height },
+    ...water,
+    ...monstersFor(typeIds, width, height, seed, spawns, water),
+    ...(options.monsterWarnings ? { monsterWarnings: true } : {}),
+    objective: { kind: 'hunt', exit: 'SOUTH', bossId: HUNT_BOSS_ID },
+    participants: [
+      {
+        playerId: HUNT_PLAYER_ID,
+        name: options.name ?? 'Player',
+        teamId: 'player',
+        shipTypeId: options.shipTypeId ?? DEFAULT_SHIP_TYPE_ID,
+        spawn: { position: start, heading: 'NORTH' },
+        controller: 'human',
+      },
+    ],
+    rules: options.rules ?? DEFAULT_RULES,
+    startingTokens: INITIAL_TOKEN_POOL,
+    startingAmmo: CANNON_STARTING_AMMO,
   };
 }
 

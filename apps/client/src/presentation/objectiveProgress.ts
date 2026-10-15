@@ -36,6 +36,9 @@ export function objectiveProgress(view: GameView): ObjectiveProgress | null {
   if (!objective) {
     return null;
   }
+  if (objective.kind === 'hunt') {
+    return null; // the hunt's banner (haul, boss, exit) comes with its own screens
+  }
   if (objective.kind === 'survive') {
     return { kind: 'survive', turn: Math.min(view.turn, objective.turns), turns: objective.turns };
   }
@@ -115,7 +118,7 @@ export function endNote(
   result: 'win' | 'loss' | 'draw' | null,
   reason: OutcomeReason | undefined,
 ): EndNote {
-  if (result === null || !view.objective) {
+  if (result === null || !view.objective || view.objective.kind === 'hunt') {
     return null;
   }
   if (view.objective.kind === 'ambush') {

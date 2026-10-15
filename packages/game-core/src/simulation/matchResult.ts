@@ -21,6 +21,16 @@ export function buildMatchResult(state: GameState): MatchResult | null {
             met: outcome.kind === 'win' && heroes.has(outcome.teamId),
           },
         }),
+    ...(state.objective?.kind === 'hunt'
+      ? {
+          hunt: {
+            ending: outcome.kind === 'win' && heroes.has(outcome.teamId) ? ('left' as const) : ('sunk' as const),
+            bossSlain:
+              state.objective.bossId !== undefined && (state.monsters?.[state.objective.bossId]?.hp ?? 1) <= 0,
+            monstersSunk: Object.values(state.monsters ?? {}).filter((monster) => monster.hp <= 0).length,
+          },
+        }
+      : {}),
     ships: Object.values(state.players).map((player) => {
       const ship = state.ships[player.shipId];
       return {

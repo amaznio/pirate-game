@@ -23,6 +23,12 @@ import type { Position } from './Position';
  *    arrive at the start of later turns (see `ambushLayout`). The hero team wins
  *    by sinking every raider, those still to arrive included; it loses if it is
  *    sunk, or if raiders are still afloat or still to come when turn `turns` ends.
+ *  - `hunt`: sea monsters only, no enemy ships and no turn limit. The hero
+ *    leaves through the `exit` edge with what it carries (the hunt is won, the
+ *    haul banked) or is sunk (the hunt is lost). Killing the boss monster does not
+ *    end it: the boss drops loot and the hero has to collect it and leave. The
+ *    usual "last team standing" rule is switched off. `exit` and `bossId` are
+ *    filled in when the match is built.
  */
 export type Objective =
   | { readonly kind: 'survive'; readonly turns: number }
@@ -36,11 +42,18 @@ export type Objective =
       /** The edge of the board the merchant is making for, set when the match is built. */
       readonly exit?: Direction;
     }
-  | { readonly kind: 'ambush'; readonly turns: number };
+  | { readonly kind: 'ambush'; readonly turns: number }
+  | {
+      readonly kind: 'hunt';
+      /** The edge of the board the hero leaves by, set when the match is built. */
+      readonly exit?: Direction;
+      /** The monster that is the boss, set when the match is built. */
+      readonly bossId?: string;
+    };
 
 export type ObjectiveKind = Objective['kind'];
 
-export const OBJECTIVE_KINDS: readonly ObjectiveKind[] = ['survive', 'salvage', 'merchant', 'ambush'];
+export const OBJECTIVE_KINDS: readonly ObjectiveKind[] = ['survive', 'salvage', 'merchant', 'ambush', 'hunt'];
 
 /** Default numbers when an objective is chosen from a menu (a solo run sets its own). */
 export const DEFAULT_OBJECTIVES: Readonly<Record<ObjectiveKind, Objective>> = {
@@ -48,6 +61,7 @@ export const DEFAULT_OBJECTIVES: Readonly<Record<ObjectiveKind, Objective>> = {
   salvage: { kind: 'salvage', target: 2 },
   merchant: { kind: 'merchant', turns: 12 },
   ambush: { kind: 'ambush', turns: 14 },
+  hunt: { kind: 'hunt' },
 };
 
 /** The player id and ship id of the merchant in a merchant match. */
@@ -74,7 +88,20 @@ export type OutcomeReason =
   | 'intercepted'
   | 'escaped'
   | 'ambush_broken'
-  | 'overrun';
+  | 'overrun'
+  | 'left';
+
+/**
+ * The side a sunk hero loses to in a hunt. The monsters have no team in the
+ * state, so this only names who won when the hunt is lost.
+ */
+export const MONSTER_TEAM_ID = 'monsters';
+
+/** The hero's player id in a hunt. */
+export const HUNT_PLAYER_ID = 'player';
+
+/** How many rows deep the exit area runs along its edge. */
+export const EXIT_DEPTH = 2;
 
 /** The team every raider sails for in an ambush match. */
 export const AMBUSH_TEAM_ID = 'raiders';

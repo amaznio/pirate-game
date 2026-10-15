@@ -26,6 +26,9 @@ export function evaluateOutcome(state: GameState, endOfTurn = false): Outcome | 
   if (state.objective?.kind === 'ambush') {
     return null; // ships still to arrive keep the match open: no last-ship shortcut
   }
+  if (state.objective?.kind === 'hunt') {
+    return null; // a lone hero afloat is not a win: the hunt ends only by leaving or sinking
+  }
   const teams = new Set(getLivingShips(state).map((ship) => ship.teamId));
   if (teams.size === 0) {
     return { kind: 'draw' };

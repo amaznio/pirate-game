@@ -1,6 +1,6 @@
 import type { GameState, Outcome } from '../domain/GameState';
 import type { TeamId } from '../domain/Entity';
-import type { Objective } from '../domain/Objective';
+import { MONSTER_TEAM_ID, type Objective } from '../domain/Objective';
 import type { Ship } from '../domain/Ship';
 import { getLivingShips } from './selectors';
 
@@ -100,6 +100,25 @@ function evaluateMerchant(
 }
 
 /**
+ * The hunt. The hero's ship is gone from the water one of two ways: it left with
+ * what it carried (the hunt is won), or it was sunk (the hunt is lost, to the
+ * monsters). Until then nothing ends it: there is no turn limit, and a lone ship
+ * afloat is not a win.
+ */
+function evaluateHunt(state: GameState): Outcome | null {
+  const heroes = heroTeams(state);
+  const ships = Object.values(state.ships).filter((ship) => heroes.has(ship.teamId));
+  if (ships.some((ship) => ship.hp > 0)) {
+    return null;
+  }
+  const left = ships.find((ship) => ship.escaped);
+  if (left) {
+    return { kind: 'win', teamId: left.teamId, reason: 'left' };
+  }
+  return { kind: 'win', teamId: MONSTER_TEAM_ID, reason: 'objective_failed' };
+}
+
+/**
  * Whether the objective has settled the match. `endOfTurn` is true only after
  * the last phase of a turn, which is when "survive N turns" is decided. Null
  * means the objective has nothing to say yet (the usual rule then applies).
@@ -132,6 +151,9 @@ export function evaluateObjective(state: GameState, endOfTurn: boolean): Outcome
   }
   if (objective.kind === 'ambush') {
     return evaluateAmbush(state, objective, endOfTurn);
+  }
+  if (objective.kind === 'hunt') {
+    return evaluateHunt(state);
   }
 
   // salvage

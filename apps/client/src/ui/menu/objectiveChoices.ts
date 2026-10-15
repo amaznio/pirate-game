@@ -6,7 +6,7 @@ import {
 } from '@pirate/game-core/domain/Objective';
 
 /** What the menu offers: an ordinary battle, or one of the objectives. */
-export type ObjectiveChoice = 'standard' | ObjectiveKind;
+export type ObjectiveChoice = 'standard' | Exclude<ObjectiveKind, 'hunt'>;
 
 export const OBJECTIVE_CHOICES: readonly ObjectiveChoice[] = [
   'standard',

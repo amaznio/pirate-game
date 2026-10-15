@@ -2,7 +2,8 @@ import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import type { ObjectiveKind } from '@pirate/game-core/domain/Objective';
 
 /** What a battle node asks of the player: an ordinary fight, or one of the objectives. */
-export type BattleKind = 'standard' | ObjectiveKind;
+/** The kinds of battle a voyage node can be. A hunt is not one yet (it becomes a node of its own). */
+export type BattleKind = 'standard' | Exclude<ObjectiveKind, 'hunt'>;
 
 export const BATTLE_KINDS: readonly BattleKind[] = ['standard', 'survive', 'salvage', 'merchant', 'ambush'];
 
