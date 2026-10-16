@@ -132,6 +132,15 @@ The user adopted a Claude Design bundle (14 boards: Harbour dark skin, Logbook p
 - **Not done:** the design's bottom tab bar (waits for a live Voyage); the design's collapsed phone strip is taller than the mockup (full token chips).
 - **Not seen in a browser:** the Lobby, the game-over and sunk dialogs, the objective banner and "Hurry" chip at phone width, the Friends screen with a real server, the Spanish and Polish layouts (new strings are machine-drafted), and any screenshot of an open dropdown.
 
+### Roadmap phase 9, sea monsters and the hunt, and the UI around it (a later session; branch `feature/sea-monster-hunting`)
+Read ROADMAP.md phase 9: it holds what was built, the numbers, how to try it and what is left. In short: monsters as entities with hidden plans; a **hunt** mode (monsters only, treasure, a Leave choice, the Kraken as boss) reachable from the menu or with `/?hunt=on`; a **hunt node** on the solo voyage that pays supplies; redrawn monster art and an Atlantean ship sheet (`/?ships=atlantean`) from `tools/art/` scripts that share `pixel.py`; and, on the way, a voyage map you drag and zoom, no briefing screen, a new game over dialog, drag and drop for the plan (dnd-kit) and matching menu cards.
+
+- **Where things are:** game-core `config/monsterTypes.ts`, `simulation/monsters.ts`, `objectives.ts` (the hunt), `escapes.ts` (leaving), `board/generateMonsters.ts`, `generateTreasure.ts`; run-core `run/battle.ts` (`buildHunt`), `run/engine.ts` (`finishBattle`), `run/rules.ts` (hunt numbers), `graph/generateArea.ts` (`pickHuntStop`); client `phaser/views/MonsterField.ts`, `ui/menu/HuntScreen.tsx`, `ui/voyage/VoyageMapScreen.tsx` and `usePanZoom.ts`, `ui/ResultSummary.tsx`, `ui/PlanDnd.tsx`.
+- **Rules to keep:** the AI never reads a monster's hidden plan (it sees the forecast only when the match warns); a departed ship's hull is 0 and `hullOnExit` holds what it left with; the voyage's save version is 2 and bumps whenever the generated map changes.
+- **The user's taste for art:** crisp, flat, banded pixel art in the ship-sheet style (no gradients or speckle), drawn from code; icons with a purpose; they asked for assets over plain text in dialogs.
+- **How the user wants work tracked:** a Linear issue for each piece of work (team Pirate Game, project Sea monster hunting), marked Done with the commit once it lands; commits only when asked, split by concern.
+- **Not seen yet:** a voyage hunt played to the end, the hunt stop on a later area's map, touch (the drag press and pinch) and phone layouts of the new screens.
+
 ## 3. The sea, and why it ended up this way
 
 Three versions were rejected by the user, which is why the final design is what
@@ -175,10 +184,8 @@ swell stripes, off by default), `?water=pack` (the pack's own bright tiles),
 
 ## 4. Git state at the end of the session
 
-On `main`, tracking `origin/main`. Everything is pushed, including the UI
-commits (`62da054`, `f8aa4b6`, `526c2ab` for the `.scratch/` ignore, `6cf65f3`
-for this file) and the phase 3 art commits (`cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`,
-`2bdd578` docs) and the i18n work (phase 3b, the commit that carries this file).
+The monster and hunt work is on `feature/sea-monster-hunting` (18 commits ahead of `main` when
+this was written, pushed with a pull request open). `main` holds everything up to the voyage (phase 7).
 Still ask before pushing new work.
 
 `PhaserGame.ts` sometimes shows as modified with no real change; it is a
@@ -240,8 +247,11 @@ CRLF/timestamp artefact, `git add` clears it.
 - Open Radix popups (Select, Popover) are hard to screenshot here; check their
   position by geometry and their content by text.
 
+- **Art scripts:** run `python tools/art/<script>.py` from the repo root (Pillow, numpy and scipy are installed). They write straight into `apps/client/public/assets/` and the frame manifests, so run only the one you mean (`sea_monsters.py` rewrites four monster sheets; the old per-monster scripts now just call it). Look at components such as the game over summary on `/?kit`, since a hidden pane cannot reach the dialog by playing.
+
 ## 7. Next steps (in this order)
 
+0. **Phase 9 leftovers** (see ROADMAP.md phase 9, and Linear): play a voyage hunt through and tune its payout, give the AI a way to leave a hunt, check the new screens on a phone, then the Atlantean monsters in the rules (PIR-125), hunts online (PIR-122) and the rest of the backlog.
 1. **Optional leftovers:** the grey wreck set (wait until wrecks are real board
    objects), a sea section in the art lab (left out on purpose), spray (off).
 2. **Phase 6** (battle objectives; all done, see ROADMAP.md) and onward: a client-only solo run (`run-core`), Postgres, monsters. First

@@ -1036,8 +1036,86 @@ Profile, run history, unlocks, hub shop, and a cloud copy of the solo voyage.
       Postgres, the API domain, the OAuth apps).
 - [ ] G. Later: unlocks and the hub shop.
 
-### 9. Sea monsters: `todo`
-Non-ship entities, telegraphed attack patterns, Kraken boss, hunt node.
+### 9. Sea monsters and the hunt: `doing` (the hunt is playable; what is left is listed at the end)
+Built on the branch `feature/sea-monster-hunting`. The work is tracked in Linear, team
+Pirate Game, project "Sea monster hunting" (PIR-85 to PIR-138).
+
+**Monsters (game-core).** A monster is an entity that blocks ships and shots like a rock, can be
+sunk, belongs to no team and plans a turn like a ship: four hidden phases (a move and a lash
+each), with the cells it will strike shown to the player only when the match is set to warn
+(`monsterWarnings`). Every number is in `config/monsterTypes.ts`:
+
+| Monster | Cells | Hull | Lash | Moves a turn | Drops |
+|---|---|---|---|---|---|
+| Giant squid | 2, never moves | 10 (15 as the Kraken) | 2 damage, twice a turn, left, right and ahead | 0 | 4 chests of 5 (8 as the Kraken) |
+| Squid | 1 | 6 | 2 damage, once, ahead | 2 | 2 chests of 2 |
+| Shark | 1 | 4 | 1 damage, twice, ahead | 3 | 1 chest of 2 |
+| Tentacle | 1, no front (steps and strikes in four directions) | 2 | 1 damage | 1 | 1 chest of 1 |
+
+The giant squid surfaces tentacles (one every three turns, and two each time it falls to 70
+and to 40 per cent of its hull, at most four afloat). The one-cell monsters sail by exactly
+the ship movement rules (wind, whirlpools, rocks). `generateMonsters` places them well apart
+(five cells where the sea has room), towards the middle, clear of the ships' starts.
+
+**The hunt.** A match with the objective `hunt` (`createHuntConfig`): one hero against the
+monsters, no enemy ship and no turn limit. The hero starts beside the exit (the shallows on the
+south edge, kept clear of rocks and hazards). Chests float among the monsters and every sunk
+monster drops more; a chest taken is added to the haul in the hold. The plan has a Leave
+choice: end the turn in the shallows having chosen it and the ship sails off, banking the haul;
+sink first and it is lost. Sinking the Kraken does not end the hunt. `MatchResult.hunt` says
+how it ended (`left` or `sunk`), the haul banked, monsters sunk and whether the boss was slain,
+and a hero that left reports the hull it left with (`hullOnExit`, because a departed ship's hull
+is set to 0).
+
+**Ships and the plan preview.** The ship AI keeps out of the cells a monster may strike (the
+exact forecast when the match warns, only what a player could guess when it does not, so it never
+reads a hidden plan), shoots monsters, and goes for treasure. The AI cannot yet choose to leave
+a hunt. `pnpm harness --monsters` plays duels with every monster on the water and prints what each
+did; the plan preview marks a shot that would hit a monster and a phase that ends on a struck cell.
+
+**The voyage.** A hunt is a node of its own on the solo route (`NodeKind` `hunt`), one in each
+area after the first, in a layer of a choice so it can be sailed round. The hero brings the hull,
+cannonballs and guns the run has grown to; the Kraken's hull is 15 in the first hunt and 3 more
+each later area, and the later seas have more monsters (`huntBossHull`, `huntMonsters`). A hunt is
+won by leaving and pays supplies: 1 for finishing, 1 for every 5 treasure banked and 3 for the
+Kraken slain (`BATTLE_REWARD.hunt`, `TREASURE_PER_SUPPLY`, `HUNT_BOSS_BONUS`), up to the hold's
+cap; the hull it left with comes back. `SAVE_VERSION` is 2 (the map changed), so an older saved
+voyage is refused. In the balance harness a hunt is scripted (the hero gets out with a set haul).
+
+**Client.** `MonsterField` draws the monsters, their attacks and marks; a boss bar and a rise
+and a slain moment for the Kraken; the Hunt is its own mode on Choose a mode (`HuntScreen`: the
+briefing, seas, ship and warnings), the objective banner shows the haul, and the end dialog says
+what happened to the haul, the monsters and the boss. Quick battle keeps a Sea monsters switch
+for mixed battles with enemy ships.
+
+**Art.** The sea monsters and the new art are drawn from code in `tools/art/` with `pixel.py`,
+a small ship-sheet-style toolkit (a crisp outline, flat banded tones, a top-left rim light, plate
+and scale patterns): `sea_monsters.py` (squid, giant squid, tentacle, shark; every sheet keeps
+the layout and manifest the game reads), `atlantean_ships.py` (a drop-in ship sheet in five jewel
+colours with its own cannons, loaded with `?ships=atlantean`, in `public/assets/atlantean/`),
+`atlantean.py` and `monster_concepts.py` (concept sheets for harpoon-firing Atlantean monsters and
+five more monsters, previews in `docs/media/monster-concepts/`; none is in the rules yet),
+`ghost_ships.py` (a spectral recolour of the ship sheet, `docs/media/ghost-ships/`),
+`map_icons.py` and `result_icons.py` (icons for the voyage map and the game over dialog,
+in `public/assets/map/` and `public/assets/result/`).
+
+**Other screens changed on this branch.** The voyage map is drawn as a map (legs between stops,
+a pixel-art icon for each kind of stop, our ship on the current stop, the leg cost and the reward
+in the dialog) inside a viewport you drag, zoom and recentre (`usePanZoom`); the briefing screen
+between the map and a fight is gone (the dialog says who is in it); the game over dialog has an
+emblem, icon tiles, a hull bar and pictures of the other ships; the plan takes drag and drop with
+dnd-kit (a token from the tray to a slot, between slots, back to the tray to remove); Quick battle
+and the Hunt screen have matching cards.
+
+**Try it.** `/?hunt=on` starts a hunt (add `&warn=on` to see the strikes, `&seed=5` for the same sea);
+Play, then The hunt; `/?ships=atlantean` shows the Atlantean fleet; `/?kit` (dev only) shows the
+components and a sample of the game over summary.
+
+**Left** (each is a Linear issue): hunts online and co-op (PIR-122); the Atlantean monsters as real
+monster types with a harpoon projectile (PIR-125); a menu choice for the Atlantean fleet (PIR-124);
+more monster kinds (PIR-120) and the last art polish (PIR-121); pausing the tentacle timer while the
+hero is idle (PIR-123); balance and AI (PIR-98, PIR-117, PIR-119: the AI cannot leave a hunt and the
+payout numbers are guesses); a play-through of a voyage hunt and a phone check of the new screens.
 
 ### 10. Content: `todo`
 Pirates sprites for crew and port screens.
@@ -1056,6 +1134,13 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `matchConfig.ts` and the protocol.
 
 ## Log
+
+- 2026-10-16: phase 9 (sea monsters and the hunt) is playable on `feature/sea-monster-hunting`:
+  monsters, the hunt objective with treasure, leaving and the Kraken, a hunt node on the voyage
+  map, the Hunt mode in the menu, redrawn monster art, an Atlantean ship sheet, a map you drag, a
+  new game over dialog and drag and drop for the plan. Tests: game-core 563, run-core 1150,
+  client 246, server 175 (a few slow game-core tests, the sea-depth test and one run-core test
+  can time out on a loaded machine and pass on their own).
 
 - 2026-10-12: phase 3b (i18n): `i18next` + `react-i18next` in the client, typed
   catalogs, a language switcher, `?lang=`/`pirate:lang`/`navigator.language`
