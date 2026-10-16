@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGame } from '@pirate/game-core/simulation/createGame';
-import { offlineConfig, startOfflineMatch } from '../offlineMatch';
+import { huntConfig, offlineConfig, startOfflineMatch } from '../offlineMatch';
 
 describe('offlineConfig', () => {
   it('is the classic duel for one opponent, and a skirmish for more', () => {
@@ -112,5 +112,22 @@ describe('ship classes of an offline match', () => {
 
     expect(view.ships[view.self.shipId].shipTypeId).toBe('brigantine');
     match.dispose();
+  });
+});
+
+describe('huntConfig', () => {
+  it('is a hunt with the monsters and a boss, and no enemy ship', () => {
+    const config = huntConfig('', 'normal', 'sloop', false, 3);
+    expect(config.objective?.kind).toBe('hunt');
+    expect(config.participants).toHaveLength(1);
+    expect((config.monsters ?? []).length).toBeGreaterThan(0);
+  });
+
+  it('names the hero, takes its ship class, and shows strikes when asked', () => {
+    const config = huntConfig('  Anne ', 'normal', 'galleon', true, 3);
+    expect(config.participants[0].name).toBe('Anne');
+    expect(config.participants[0].shipTypeId).toBe('galleon');
+    expect(config.monsterWarnings).toBe(true);
+    expect(huntConfig('   ', 'normal', 'sloop', false, 3).participants[0].name).toBe('Player');
   });
 });

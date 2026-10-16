@@ -4,6 +4,7 @@ import type { AiDifficulty } from '@pirate/game-core/domain/GameState';
 import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import type { OfflineShips } from '../../app/offlineMatch';
 import { FriendsScreen } from './FriendsScreen';
+import { HuntScreen, type HuntSettings } from './HuntScreen';
 import { HomeScreen } from './HomeScreen';
 import { ModeSelectScreen } from './ModeSelectScreen';
 import type { ObjectiveChoice } from './objectiveChoices';
@@ -19,6 +20,8 @@ interface MainMenuProps {
   initialScreen?: 'home' | 'voyage';
   /** Starts the battle of the solo voyage's current stop. */
   onStartRunBattle: (setup: BattleSetup) => void;
+  /** Starts a hunt: sea monsters and a boss, no enemy ships. */
+  onPlayHunt: (name: string, settings: HuntSettings) => void;
   onPlayOffline: (
     opponents: number,
     name: string,
@@ -32,13 +35,14 @@ interface MainMenuProps {
   ) => void;
 }
 
-type Screen = 'home' | 'modes' | 'quick' | 'friends' | 'voyage';
+type Screen = 'home' | 'modes' | 'quick' | 'hunt' | 'friends' | 'voyage';
 
 /** The screens before a match: Home, Choose a mode, then the mode's own settings. */
 export function MainMenu({
   initialRoomCode = '',
   initialScreen = 'home',
   onStartRunBattle,
+  onPlayHunt,
   onPlayOffline,
 }: MainMenuProps) {
   const [name, setName] = useStoredName();
@@ -67,6 +71,10 @@ export function MainMenu({
     );
   }
 
+  if (screen === 'hunt') {
+    return <HuntScreen onBack={goModes} onPlay={(settings) => onPlayHunt(name.trim(), settings)} />;
+  }
+
   if (screen === 'friends') {
     return (
       <FriendsScreen
@@ -87,6 +95,7 @@ export function MainMenu({
       <ModeSelectScreen
         onBack={() => setScreen('home')}
         onQuickBattle={() => setScreen('quick')}
+        onHunt={() => setScreen('hunt')}
         onFriends={() => setScreen('friends')}
         onVoyage={() => setScreen('voyage')}
       />

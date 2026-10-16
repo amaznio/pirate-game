@@ -14,7 +14,9 @@ export function ObjectiveBanner({ className = '' }: { className?: string }) {
     <Banner tone="objective" className={className}>
       {progress.kind === 'survive'
         ? t('objective.surviveProgress', { turn: progress.turn, turns: progress.turns })
-        : progress.kind === 'ambush'
+        : progress.kind === 'hunt'
+          ? t('objective.huntProgress', { haul: progress.haul })
+          : progress.kind === 'ambush'
           ? t('objective.ambushProgress', {
               afloat: progress.afloat,
               coming: progress.coming,

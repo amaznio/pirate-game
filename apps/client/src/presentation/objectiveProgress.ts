@@ -6,6 +6,11 @@ import type { Direction } from '@pirate/game-core/domain/Direction';
 export type ObjectiveProgress =
   | { readonly kind: 'survive'; readonly turn: number; readonly turns: number }
   | {
+      readonly kind: 'hunt';
+      /** The treasure in the viewer's hold. */
+      readonly haul: number;
+    }
+  | {
       readonly kind: 'salvage';
       /** Pickups taken by the viewer's team. */
       readonly yours: number;
@@ -37,7 +42,7 @@ export function objectiveProgress(view: GameView): ObjectiveProgress | null {
     return null;
   }
   if (objective.kind === 'hunt') {
-    return null; // the hunt's banner (haul, boss, exit) comes with its own screens
+    return { kind: 'hunt', haul: view.self.haul ?? 0 };
   }
   if (objective.kind === 'survive') {
     return { kind: 'survive', turn: Math.min(view.turn, objective.turns), turns: objective.turns };

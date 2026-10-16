@@ -4,6 +4,7 @@ import { GameClient } from '@pirate/game-core/client/GameClient';
 import { LocalTransport } from '@pirate/game-core/client/LocalTransport';
 import {
   createDuelConfig,
+  createHuntConfig,
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
@@ -40,6 +41,27 @@ export function startOfflineMatch(config: MatchConfig): OfflineMatch {
       transport.dispose();
       host.dispose();
     },
+  };
+}
+
+/** A hunt for one player: the monsters and their boss, no enemy ships. The name is kept when it is not blank. */
+export function huntConfig(
+  name: string,
+  mapStyle: MapStyle = DEFAULT_MAP_STYLE,
+  shipTypeId: string = DEFAULT_SHIP_TYPE_ID,
+  monsterWarnings = false,
+  seed: number = randomSeed(),
+): MatchConfig {
+  const base = createHuntConfig({ seed, sea: mapStyle, shipTypeId, monsterWarnings });
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return base;
+  }
+  return {
+    ...base,
+    participants: base.participants.map((participant, index) =>
+      index === 0 ? { ...participant, name: trimmed } : participant,
+    ),
   };
 }
 

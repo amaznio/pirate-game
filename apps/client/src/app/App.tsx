@@ -8,7 +8,9 @@ import type { BattleSetup } from '@pirate/run-core/run/battle';
 import { runStore } from '../run/runStore';
 import { GameScreen } from './GameScreen';
 import { matchConfigFromSearch } from './matchFromUrl';
+import type { HuntSettings } from '../ui/menu/HuntScreen';
 import {
+  huntConfig,
   offlineConfig,
   startOfflineMatch,
   type OfflineMatch,
@@ -118,6 +120,10 @@ export default function App() {
     [],
   );
 
+  const playHunt = useCallback((name: string, settings: HuntSettings) => {
+    setOffline(startOfflineMatch(huntConfig(name, settings.mapStyle, settings.ship, settings.monsterWarnings)));
+  }, []);
+
   const exitOffline = useCallback(() => {
     offlineRef.current?.dispose();
     setOffline(null);
@@ -177,6 +183,7 @@ export default function App() {
       initialRoomCode={roomFromUrl()}
       initialScreen={menuStart}
       onStartRunBattle={startRunBattle}
+      onPlayHunt={playHunt}
       onPlayOffline={playOffline}
     />
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGame } from '@pirate/game-core/simulation/createGame';
-import { createDuelConfig } from '@pirate/game-core/config/matchConfig';
+import { createDuelConfig, createHuntConfig } from '@pirate/game-core/config/matchConfig';
 import { redactState } from '@pirate/game-core/view/redact';
 import type { GameState } from '@pirate/game-core/domain/GameState';
 import { endNote, objectiveProgress } from '../objectiveProgress';
@@ -10,6 +10,13 @@ const viewOf = (state: GameState) => redactState(state, 'player', null);
 describe('objectiveProgress', () => {
   it('is null for a standard match', () => {
     expect(objectiveProgress(viewOf(createGame()))).toBeNull();
+  });
+
+  it('shows the haul in the hold for a hunt', () => {
+    const state = createGame(createHuntConfig({ seed: 1, sea: 'normal' }));
+    expect(objectiveProgress(viewOf(state))).toEqual({ kind: 'hunt', haul: 0 });
+    const loaded: GameState = { ...state, players: { ...state.players, player: { ...state.players['player'], haul: 5 } } };
+    expect(objectiveProgress(viewOf(loaded))).toEqual({ kind: 'hunt', haul: 5 });
   });
 
   it('counts turns for survive, never past the limit', () => {

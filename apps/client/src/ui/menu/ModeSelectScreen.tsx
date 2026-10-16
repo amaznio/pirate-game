@@ -1,4 +1,4 @@
-import { Anchor, Compass, Users } from 'lucide-react';
+import { Anchor, Compass, Skull, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ScreenFrame } from '@/kit/ScreenFrame';
 import { Tile } from '@/kit/Tile';
@@ -7,18 +7,19 @@ import { useRun } from '../../run/runStore';
 interface ModeSelectScreenProps {
   onBack: () => void;
   onQuickBattle: () => void;
+  onHunt: () => void;
   onFriends: () => void;
   onVoyage: () => void;
 }
 
-/** Pick a mode: the main action (Quick battle) comes first and largest; Voyage last. */
-export function ModeSelectScreen({ onBack, onQuickBattle, onFriends, onVoyage }: ModeSelectScreenProps) {
+/** Pick a mode: the main action (Quick battle) comes first and largest, then the Hunt; Voyage last. */
+export function ModeSelectScreen({ onBack, onQuickBattle, onHunt, onFriends, onVoyage }: ModeSelectScreenProps) {
   const { t } = useTranslation();
   // A voyage that is still going on can be carried on; a finished one starts over.
   const ongoing = useRun((state) => state.run !== null && state.run.phase !== 'victory' && state.run.phase !== 'defeat');
   return (
     <ScreenFrame title={t('menu.chooseMode')} onBack={onBack}>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Tile
           primary
           icon={<Anchor />}
@@ -27,6 +28,13 @@ export function ModeSelectScreen({ onBack, onQuickBattle, onFriends, onVoyage }:
           cta={t('menu.chooseScenario')}
           onClick={onQuickBattle}
           className="md:min-h-64"
+        />
+        <Tile
+          icon={<Skull />}
+          title={t('menu.huntTitle')}
+          blurb={t('menu.huntBlurb')}
+          cta={t('menu.huntCta')}
+          onClick={onHunt}
         />
         <Tile
           icon={<Users />}
