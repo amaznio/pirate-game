@@ -195,6 +195,37 @@ describe('the Scallywag stones', () => {
   });
 });
 
+describe('the Atlantean cannons', () => {
+  it('add a cannon of each ship type in every hull colour, and only to the Atlantean sheet', () => {
+    const living = new Set(shipFrameRects().map((rect) => rect.name));
+    const atlantean = shipFrameRects('atlantean');
+    const names = new Set(atlantean.map((rect) => rect.name));
+    for (let team = 0; team < 5; team += 1) {
+      for (let type = 1; type <= 3; type += 1) {
+        expect(names.has(cannonFrameName(type, team))).toBe(true);
+        expect(living.has(cannonFrameName(type, team))).toBe(false);
+      }
+    }
+    expect(atlantean).toHaveLength(shipFrameRects().length + 15);
+  });
+
+  it('keep their frames on the sheet and clear of one another', () => {
+    const cannons = shipFrameRects('atlantean').filter((rect) => /^cannon\/\d\/\d$/.test(rect.name));
+    for (const rect of cannons) {
+      expect(rect.x + rect.w).toBeLessThanOrEqual(SHIPS_SHEET_SIZE.width);
+      expect(rect.y + rect.h).toBeLessThanOrEqual(SHIPS_SHEET_SIZE.height);
+    }
+    for (const a of cannons) {
+      for (const b of cannons) {
+        if (a !== b) {
+          const apart = a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+          expect(apart).toBe(true);
+        }
+      }
+    }
+  });
+});
+
 describe('ship looks', () => {
   it('cover every ship class, and grow from small to large', () => {
     expect(Object.keys(SHIP_LOOKS).sort()).toEqual(Object.keys(SHIP_TYPES).sort());

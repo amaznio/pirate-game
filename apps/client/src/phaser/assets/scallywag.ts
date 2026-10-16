@@ -166,8 +166,24 @@ const CANNON_BOXES: readonly Box[] = [
   { x: 452, y: 628, w: 8, h: 8 },
 ];
 
-export const cannonFrameName = (type: number): string => `cannon/${type}`;
+/**
+ * A cannon frame. With a team it is the Atlantean sheet's cannon in that hull
+ * colour (the living sheet has one cannon a type for every team).
+ */
+export const cannonFrameName = (type: number, team?: number): string =>
+  team === undefined ? `cannon/${type}` : `cannon/${type}/${team}`;
 export const CANNON_TYPES = CANNON_BOXES.length;
+
+/**
+ * The Atlantean sheet adds the three cannon types that ships use (1 to 3) in each of
+ * the five hull colours, in a strip below the effects: a column every 20 px for a
+ * team, a row every 10 px for a type. The sizes are those of the plain cannons.
+ */
+export const ATLANTEAN_CANNON_TYPES = 3;
+const ATLANTEAN_CANNON_STRIP = { x: 460, y: 642, columnPitch: 20, rowPitch: 10 } as const;
+
+/** Which art set's sheet is meant: it decides which frames exist. */
+export type ShipSheetSet = 'living' | 'atlantean';
 
 /** Smoke puff and explosion: four 16x16 frames each, side by side. */
 export const FX_FRAMES = 4;
@@ -252,7 +268,7 @@ export interface FrameRect {
 }
 
 /** Every named frame cut from the ships sheet. Pure, so it can be checked in a test. */
-export function shipFrameRects(): FrameRect[] {
+export function shipFrameRects(set: ShipSheetSet = 'living'): FrameRect[] {
   const rects: FrameRect[] = [];
 
   for (const size of Object.keys(HULL_LAYOUT) as HullSize[]) {
@@ -307,6 +323,21 @@ export function shipFrameRects(): FrameRect[] {
   CANNON_BOXES.forEach((box, index) => {
     rects.push({ name: cannonFrameName(index + 1), x: box.x, y: box.y, w: box.w, h: box.h });
   });
+
+  if (set === 'atlantean') {
+    for (let team = 0; team < HULL_COLOURS; team += 1) {
+      for (let type = 1; type <= ATLANTEAN_CANNON_TYPES; type += 1) {
+        const box = CANNON_BOXES[type - 1];
+        rects.push({
+          name: cannonFrameName(type, team),
+          x: ATLANTEAN_CANNON_STRIP.x + ATLANTEAN_CANNON_STRIP.columnPitch * team,
+          y: ATLANTEAN_CANNON_STRIP.y + ATLANTEAN_CANNON_STRIP.rowPitch * (type - 1),
+          w: box.w,
+          h: box.h,
+        });
+      }
+    }
+  }
 
   for (let frame = 0; frame < FX_FRAMES; frame += 1) {
     rects.push({ name: fxFrameName('puff', frame), x: 448 + 16 * frame, y: 608, w: 16, h: 16 });
@@ -369,12 +400,12 @@ export function packFrames(
  * under a bow). The new sheet is registered as `ScallywagKeys.ships`, with the
  * same frame names.
  */
-export function buildPaddedShipSheet(textures: Phaser.Textures.TextureManager): void {
+export function buildPaddedShipSheet(textures: Phaser.Textures.TextureManager, set: ShipSheetSet = 'living'): void {
   if (textures.exists(ScallywagKeys.ships)) {
     return;
   }
   const raw = textures.get(ScallywagKeys.shipsRaw).getSourceImage() as CanvasImageSource;
-  const packed = packFrames(shipFrameRects(), 1024, 2);
+  const packed = packFrames(shipFrameRects(set), 1024, 2);
   const canvas = textures.createCanvas(ScallywagKeys.ships, packed.width, packed.height);
   const context = canvas?.getContext();
   if (!canvas || !context) {

@@ -9,6 +9,26 @@ export function artStyleFromSearch(search: string): ArtStyle {
 }
 
 /**
+ * Which ships the pixel-art match shows: the living Scallywag fleet (default) or
+ * the regal Atlantean one (`?ships=atlantean`), a sheet of the same layout drawn
+ * by tools/art/atlantean_ships.py. It also has a cannon in each team's colour.
+ */
+export type ShipSet = 'living' | 'atlantean';
+
+export function shipSetFromSearch(search: string): ShipSet {
+  return new URLSearchParams(search).get('ships') === 'atlantean' ? 'atlantean' : 'living';
+}
+
+let cachedShipSet: ShipSet | null = null;
+
+export function currentShipSet(): ShipSet {
+  if (cachedShipSet === null) {
+    cachedShipSet = shipSetFromSearch(typeof window === 'undefined' ? '' : window.location.search);
+  }
+  return cachedShipSet;
+}
+
+/**
  * The sea in the pixel-art style: `calm` is a soft blue drawn in code, `pack`
  * the Scallywag pack's own (much brighter, busier) water tiles.
  */

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   artStyleFromSearch,
   seaModeFromSearch,
+  shipSetFromSearch,
   swellBandsFromSearch,
   waterStyleFromSearch,
 } from '../artStyle';
@@ -42,5 +43,14 @@ describe('swellBandsFromSearch', () => {
     expect(swellBandsFromSearch('')).toBe(false);
     expect(swellBandsFromSearch('?bands=off')).toBe(false);
     expect(swellBandsFromSearch('?art=scallywag&bands=on')).toBe(true);
+  });
+});
+
+describe('shipSetFromSearch', () => {
+  it('shows the living fleet unless the Atlantean one is asked for', () => {
+    expect(shipSetFromSearch('')).toBe('living');
+    expect(shipSetFromSearch('?ships=other')).toBe('living');
+    expect(shipSetFromSearch('?ships=atlantean')).toBe('atlantean');
+    expect(shipSetFromSearch('?art=scallywag&ships=atlantean')).toBe('atlantean');
   });
 });

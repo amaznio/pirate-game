@@ -15,6 +15,7 @@ import {
   type HullState,
   type SailKind,
 } from '../assets/scallywag';
+import { currentShipSet } from '../../presentation/artStyle';
 
 /**
  * What a ship class looks like: which hull, how many sails and where they sit
@@ -176,12 +177,15 @@ export function createScallywagShip(
   // The ship's right side is screen-left when it faces south; the cannon art
   // points left, so the other side mirrors it.
   const edge = layout.w / 2 - 7;
+  // The Atlantean fleet has a cannon in each hull colour; the living one has a single cannon.
+  const cannonTeam =
+    currentShipSet() === 'atlantean' && typeof spec.hullColour === 'number' ? spec.hullColour : undefined;
   for (let i = 0; i < spec.cannons; i += 1) {
     const along = (i - (spec.cannons - 1) / 2) * CANNON_SPACING;
     for (const side of [-1, 1]) {
       parts.push(
         scene.add
-          .image(side * edge, along, ScallywagKeys.ships, cannonFrameName(spec.look.cannonType))
+          .image(side * edge, along, ScallywagKeys.ships, cannonFrameName(spec.look.cannonType, cannonTeam))
           .setOrigin(0.5, 0.5)
           .setFlipX(side === 1),
       );

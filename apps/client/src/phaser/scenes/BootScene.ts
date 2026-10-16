@@ -10,7 +10,7 @@ import {
 import { buildSurfTextures } from '../assets/surfTextures';
 import { MONSTER_ART_LIST, registerMonsterFrames } from '../assets/monsterArt';
 import { useCrispFiltering } from '../assets/crispTextures';
-import { currentArtStyle } from '../../presentation/artStyle';
+import { currentArtStyle, currentShipSet } from '../../presentation/artStyle';
 import { TILE_SIZE } from '../Grid';
 
 /**
@@ -41,7 +41,10 @@ export class BootScene extends Phaser.Scene {
       this.load.image(art.key, art.path);
     }
     if (currentArtStyle() === 'scallywag') {
-      this.load.image(ScallywagKeys.shipsRaw, 'assets/scallywag/ships.png');
+      this.load.image(
+        ScallywagKeys.shipsRaw,
+        currentShipSet() === 'atlantean' ? 'assets/atlantean/ships.png' : 'assets/scallywag/ships.png',
+      );
     }
   }
 
@@ -57,7 +60,7 @@ export class BootScene extends Phaser.Scene {
       this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
     if (currentArtStyle() === 'scallywag') {
-      buildPaddedShipSheet(this.textures);
+      buildPaddedShipSheet(this.textures, currentShipSet());
       registerWaterFrames(this.textures);
       generatePixelTerrainTextures(this);
       buildSurfTextures(this);
