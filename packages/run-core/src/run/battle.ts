@@ -51,9 +51,9 @@ interface Fleet {
 
 /** The enemy fleet of an ordinary battle: bigger ships, more of them and better pilots as the run goes on. */
 export function fleetFor(depth: number): Fleet {
-  const shipTypeId = depth < 0.3 ? 'sloop' : depth < 0.6 ? 'brigantine' : 'galleon';
-  const count = 1 + (depth >= 0.3 ? 1 : 0) + (depth >= 0.65 ? 1 : 0);
-  const aiDifficulty: AiDifficulty = depth < 0.25 ? 'easy' : depth < 0.6 ? 'normal' : 'hard';
+  const shipTypeId = depth < 0.4 ? 'sloop' : depth < 0.75 ? 'brigantine' : 'galleon';
+  const count = depth >= 0.5 ? 2 : 1;
+  const aiDifficulty: AiDifficulty = depth < 0.4 ? 'easy' : depth < 0.75 ? 'normal' : 'hard';
   return { shipTypeIds: Array.from({ length: count }, () => shipTypeId), aiDifficulty };
 }
 
