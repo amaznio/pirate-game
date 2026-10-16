@@ -12,6 +12,8 @@ import type {
 import type { PlayerId } from '@pirate/game-core/domain/Entity';
 import { getShipType, tokenEconomyOf } from '@pirate/game-core/config/shipTypes';
 import { getMonsterType } from '@pirate/game-core/config/monsterTypes';
+import { EXIT_DEPTH } from '@pirate/game-core/domain/Objective';
+import { inExitArea } from '@pirate/game-core/simulation/escapes';
 import type { GameView } from '@pirate/game-core/view/GameView';
 import { assignTeamStyles } from '../presentation/teamStyle';
 import { NO_HAZARDS, seaHazards, type SeaHazards } from '../presentation/seaHazards';
@@ -61,6 +63,8 @@ export interface GameUISnapshot {
   loot: boolean;
   /** A hunt: the plan may choose to leave through the exit. */
   canLeave: boolean;
+  /** A hunt: the hero is afloat in the exit area with the turn open, so it can sail off right now. */
+  atExit: boolean;
   /** The plan says to leave at the end of the turn. */
   leaving: boolean;
   /** The treasure in the hold (a hunt). */
@@ -117,6 +121,8 @@ interface GameUIStore extends GameUISnapshot {
   setCannonShots: (phase: number, side: CannonSide, shots: number) => void;
   clearPlayerActions: () => void;
   setLeave: (leave: boolean) => void;
+  /** Sails the hero off the board at once (from the exit area, between turns). */
+  leaveNow: () => void;
   setAuto: (auto: boolean) => void;
   setRequested: (token: MovementAction) => void;
   lockIn: () => void;
@@ -179,6 +185,12 @@ function snapshot({
     hazards: seaHazards(view.terrain),
     loot: Object.keys(view.pickups ?? {}).length > 0,
     canLeave: view.objective?.kind === 'hunt',
+    atExit:
+      canEdit &&
+      view.objective?.kind === 'hunt' &&
+      view.objective.exit !== undefined &&
+      ship !== undefined &&
+      inExitArea(view.board, view.objective.exit, ship.position, EXIT_DEPTH),
     leaving: !!draft.leave,
     haul: self.haul ?? 0,
     boss: bossOf(view),
@@ -231,6 +243,7 @@ const EMPTY: GameUISnapshot = {
   hazards: NO_HAZARDS,
   loot: false,
   canLeave: false,
+  atExit: false,
   leaving: false,
   haul: 0,
   boss: null,
@@ -308,6 +321,7 @@ export const useGameUIStore = create<GameUIStore>(() => ({
     useGameUIStore.setState({ activeSlot: null });
   },
   setLeave: (leave) => currentClient?.setLeave(leave),
+  leaveNow: () => currentClient?.leaveHunt(),
   setAuto: (auto) => currentClient?.setTokenGeneration({ auto }),
   setRequested: (token) => currentClient?.setTokenGeneration({ requested: token }),
   lockIn: () => currentClient?.lockIn(),

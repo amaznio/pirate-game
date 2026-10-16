@@ -270,7 +270,8 @@
     "holdFull": "Twój magazyn jest pełny przy tej liczbie żetonów; nowe przepadają",
     "planned": "{{queued}}/{{total}} zaplanowane",
     "autoToken": "Żeton auto",
-    "nextTurnYouGet": "W następnej turze dostajesz:"
+    "nextTurnYouGet": "W następnej turze dostajesz:",
+    "leaveNow": "Wypłyń teraz ze skarbem: {{count}}"
   },
   "legend": {
     "windTitle": "Wiatr",
@@ -461,6 +462,10 @@
       "repair": {
         "name": "Cieśla",
         "blurb": "Napraw 2 kadłuba."
+      },
+      "quickLoaders": {
+        "name": "Szybkie ładowanie",
+        "blurb": "+1 kula armatnia ładowana co turę."
       }
     },
     "plunder": "Łup",
@@ -471,5 +476,12 @@
     "soldOut": "Nic więcej tu nie przyda się twojemu statkowi.",
     "priceLabel": "Cena: {{price}}",
     "portBlurb": "Wydaj łup na ulepszenia."
+  },
+  "exitDialog": {
+    "title": "Dotarłeś do wyjścia",
+    "body": "Odpłynąć teraz ze skarbem ({{count}}) czy polować dalej?",
+    "bodyEmpty": "Odpłynąć teraz z pustą ładownią czy polować dalej?",
+    "leave": "Wypłyń",
+    "stay": "Poluj dalej"
   }
 }

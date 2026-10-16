@@ -1,11 +1,14 @@
 import type { Direction } from '../domain/Direction';
+import type { PlayerId } from '../domain/Entity';
 import type { GameEvent } from '../domain/GameEvent';
+import type { GameState } from '../domain/GameState';
 import type { Position } from '../domain/Position';
 import type { Board } from '../domain/Board';
 import { ACTIONS_PER_TURN } from '../domain/Action';
 import { EXIT_DEPTH } from '../domain/Objective';
 import type { SubmittedActions } from '../domain/TurnResult';
 import type { MutableGameState } from './internal';
+import { evaluateObjective } from './objectives';
 
 /** Whether a cell is on the edge of the board a ship is making for. */
 export function onExitEdge(board: Board, exit: Direction, position: Position): boolean {
@@ -89,4 +92,46 @@ function resolveLeaving(state: MutableGameState, phase: number, submitted: Submi
     events.push({ type: 'SHIP_ESCAPED', shipId: ship.id, at: { ...ship.position }, phase });
   }
   return events;
+}
+
+/**
+ * Whether a hero in a hunt may sail off now: the hunt is between turns (planning),
+ * and the hero is afloat in the exit area.
+ */
+export function canLeaveHuntNow(state: GameState, playerId: PlayerId): boolean {
+  const objective = state.objective;
+  const player = state.players[playerId];
+  const ship = player ? state.ships[player.shipId] : undefined;
+  return (
+    state.status === 'planning' &&
+    state.outcome === null &&
+    objective?.kind === 'hunt' &&
+    objective.exit !== undefined &&
+    ship !== undefined &&
+    ship.hp > 0 &&
+    inExitArea(state.board, objective.exit, ship.position, EXIT_DEPTH)
+  );
+}
+
+/**
+ * A hero that has reached the exit area sails off at once, between turns, with its
+ * haul: no further turn is played, so nothing can hit it on the way. Returns the
+ * state the hunt is left in (settled as "left") and the event to show, or null when
+ * leaving is not allowed (see `canLeaveHuntNow`).
+ */
+export function leaveHuntNow(
+  state: GameState,
+  playerId: PlayerId,
+): { state: GameState; events: GameEvent[] } | null {
+  if (!canLeaveHuntNow(state, playerId)) {
+    return null;
+  }
+  const ship = state.ships[state.players[playerId]!.shipId]!;
+  const left = { ...ship, hp: 0, escaped: true, hullOnExit: ship.hp };
+  const next: GameState = { ...state, ships: { ...state.ships, [ship.id]: left } };
+  const outcome = evaluateObjective(next, false) ?? { kind: 'eliminated' as const };
+  return {
+    state: { ...next, status: 'game_over', outcome },
+    events: [{ type: 'SHIP_ESCAPED', shipId: ship.id, at: { ...ship.position }, phase: ACTIONS_PER_TURN - 1 }],
+  };
 }

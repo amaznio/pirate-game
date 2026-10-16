@@ -106,6 +106,31 @@ export function GameOverDialog({
   );
 }
 
+/** A hunt, with the ship in the exit area: sail off with the haul now, or keep hunting. */
+export function ExitDialog({ haul, onLeave, onStay }: { haul: number; onLeave: () => void; onStay: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Dialog open onOpenChange={(open) => !open && onStay()}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader className="items-center text-center">
+          <DialogTitle className="font-head text-3xl font-bold">{t('exitDialog.title')}</DialogTitle>
+          <DialogDescription className="text-base">
+            {haul > 0 ? t('exitDialog.body', { count: haul }) : t('exitDialog.bodyEmpty')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-2">
+          <Button size="lg" onClick={onLeave}>
+            {t('exitDialog.leave')}
+          </Button>
+          <Button variant="secondary" onClick={onStay}>
+            {t('exitDialog.stay')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** Sunk while others are still fighting: stay and watch, or leave. */
 export function SunkDialog({ onKeepWatching, onExit }: { onKeepWatching: () => void; onExit: () => void }) {
   const { t } = useTranslation();

@@ -64,6 +64,10 @@ export class LocalTransport implements GameTransport {
     this.host.acknowledgeTurn(this.viewerId);
   }
 
+  leaveHunt(): void {
+    this.host.leaveHunt(this.viewerId);
+  }
+
   restart(): void {
     this.host.startNewGame();
   }

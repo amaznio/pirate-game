@@ -44,6 +44,12 @@ export interface GameTransport {
   /** The presentation finished animating the resolved turn. */
   acknowledgeTurn(): void;
 
+  /**
+   * In a hunt, sails the hero off at once from the exit area, between turns. Only a
+   * local game does this for now; a transport that cannot leaves it out.
+   */
+  leaveHunt?(): void;
+
   /** Starts a new match (only meaningful for a local game). */
   restart(): void;
 }

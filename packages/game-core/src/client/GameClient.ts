@@ -176,6 +176,11 @@ export class GameClient {
     }
   }
 
+  /** In a hunt, sails off at once from the exit area (between turns), with the haul. */
+  leaveHunt(): void {
+    this.transport.leaveHunt?.();
+  }
+
   clearDraft(): void {
     if (this.snapshot.canEdit) {
       this.setDraft(emptyDraft());

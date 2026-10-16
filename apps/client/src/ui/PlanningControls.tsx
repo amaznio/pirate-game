@@ -37,6 +37,8 @@ export function PlanningControls({ compact = false }: { compact?: boolean }) {
   const setRequested = useGameUIStore((state) => state.setRequested);
   const lockIn = useGameUIStore((state) => state.lockIn);
   const canLeave = useGameUIStore((state) => state.canLeave);
+  const atExit = useGameUIStore((state) => state.atExit);
+  const leaveNow = useGameUIStore((state) => state.leaveNow);
   const leaving = useGameUIStore((state) => state.leaving);
   const haul = useGameUIStore((state) => state.haul);
   const setLeave = useGameUIStore((state) => state.setLeave);
@@ -100,6 +102,11 @@ export function PlanningControls({ compact = false }: { compact?: boolean }) {
 
       {canLeave && (
         <div className="flex flex-col gap-1.5">
+          {atExit && (
+            <Button size={compact ? 'sm' : 'default'} onClick={leaveNow}>
+              {t('plan.leaveNow', { count: haul })}
+            </Button>
+          )}
           <Button
             variant={leaving ? 'default' : 'secondary'}
             size={compact ? 'sm' : 'default'}

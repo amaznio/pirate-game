@@ -14,7 +14,7 @@ import { PreviewToggle } from '../ui/PreviewToggle';
 import { SeaGuideButton } from '../ui/SeaGuideDialog';
 import { useIsDesktop } from '../ui/useIsDesktop';
 import { useDesktopShortcuts } from '../ui/useDesktopShortcuts';
-import { GameOverDialog, SunkDialog } from '../ui/EndDialogs';
+import { ExitDialog, GameOverDialog, SunkDialog } from '../ui/EndDialogs';
 
 interface GameScreenProps {
   client: GameClient;
@@ -67,6 +67,16 @@ export function GameScreen({
   const note = useGameUIStore((state) => state.endNote);
   const matchResult = useGameUIStore((state) => state.battle);
   const spectating = useGameUIStore((state) => state.spectating);
+  // A hunt: asked once each time the ship comes into the exit area; "keep hunting" holds the question until it has been out again.
+  const atExit = useGameUIStore((state) => state.atExit);
+  const haul = useGameUIStore((state) => state.haul);
+  const leaveNow = useGameUIStore((state) => state.leaveNow);
+  const [exitDismissed, setExitDismissed] = useState(false);
+  useEffect(() => {
+    if (!atExit) {
+      setExitDismissed(false);
+    }
+  }, [atExit]);
   // Told once per sinking; it comes back only if the player is afloat again.
   const [sunkDismissed, setSunkDismissed] = useState(false);
   useEffect(() => {
@@ -184,6 +194,10 @@ export function GameScreen({
       </div>
 
       {desktop && <DesktopSidebar />}
+
+      {atExit && !exitDismissed && status === 'planning' && (
+        <ExitDialog haul={haul} onLeave={leaveNow} onStay={() => setExitDismissed(true)} />
+      )}
 
       {/* Sunk while others are still fighting: say so, and let them stay or leave.
           It waits for the turn that sank them to finish animating. */}

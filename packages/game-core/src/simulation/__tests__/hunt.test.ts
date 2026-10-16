@@ -9,7 +9,7 @@ import { HUNT_BOSS_ID, createHuntConfig } from '../../config/matchConfig';
 import { createBoard } from '../../domain/Board';
 import { cellKey } from '../../domain/Terrain';
 import { createGame } from '../createGame';
-import { inExitArea } from '../escapes';
+import { canLeaveHuntNow, inExitArea, leaveHuntNow } from '../escapes';
 import { buildMatchResult } from '../matchResult';
 import { evaluateOutcome, resolveTurn } from '../resolveTurn';
 import { damageMonster } from '../monsters';
@@ -155,15 +155,17 @@ describe('hunt: treasure', () => {
   it('scatters plenty of chests on open water, clear of rocks, monsters and the exit', () => {
     for (let seed = 1; seed <= 12; seed += 1) {
       const config = createHuntConfig({ seed, sea: 'normal' });
-      const chests = Object.entries(config.pickups ?? {});
+      const everything = Object.entries(config.pickups ?? {});
+      const chests = everything.filter(([, pickup]) => pickup.kind === 'chest');
       expect(chests.length, `seed ${seed}`).toBeGreaterThanOrEqual(8);
       const monsterCellKeys = new Set(
         (config.monsters ?? []).flatMap((m) => monsterCells(m, getMonsterType(m.typeId).length).map(cellKey)),
       );
-      for (const [key, pickup] of chests) {
+      for (const [key, pickup] of everything) {
         const [x, y] = key.split(',').map(Number);
-        expect(pickup.kind).toBe('chest');
-        expect(pickup.value ?? 0).toBeGreaterThan(0);
+        if (pickup.kind === 'chest') {
+          expect(pickup.value ?? 0).toBeGreaterThan(0);
+        }
         expect(y, `exit ${key}`).toBeLessThan(BOARD_HEIGHT - EXIT_DEPTH);
         expect(config.obstacles.some((o) => o.x === x && o.y === y), `rock ${key}`).toBe(false);
         expect(config.terrain?.[key], `hazard ${key}`).toBeUndefined();
@@ -312,6 +314,44 @@ describe('hunt: leaving', () => {
     expect(applyPlayerPlan(normal, 'player', real)).toEqual({ ok: false, reason: 'malformed_plan' });
     expect(parsePlayerActions({ movement: [null, null, null, null], cannons: emptyCannons, leave: true })?.leave).toBe(true);
     expect(parsePlayerActions({ movement: [null, null, null, null], cannons: emptyCannons, leave: 'yes' })).toBeNull();
+  });
+});
+
+describe('hunt: leaving now, from the exit area, between turns', () => {
+  const inExit = (state: GameState): GameState =>
+    withHero(state, { position: { x: state.ships['player-ship'].position.x, y: BOARD_HEIGHT - 1 } });
+  const withHaul = (state: GameState, haul: number): GameState => ({
+    ...state,
+    players: { ...state.players, player: { ...state.players['player'], haul } },
+  });
+
+  it('is allowed only in the exit area, while planning, with the hero afloat', () => {
+    expect(canLeaveHuntNow(inExit(hunt()), 'player')).toBe(true);
+    expect(canLeaveHuntNow(hunt(), 'player')).toBe(false);
+    expect(canLeaveHuntNow({ ...inExit(hunt()), status: 'animating' }, 'player')).toBe(false);
+    expect(canLeaveHuntNow(withHero(inExit(hunt()), { hp: 0 }), 'player')).toBe(false);
+    expect(canLeaveHuntNow(inExit(hunt()), 'nobody')).toBe(false);
+    const normal = createGame({ ...createHuntConfig({ seed: 1 }), objective: undefined, monsters: [] });
+    expect(canLeaveHuntNow(inExit(normal), 'player')).toBe(false);
+  });
+
+  it('sails the hero off at once with the haul, and ends the hunt as left', () => {
+    const state = withHaul(inExit(hunt()), 7);
+    const left = leaveHuntNow(state, 'player')!;
+    expect(left.events.map((e) => e.type)).toEqual(['SHIP_ESCAPED']);
+    expect(left.state.status).toBe('game_over');
+    expect(left.state.turn).toBe(state.turn);
+    expect(left.state.outcome).toEqual({ kind: 'win', teamId: 'player', reason: 'left' });
+    expect(left.state.ships['player-ship']).toMatchObject({ hp: 0, escaped: true, hullOnExit: state.ships['player-ship'].hp });
+    expect(buildMatchResult(left.state)?.hunt).toMatchObject({ ending: 'left', haul: 7 });
+  });
+
+  it('does nothing when leaving is not allowed, and never changes the state it was given', () => {
+    expect(leaveHuntNow(hunt(), 'player')).toBeNull();
+    const state = inExit(hunt());
+    const before = JSON.stringify(state);
+    leaveHuntNow(state, 'player');
+    expect(JSON.stringify(state)).toBe(before);
   });
 });
 

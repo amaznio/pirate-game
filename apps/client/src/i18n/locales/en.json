@@ -262,7 +262,8 @@
     "holdFull": "Your hold is full at this many tokens; new ones are lost",
     "planned": "{{queued}}/{{total}} planned",
     "autoToken": "Auto token",
-    "nextTurnYouGet": "Next turn you get:"
+    "nextTurnYouGet": "Next turn you get:",
+    "leaveNow": "Leave now with {{count}} treasure"
   },
   "legend": {
     "windTitle": "Wind",
@@ -453,6 +454,10 @@
       "repair": {
         "name": "Carpenter",
         "blurb": "Mend 2 hull."
+      },
+      "quickLoaders": {
+        "name": "Quick loaders",
+        "blurb": "Reload +1 cannonball every turn."
       }
     },
     "plunder": "Plunder",
@@ -463,5 +468,12 @@
     "soldOut": "Nothing else here is of use to your ship.",
     "priceLabel": "Price: {{price}}",
     "portBlurb": "Spend your plunder on upgrades."
+  },
+  "exitDialog": {
+    "title": "You reached the exit",
+    "body": "Sail off now with {{count}} treasure, or keep hunting?",
+    "bodyEmpty": "Sail off now with an empty hold, or keep hunting?",
+    "leave": "Leave",
+    "stay": "Keep hunting"
   }
 }

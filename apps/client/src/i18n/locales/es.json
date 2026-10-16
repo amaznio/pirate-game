@@ -262,7 +262,8 @@
     "holdFull": "Tu bodega se llena con esta cantidad de fichas; las nuevas se pierden",
     "planned": "{{queued}}/{{total}} planeados",
     "autoToken": "Ficha auto",
-    "nextTurnYouGet": "El próximo turno recibes:"
+    "nextTurnYouGet": "El próximo turno recibes:",
+    "leaveNow": "Salir ya con {{count}} de tesoro"
   },
   "legend": {
     "windTitle": "Viento",
@@ -453,6 +454,10 @@
       "repair": {
         "name": "Carpintero",
         "blurb": "Repara 2 de casco."
+      },
+      "quickLoaders": {
+        "name": "Cargadores rápidos",
+        "blurb": "Recargas +1 bala de cañón cada turno."
       }
     },
     "plunder": "Botín",
@@ -463,5 +468,12 @@
     "soldOut": "Aquí ya no queda nada útil para tu barco.",
     "priceLabel": "Precio: {{price}}",
     "portBlurb": "Gasta tu botín en mejoras."
+  },
+  "exitDialog": {
+    "title": "Has llegado a la salida",
+    "body": "¿Zarpar ya con {{count}} de tesoro o seguir cazando?",
+    "bodyEmpty": "¿Zarpar ya con la bodega vacía o seguir cazando?",
+    "leave": "Salir",
+    "stay": "Seguir cazando"
   }
 }

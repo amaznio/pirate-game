@@ -5,7 +5,8 @@ import { createGame } from '../../simulation/createGame';
 import type { GameState } from '../../domain/GameState';
 import type { PlayerActions } from '../../domain/TurnResult';
 import { pos } from '../../domain/Position';
-import { createSkirmishConfig } from '../../config/matchConfig';
+import { BOARD_HEIGHT } from '../../config/gameRules';
+import { createHuntConfig, createSkirmishConfig } from '../../config/matchConfig';
 
 /** A state where one left-broadside shot sinks the enemy. */
 function gameOverSetup(): GameState {
@@ -721,5 +722,36 @@ describe('handing a ship to an AI and back', () => {
 
     expect(host.getPendingTurn()).toBe(turn);
     expect(host.getState().status).toBe('animating');
+  });
+});
+
+describe('leaving a hunt', () => {
+  const huntHost = (inExit: boolean) => {
+    const base = createGame(createHuntConfig({ seed: 1 }));
+    const ship = base.ships['player-ship'];
+    const state: GameState = inExit
+      ? { ...base, ships: { ...base.ships, 'player-ship': { ...ship, position: { x: ship.position.x, y: BOARD_HEIGHT - 1 } } } }
+      : base;
+    const bus = new EventBus();
+    const seen: string[] = [];
+    bus.on((event) => seen.push(event.type));
+    return { host: new GameController(bus, { turnDurationMs: null, initialState: state }), seen };
+  };
+
+  it('ends the hunt at once with the hero gone, when it is in the exit area between turns', () => {
+    const { host, seen } = huntHost(true);
+    expect(host.leaveHunt('player')).toBe(true);
+    expect(host.getState().status).toBe('game_over');
+    expect(host.getState().outcome).toEqual({ kind: 'win', teamId: 'player', reason: 'left' });
+    expect(seen).toEqual(['SHIP_ESCAPED']);
+    expect(host.leaveHunt('player')).toBe(false);
+  });
+
+  it('refuses outside the exit area, changing nothing', () => {
+    const { host, seen } = huntHost(false);
+    const before = host.getState();
+    expect(host.leaveHunt('player')).toBe(false);
+    expect(host.getState()).toBe(before);
+    expect(seen).toEqual([]);
   });
 });

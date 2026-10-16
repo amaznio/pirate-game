@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventBus } from '../../events/EventBus';
 import { GameController } from '../../controller/GameController';
-import { createSkirmishConfig } from '../../config/matchConfig';
+import { BOARD_HEIGHT } from '../../config/gameRules';
+import { createHuntConfig, createSkirmishConfig } from '../../config/matchConfig';
+import { createGame } from '../../simulation/createGame';
 import { GameClient } from '../GameClient';
 import { LocalTransport } from '../LocalTransport';
 
@@ -243,5 +245,40 @@ describe('what is left to spend while a turn is played', () => {
       client.getView().self.tokens.FORWARD,
     );
     expect(client.getView().self.tokens.FORWARD).toBe(pool - 1);
+  });
+});
+
+describe('leaving a hunt', () => {
+  function huntSetup(inExit: boolean) {
+    const base = createGame(createHuntConfig({ seed: 1 }));
+    const ship = base.ships['player-ship'];
+    const state = inExit
+      ? { ...base, ships: { ...base.ships, 'player-ship': { ...ship, position: { x: ship.position.x, y: BOARD_HEIGHT - 1 } } } }
+      : base;
+    const bus = new EventBus();
+    const host = new GameController(bus, { turnDurationMs: null, initialState: state });
+    return { host, client: new GameClient(new LocalTransport(host, bus, 'player')) };
+  }
+
+  it('sails off at once from the exit area and the view shows the hunt won', () => {
+    const { client } = huntSetup(true);
+    client.leaveHunt();
+    const view = client.getSnapshot().view;
+    expect(view.status).toBe('game_over');
+    expect(view.outcome).toEqual({ kind: 'win', teamId: 'player', reason: 'left' });
+  });
+
+  it('does nothing outside the exit area', () => {
+    const { client } = huntSetup(false);
+    client.leaveHunt();
+    expect(client.getSnapshot().view.status).toBe('planning');
+  });
+
+  it('is a no-op on a transport that cannot leave', () => {
+    const { host } = huntSetup(true);
+    const bus = new EventBus();
+    const local = new LocalTransport(host, bus, 'player');
+    const bare = Object.create(local, { leaveHunt: { value: undefined } }) as LocalTransport;
+    expect(() => new GameClient(bare).leaveHunt()).not.toThrow();
   });
 });

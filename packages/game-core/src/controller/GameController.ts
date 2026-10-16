@@ -7,6 +7,7 @@ import type {
 import type { PlayerId } from '../domain/Entity';
 import type { PlayerActions, TurnResult } from '../domain/TurnResult';
 import { createGame } from '../simulation/createGame';
+import { leaveHuntNow } from '../simulation/escapes';
 import { resolveTurn } from '../simulation/resolveTurn';
 import { beginNextTurn, spendMovementTokens } from '../simulation/tokens';
 import { applyPlayerPlan, type PlanRejection } from '../simulation/plans';
@@ -286,6 +287,21 @@ export class GameController {
     if (this.state.status === 'planning') {
       this.resolveIfReady();
     }
+  }
+
+  /**
+   * In a hunt, a hero standing in the exit area between turns sails off at once with its
+   * haul, and the hunt ends. Returns false when that is not allowed right now.
+   */
+  leaveHunt(playerId: PlayerId): boolean {
+    const left = leaveHuntNow(this.state, playerId);
+    if (!left) {
+      return false;
+    }
+    this.clearPlanningTimer();
+    this.eventBus.emitMany(left.events);
+    this.setState(left.state);
+    return true;
   }
 
   // --- Turn resolution ----------------------------------------------------
