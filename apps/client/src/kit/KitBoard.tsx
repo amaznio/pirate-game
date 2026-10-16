@@ -8,6 +8,8 @@ import { Tile } from '@/kit/Tile';
 import { Anchor, Compass } from 'lucide-react';
 import { CannonToggle } from '@/ui/CannonToggle';
 import { HullBar } from '@/ui/ShipStatus';
+import { ResultSummaryView } from '@/ui/ResultSummary';
+import type { MatchResult } from '@pirate/game-core/domain/MatchResult';
 import { TOKEN_META, TOKEN_ORDER } from '@/ui/tokenMeta';
 import { ChoiceGroup, ChoiceRow } from '@/kit/ChoiceRow';
 import { Notice } from '@/kit/Notice';
@@ -163,10 +165,52 @@ export function KitBoard() {
         <Section title="Card">
           <Card className="w-full p-4">A panel on the ocean.</Card>
         </Section>
+
+        <Section title="Result summary (a win, a hunt left, a loss)">
+          <div className="flex w-full gap-4">
+            {['victory', 'defeat', 'draw'].map((name) => (
+              <img key={name} src={`/assets/result/emblem-${name}.png`} width={96} height={96} alt={name} className="[image-rendering:pixelated]" />
+            ))}
+          </div>
+          <div className="flex w-full flex-wrap gap-4">
+            {SAMPLE_RESULTS.map((sample, index) => (
+              <Card key={index} className="w-full max-w-md p-4">
+                <ResultSummaryView battle={sample} viewerId="you" />
+              </Card>
+            ))}
+          </div>
+        </Section>
       </div>
     </div>
   );
 }
+
+const NO_LOOT = { barrel: 0, crate: 0, plank: 0 };
+const SAMPLE_SHIPS = {
+  you: { playerId: 'you', name: 'You', teamId: 'a', shipTypeId: 'brigantine', hull: 5, maxHull: 6, afloat: true, ammo: 2, tokens: 0, pickups: { barrel: 1, crate: 0, plank: 1 } },
+  foe: { playerId: 'foe', name: 'Enemy', teamId: 'b', shipTypeId: 'sloop', hull: 0, maxHull: 4, afloat: false, ammo: 0, tokens: 0, pickups: NO_LOOT },
+  rival: { playerId: 'rival', name: 'Bot 3', teamId: 'c', shipTypeId: 'galleon', hull: 3, maxHull: 6, afloat: true, ammo: 4, tokens: 0, pickups: NO_LOOT },
+};
+const SAMPLE_RESULTS: MatchResult[] = [
+  {
+    outcome: { kind: 'win', teamId: 'a' },
+    turns: 9,
+    ships: [SAMPLE_SHIPS.you, SAMPLE_SHIPS.foe, SAMPLE_SHIPS.rival],
+    objective: { kind: 'salvage', met: true },
+  },
+  {
+    outcome: { kind: 'win', teamId: 'a', reason: 'left' },
+    turns: 13,
+    ships: [{ ...SAMPLE_SHIPS.you, hull: 3, afloat: false, escaped: true, haul: 12 }],
+    objective: { kind: 'hunt', met: true },
+    hunt: { ending: 'left', bossSlain: true, monstersSunk: 3, haul: 12 },
+  },
+  {
+    outcome: { kind: 'win', teamId: 'b' },
+    turns: 7,
+    ships: [{ ...SAMPLE_SHIPS.you, hull: 0, afloat: false, ammo: 5 }, { ...SAMPLE_SHIPS.foe, hull: 2, afloat: true }],
+  },
+] as MatchResult[];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

@@ -273,9 +273,9 @@ HULL_COLOUR = 3  # navy, the colour the player's team has
 SAIL_COLOUR = 1  # cream
 
 
-def ship_marker(sheet, name):
+def ship_marker(sheet, name, colour=HULL_COLOUR, half_galleon=True):
     x0, pitch, w, h = HULLS[name]
-    hull = sheet.crop((x0 + pitch * HULL_COLOUR, 0, x0 + pitch * HULL_COLOUR + w, h))
+    hull = sheet.crop((x0 + pitch * colour, 0, x0 + pitch * colour + w, h))
     out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     out.alpha_composite(hull)
     yard = sheet.crop((32 * 5, 551, 32 * 5 + 32, 551 + 15))
@@ -283,9 +283,18 @@ def ship_marker(sheet, name):
     cy = int(h * (0.5 if name != 'galleon' else 56 / 128)) - 4
     out.alpha_composite(yard, (w // 2 - 16, cy))
     out.alpha_composite(sail, (w // 2 - 14, cy + 2))
-    if name == 'galleon':  # drawn at half size so it stays about as tall as the others
+    if name == 'galleon' and half_galleon:  # drawn at half size so it stays about as tall as the others
         out = out.resize((w // 2, h // 2), Image.NEAREST)
     return out
+
+
+SPLIT_ROW = {'sloop': 128, 'brigantine': 160, 'galleon': 256}  # where the broken hulls sit on the ship sheet
+
+
+def wreck_marker(sheet, name, colour):
+    """A hull broken in two, from the ship sheet."""
+    x0, pitch, w, h = HULLS[name]
+    return sheet.crop((x0 + pitch * colour, SPLIT_ROW[name], x0 + pitch * colour + w, SPLIT_ROW[name] + h))
 
 
 def main():
@@ -302,6 +311,12 @@ def main():
         img = ship_marker(sheet, name)
         img.save(os.path.join(OUT, f'ship-{name}.png'))
         ships[name] = img
+        # pictures for lists (the game over dialog): the ship sailing to the right, whole or broken in two,
+        # ours in navy and a rival's in red-orange, at the size it has in the game
+        for tag, colour in (('mine', HULL_COLOUR), ('foe', 2)):
+            ship_marker(sheet, name, colour, half_galleon=False).rotate(90, expand=True).save(
+                os.path.join(OUT, f'row-{name}-{tag}.png'))
+            wreck_marker(sheet, name, colour).rotate(90, expand=True).save(os.path.join(OUT, f'row-{name}-{tag}-wreck.png'))
     # a contact sheet on a dark card colour, 5x
     scale = 5
     pad = 8

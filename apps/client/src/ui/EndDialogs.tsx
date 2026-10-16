@@ -58,10 +58,28 @@ export function GameOverDialog({
           ? t('result.drawBody')
           : t('result.sunkBodyAlt'));
 
+  // A picture for how it ended: a trophy for a win (a hunt left alive is one), a flag of truce for a draw, else a sinking ship.
+  const emblem = hunt
+    ? hunt.ending === 'left'
+      ? 'victory'
+      : 'defeat'
+    : result === 'win'
+      ? 'victory'
+      : result === 'draw'
+        ? 'draw'
+        : 'defeat';
+
   return (
     <Dialog open>
       <DialogContent showCloseButton={false} onEscapeKeyDown={(event) => event.preventDefault()}>
         <DialogHeader className="items-center text-center">
+          <img
+            src={`/assets/result/emblem-${emblem}.png`}
+            width={96}
+            height={96}
+            alt=""
+            className="[image-rendering:pixelated]"
+          />
           <DialogTitle className="font-head text-4xl font-bold">{title}</DialogTitle>
           <DialogDescription className="text-base">{body}</DialogDescription>
         </DialogHeader>
