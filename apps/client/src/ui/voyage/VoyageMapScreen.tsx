@@ -1,3 +1,4 @@
+import { LocateFixed, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -23,10 +24,12 @@ import { runStore, useRun } from '../../run/runStore';
 import { AbandonButton, EventBanners, VoyageStats } from './VoyageParts';
 import { aiLevelLabel } from '../menu/aiLevels';
 import { mapStyleLabel } from '../menu/mapStyles';
+import { usePanZoom } from './usePanZoom';
 import { fleetText, mapKindOf, nodeBlurb, nodeTitle, stateLabel } from './voyageText';
 
-/** Pixels of map for each layer of the route. */
+/** Pixels of map for each layer of the route, and how wide the map is (it is dragged and zoomed inside its viewport). */
 const ROW = 132;
+const WORLD_W = 480;
 
 /** What a stop pays when it is won, in words; none for a port. */
 function rewardText(t: TFunction, node: RouteNode): string | null {
@@ -44,7 +47,9 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
   const { t } = useTranslation();
   const events = useRun((state) => state.events);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const mapRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [glide, setGlide] = useState(false);
+  const firstCentre = useRef(true);
 
   const graph = graphFor(run);
   const moves = availableMoves(run);
@@ -53,10 +58,29 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
   const yOf = (node: RouteNode) => node.layer * ROW + ROW / 2;
 
-  // Bring the ship's stop into view when the map opens or the ship moves.
+  const pan = usePanZoom(viewportRef, { width: WORLD_W, height: graph.layers * ROW });
+  const here = byId.get(run.nodeId);
+
+  /** Puts our ship's stop a little above the middle, so the stops ahead show; the map slides there after a leg. */
+  const centreOnShip = (slide: boolean) => {
+    if (!here) {
+      return;
+    }
+    // Fit the map's width, a little magnified on a wide screen and a little shrunk on a phone.
+    const fit = Math.max(0.6, Math.min(1.8, pan.boundsNow().viewW / (WORLD_W + 100)));
+    setGlide(slide);
+    pan.centreOn(here.x * WORLD_W, yOf(here), fit, 0.5, 0.38);
+    if (slide) {
+      window.setTimeout(() => setGlide(false), 400);
+    }
+  };
+
+  // Centre on the ship when the map opens and after each leg.
   useEffect(() => {
-    mapRef.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: 'center' });
-  }, [run.nodeId]);
+    centreOnShip(!firstCentre.current);
+    firstCentre.current = false;
+    // Only when the ship moves or the map is a different one: not on every drag.
+  }, [run.nodeId, graph.layers]);
 
   const stateOf = (id: string): MapNodeState =>
     id === run.nodeId ? 'current' : run.path.includes(id) ? 'cleared' : moveIds.has(id) ? 'available' : 'locked';
@@ -85,54 +109,79 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
   const shipSrc = `/assets/map/ship-${classForHullLevel(run.hullLevel).id}.png`;
 
   return (
-    <ScreenFrame title={t('menu.voyage')} onBack={onBack} actions={<AbandonButton />} wide={false}>
+    <ScreenFrame title={t('menu.voyage')} onBack={onBack} actions={<AbandonButton />}>
       <VoyageStats run={run} />
       <EventBanners events={events} />
       <Banner tone="objective">{t('voyage.chooseNext')}</Banner>
 
+      {/* The map is a viewport on a larger world: drag to pan, wheel or pinch or the buttons to zoom. */}
       <div
-        ref={mapRef}
-        role="list"
-        aria-label={t('menu.voyage')}
-        className="relative mx-auto mb-6 w-full max-w-md"
-        style={{ height: graph.layers * ROW }}
+        ref={viewportRef}
+        data-dragging={pan.dragging}
+        className="relative h-[max(360px,calc(100dvh-15rem))] cursor-grab touch-none select-none overflow-hidden rounded-card border border-border bg-black/10 data-[dragging=true]:cursor-grabbing"
+        onFocusCapture={(event) => pan.reveal(event.target as Element)}
+        {...pan.handlers}
       >
-        <svg aria-hidden className="pointer-events-none absolute inset-0 size-full">
-          {legs.map(({ edge, rank }) => {
-            const a = byId.get(edge.from)!;
-            const b = byId.get(edge.to)!;
+        <div
+          role="list"
+          aria-label={t('menu.voyage')}
+          className={`absolute left-0 top-0 origin-top-left ${glide ? 'transition-transform duration-300 ease-out' : ''}`}
+          style={{
+            width: WORLD_W,
+            height: graph.layers * ROW,
+            transform: `translate(${pan.view.x}px, ${pan.view.y}px) scale(${pan.view.z})`,
+          }}
+        >
+          <svg aria-hidden className="pointer-events-none absolute inset-0 size-full">
+            {legs.map(({ edge, rank }) => {
+              const from = byId.get(edge.from)!;
+              const to = byId.get(edge.to)!;
+              return (
+                <line
+                  key={`${edge.from}>${edge.to}`}
+                  x1={from.x * WORLD_W}
+                  y1={yOf(from)}
+                  x2={to.x * WORLD_W}
+                  y2={yOf(to)}
+                  strokeLinecap="round"
+                  strokeWidth={rank === 2 ? 4 : rank === 1 ? 3 : 2}
+                  strokeDasharray={rank === 1 ? '2 7' : undefined}
+                  className={rank === 0 ? 'stroke-border' : 'stroke-primary'}
+                  opacity={rank === 0 ? 0.6 : 1}
+                />
+              );
+            })}
+          </svg>
+          {graph.nodes.map((node) => {
+            const state = stateOf(node.id);
             return (
-              <line
-                key={`${edge.from}>${edge.to}`}
-                x1={`${a.x * 100}%`}
-                y1={yOf(a)}
-                x2={`${b.x * 100}%`}
-                y2={yOf(b)}
-                strokeLinecap="round"
-                strokeWidth={rank === 2 ? 4 : rank === 1 ? 3 : 2}
-                strokeDasharray={rank === 1 ? '2 7' : undefined}
-                className={rank === 0 ? 'stroke-border' : 'stroke-primary'}
-                opacity={rank === 0 ? 0.6 : 1}
+              <MapNode
+                key={node.id}
+                kind={mapKindOf(node)}
+                state={state}
+                label={nodeTitle(t, node)}
+                stateLabel={stateLabel(t, state)}
+                cost={state === 'available' ? legCost(run, node.id) : null}
+                {...(state === 'current' ? { shipSrc } : {})}
+                {...(state === 'available' ? { onSelect: () => setSelectedId(node.id) } : {})}
+                style={{ left: node.x * WORLD_W, top: yOf(node) }}
               />
             );
           })}
-        </svg>
-        {graph.nodes.map((node) => {
-          const state = stateOf(node.id);
-          return (
-            <MapNode
-              key={node.id}
-              kind={mapKindOf(node)}
-              state={state}
-              label={nodeTitle(t, node)}
-              stateLabel={stateLabel(t, state)}
-              cost={state === 'available' ? legCost(run, node.id) : null}
-              {...(state === 'current' ? { shipSrc } : {})}
-              {...(state === 'available' ? { onSelect: () => setSelectedId(node.id) } : {})}
-              style={{ left: `${node.x * 100}%`, top: yOf(node) }}
-            />
-          );
-        })}
+        </div>
+
+        {/* Pressing these must not start a drag of the map under them. */}
+        <div className="absolute right-2 top-2 flex flex-col gap-1.5" onPointerDown={(event) => event.stopPropagation()}>
+          <Button size="icon" variant="secondary" aria-label={t('voyage.zoomIn')} title={t('voyage.zoomIn')} onClick={() => pan.zoomBy(1.25)}>
+            <ZoomIn aria-hidden />
+          </Button>
+          <Button size="icon" variant="secondary" aria-label={t('voyage.zoomOut')} title={t('voyage.zoomOut')} onClick={() => pan.zoomBy(0.8)}>
+            <ZoomOut aria-hidden />
+          </Button>
+          <Button size="icon" variant="secondary" aria-label={t('voyage.centreShip')} title={t('voyage.centreShip')} onClick={() => centreOnShip(true)}>
+            <LocateFixed aria-hidden />
+          </Button>
+        </div>
       </div>
 
       <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelectedId(null)}>
