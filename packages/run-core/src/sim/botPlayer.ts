@@ -6,7 +6,7 @@ import { runMatch } from '@pirate/game-core/testing/matchRunner';
 import { AREAS, type AreaSpec } from '../config/areas';
 import type { BattleKind } from '../graph/types';
 import { buildBattle, graphFor, type BattleSetup } from '../run/battle';
-import { applyAction, availableMoves, legCost, startRun } from '../run/engine';
+import { applyAction, availableMoves, startRun } from '../run/engine';
 import { classForHullLevel } from '../run/rules';
 import type { DefeatReason, RunState, UpgradeId } from '../run/types';
 import { chooseRoute, chooseUpgrade, type RoutePolicy } from './policies';
@@ -62,10 +62,10 @@ export interface RunReport {
   readonly areaReached: number;
   readonly battles: readonly BattleRecord[];
   readonly legs: number;
-  /** Legs the hold could not fully pay for. */
-  readonly starvedLegs: number;
-  /** Supplies in the hold as each leg began. */
-  readonly suppliesAtDeparture: readonly number[];
+  /** Plunder in hand as the ship arrived at each port, before shopping. */
+  readonly plunderAtPort: readonly number[];
+  /** Plunder left unspent when the run ended. */
+  readonly plunderLeft: number;
   readonly upgrades: readonly UpgradeId[];
   readonly hullLevel: number;
   readonly cannonsPerSide: number;
@@ -90,8 +90,7 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
 
   let state: RunState = startRun(seed, { ...(options.areaCount === undefined ? {} : { areaCount: options.areaCount }), specs });
   const battles: BattleRecord[] = [];
-  const suppliesAtDeparture: number[] = [];
-  let starvedLegs = 0;
+  const plunderAtPort: number[] = [];
   let portsVisited = 0;
   let timedOut = false;
 
@@ -106,13 +105,13 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
   for (let guard = 0; guard < 5000 && state.phase !== 'victory' && state.phase !== 'defeat'; guard += 1) {
     if (state.phase === 'port') {
       portsVisited += 1;
-      state = act({ type: 'chooseUpgrade', upgrade: chooseUpgrade(state, state.offer ?? []) });
+      plunderAtPort.push(state.plunder);
+      for (let pick = chooseUpgrade(state, state.offer ?? []); pick !== null; pick = chooseUpgrade(state, state.offer ?? [])) {
+        state = act({ type: 'buyUpgrade', upgrade: pick });
+      }
+      state = act({ type: 'leavePort' });
     } else if (state.phase === 'map') {
       const next = chooseRoute(state, availableMoves(state, specs), route);
-      suppliesAtDeparture.push(state.supplies);
-      if (state.supplies < (legCost(state, next.id, specs) ?? 0)) {
-        starvedLegs += 1;
-      }
       state = act({ type: 'travel', to: next.id });
     } else {
       const setup = buildBattle(state, specs);
@@ -175,8 +174,8 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
     areaReached: state.areaIndex,
     battles,
     legs: state.legs,
-    starvedLegs,
-    suppliesAtDeparture,
+    plunderAtPort,
+    plunderLeft: state.plunder,
     upgrades: state.upgrades,
     hullLevel: state.hullLevel,
     cannonsPerSide: state.cannonsPerSide,

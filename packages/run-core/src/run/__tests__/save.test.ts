@@ -17,7 +17,7 @@ describe('saving a run', () => {
   });
 
   it('can carry on playing after a load', () => {
-    const run = step(startRun(5), { type: 'chooseUpgrade', upgrade: startRun(5).offer![0]! }).state;
+    const run = step(startRun(5), { type: 'leavePort' }).state;
     const loaded = parseRun(serializeRun(run))!;
     const move = availableMoves(loaded)[0]!;
     expect(step(loaded, { type: 'travel', to: move.id }).state.nodeId).toBe(move.id);
@@ -52,14 +52,16 @@ describe('a save that cannot be trusted gives nothing', () => {
     expect(parseRun(tweak({ version: 0 }))).toBeNull();
     expect(parseRun(tweak({ version: 1 }))).toBeNull();
     expect(parseRun(tweak({ version: 2 }))).toBeNull();
+    expect(parseRun(tweak({ version: 3 }))).toBeNull();
   });
 
   it('refuses numbers outside what the engine can make', () => {
     expect(parseRun(tweak({ hull: 99 }))).toBeNull();
     expect(parseRun(tweak({ hull: 0 }))).toBeNull();
     expect(parseRun(tweak({ hullLevel: 9 }))).toBeNull();
-    expect(parseRun(tweak({ supplies: 500 }))).toBeNull();
-    expect(parseRun(tweak({ supplies: -1 }))).toBeNull();
+    expect(parseRun(tweak({ plunder: 500000 }))).toBeNull();
+    expect(parseRun(tweak({ plunder: -1 }))).toBeNull();
+    expect(parseRun(tweak({ plunder: 2.5 }))).toBeNull();
     expect(parseRun(tweak({ cannonsPerSide: 4 }))).toBeNull();
     expect(parseRun(tweak({ cannonsPerSide: 0 }))).toBeNull();
     expect(parseRun(tweak({ ammo: 1.5 }))).toBeNull();
@@ -68,9 +70,11 @@ describe('a save that cannot be trusted gives nothing', () => {
     expect(parseRun(tweak({ seed: -3 }))).toBeNull();
   });
 
-  it('refuses a stop that is not on the map, or a port with nothing to pick', () => {
+  it('refuses a stop that is not on the map, or a port with no shop', () => {
     expect(parseRun(tweak({ nodeId: 'a0:99:9' }))).toBeNull();
-    expect(parseRun(tweak({ offer: [] }))).toBeNull();
+    expect(parseRun(tweak({ offer: null }))).toBeNull();
+    // A port whose upgrades are all bought is still a port.
+    expect(parseRun(tweak({ offer: [] }))).not.toBeNull();
     expect(parseRun(tweak({ offer: ['nonsense'] }))).toBeNull();
     expect(parseRun(tweak({ phase: 'weather' }))).toBeNull();
     expect(parseRun(tweak({ upgrades: ['nonsense'] }))).toBeNull();

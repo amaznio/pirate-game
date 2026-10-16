@@ -231,14 +231,14 @@ describe('real battles feed the run', () => {
     let finished = 0;
     for (let seed = 1; seed <= 12; seed += 1) {
       let run: RunState = startRun(seed);
-      run = step(run, { type: 'chooseUpgrade', upgrade: run.offer![0]! }).state;
+      run = step(run, { type: 'leavePort' }).state;
       // Sail to the first fight.
       for (let guard = 0; guard < 30 && run.phase !== 'battle'; guard += 1) {
         const graph = graphFor(run);
         const edge = graph.edges.find((e) => e.from === run.nodeId)!;
         run = step(run, { type: 'travel', to: edge.to }).state;
         if (run.phase === 'port') {
-          run = step(run, { type: 'chooseUpgrade', upgrade: run.offer![0]! }).state;
+          run = step(run, { type: 'leavePort' }).state;
         }
       }
       expect(run.phase).toBe('battle');

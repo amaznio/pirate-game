@@ -1,6 +1,7 @@
 import { CANNON_STARTING_AMMO } from '@pirate/game-core/config/gameRules';
 import { getShipType, type ShipType } from '@pirate/game-core/config/shipTypes';
 import type { BattleKind } from '../graph/types';
+import type { UpgradeId } from './types';
 
 /**
  * The numbers of the solo voyage. Starting guesses: the balance harness (roadmap
@@ -53,36 +54,44 @@ export function ammoFullFor(level: number, ammoBonus: number): number {
 
 /** How much one "cannonballs" upgrade adds to the stock, for good and right now. */
 export const CANNONBALLS_UPGRADE = 2;
-/** What the repair upgrade mends, and the provisions upgrade adds. */
+/** What the repair upgrade mends. */
 export const REPAIR_UPGRADE = 2;
-export const PROVISIONS_UPGRADE = 3;
 
-/** What a port does for the ship on arrival; a landfall (the start of an area) does more. */
+/** What a port does for the ship on arrival, free; a landfall (the start of an area) does more. */
 export const PORT_REPAIR = 2;
 export const LANDFALL_REPAIR = 4;
-export const PORT_SUPPLIES = 2;
-/** A landfall restocks the hold to the top. */
-export const LANDFALL_FILLS_HOLD = true;
 
-/** What a leg of the route costs the hull when the hold cannot pay for it. */
-export const STARVATION_HULL_COST = 1;
+/**
+ * Plunder is the voyage's money: fights and treasure pay it, ports sell upgrades for it.
+ * The ship sets out with enough for one hull upgrade.
+ */
+export const START_PLUNDER = 8;
 
-/** Supplies a won battle pays; a merchant kill pays the most. */
+/** What each upgrade costs in plunder. Starting guesses: a full ship (about 100) is just within a voyage's means. */
+export const UPGRADE_PRICE: Readonly<Record<UpgradeId, number>> = {
+  repair: 4,
+  cannonballs: 5,
+  reinforceHull: 8,
+  addCannon: 12,
+  cannonDamage: 16,
+};
+
+/** Plunder a won battle pays; a merchant or an ambush pays the most, a boss more still. */
 export const BATTLE_REWARD: Readonly<Record<BattleKind | 'boss' | 'hunt', number>> = {
-  standard: 1,
-  survive: 2,
-  salvage: 2,
-  merchant: 3,
-  ambush: 3,
-  boss: 3,
+  standard: 3,
+  survive: 4,
+  salvage: 4,
+  merchant: 6,
+  ambush: 6,
+  boss: 8,
   hunt: 1,
 };
 
 /**
- * What a hunt pays on top of that: each this many treasure banked is one supply (a
+ * What a hunt pays on top of that: each this many treasure banked is one plunder (a
  * full clear of the water is worth a hold or more), and the boss slain is worth a bonus.
  */
-export const TREASURE_PER_SUPPLY = 5;
+export const TREASURE_PER_PLUNDER = 5;
 export const HUNT_BOSS_BONUS = 3;
 
 /** The Kraken's hull in the hunt of an area: its own 15 in the first hunt, 3 more each later area. */
@@ -99,16 +108,6 @@ export function huntMonsters(areaIndex: number): readonly ('giant-squid' | 'squi
     ...(areaIndex >= 2 ? (['shark'] as const) : []),
     ...(areaIndex >= 3 ? (['squid'] as const) : []),
   ];
-}
-
-/** Supplies one leg of the route costs the ship at this hull level, before the leg's own cost. */
-export function supplyUseFor(level: number): number {
-  return classForHullLevel(level).supplyUse;
-}
-
-/** How many supplies the hold carries at this hull level. */
-export function cargoCapFor(level: number): number {
-  return classForHullLevel(level).cargoCap;
 }
 
 /**

@@ -6,7 +6,7 @@ export interface RunSummary {
   readonly victories: number;
   /** For each area: runs that ended there (a victory counts in the last area). */
   readonly endedInArea: readonly number[];
-  /** What ended the lost runs: the kind of the fatal battle, or starved / abandoned / timeout. */
+  /** What ended the lost runs: the kind of the fatal battle, or abandoned / timeout. */
   readonly lostTo: Readonly<Record<string, number>>;
   readonly battlesPerRun: number;
   readonly legsPerRun: number;
@@ -15,13 +15,12 @@ export interface RunSummary {
   /** Win rate and numbers per area, and per battle kind. */
   readonly byArea: readonly BattleGroup[];
   readonly byKind: Readonly<Record<string, BattleGroup>>;
-  readonly supplies: {
-    readonly averageAtDeparture: number;
-    readonly lowestSeen: number;
-    /** Share of legs the hold could not fully pay for. */
-    readonly starvedLegShare: number;
-    /** Share of runs with at least one such leg. */
-    readonly runsThatStarved: number;
+  readonly plunder: {
+    /** In hand on arriving at a port, before shopping. */
+    readonly averageAtPort: number;
+    readonly highestAtPort: number;
+    /** Left unspent when the run ended. */
+    readonly averageLeftAtEnd: number;
   };
   readonly ship: {
     readonly upgradesPerRun: number;
@@ -68,7 +67,7 @@ export function summarize(reports: readonly RunReport[], areaCount: number): Run
     }
     const fatal = report.battles.at(-1);
     const key =
-      report.reason === 'starved' || report.reason === 'abandoned' || report.reason === 'timeout'
+      report.reason === 'abandoned' || report.reason === 'timeout'
         ? report.reason
         : fatal && !fatal.won
           ? fatal.kind
@@ -76,9 +75,7 @@ export function summarize(reports: readonly RunReport[], areaCount: number): Run
     lostTo[key] = (lostTo[key] ?? 0) + 1;
   }
   const kinds = [...new Set(all.map((battle) => battle.kind))];
-  const departures = reports.flatMap((report) => report.suppliesAtDeparture);
-  const legs = reports.reduce((sum, report) => sum + report.suppliesAtDeparture.length, 0);
-  const starvedLegs = reports.reduce((sum, report) => sum + report.starvedLegs, 0);
+  const atPort = reports.flatMap((report) => report.plunderAtPort);
   const classAtBoss = Array.from({ length: areaCount }, (_, area) => {
     const counts: Record<string, number> = {};
     for (const battle of all) {
@@ -101,11 +98,10 @@ export function summarize(reports: readonly RunReport[], areaCount: number): Run
     wallMsPerRun: mean(reports.map((report) => report.wallMs)),
     byArea: Array.from({ length: areaCount }, (_, area) => group(all.filter((battle) => battle.areaIndex === area))),
     byKind: Object.fromEntries(kinds.map((kind) => [kind, group(all.filter((battle) => battle.kind === kind))])),
-    supplies: {
-      averageAtDeparture: mean(departures),
-      lowestSeen: departures.length === 0 ? 0 : Math.min(...departures),
-      starvedLegShare: legs === 0 ? 0 : starvedLegs / legs,
-      runsThatStarved: reports.length === 0 ? 0 : reports.filter((report) => report.starvedLegs > 0).length / reports.length,
+    plunder: {
+      averageAtPort: mean(atPort),
+      highestAtPort: atPort.length === 0 ? 0 : Math.max(...atPort),
+      averageLeftAtEnd: mean(reports.map((report) => report.plunderLeft)),
     },
     ship: {
       upgradesPerRun: mean(reports.map((report) => report.upgrades.length)),
@@ -147,9 +143,9 @@ export function formatSummary(summary: RunSummary): string {
     lines.push(`  ${kind.padEnd(20)}  ${String(g.battles).padStart(5)}  ${pct(g.winRate).padStart(4)}  ${pct(g.drawRate).padStart(5)}  ${num(g.averageTurns).padStart(5)}  ${num(g.hullLostWhenWon).padStart(5)}`);
   }
   lines.push('');
-  lines.push('Supplies');
+  lines.push('Plunder');
   lines.push(
-    `  ${num(summary.supplies.averageAtDeparture)} in the hold on average as a leg begins, lowest ${summary.supplies.lowestSeen}; ${pct(summary.supplies.starvedLegShare)} of legs starved, ${pct(summary.supplies.runsThatStarved)} of runs starved at least once`,
+    `  ${num(summary.plunder.averageAtPort)} in hand on arriving at a port on average, at most ${summary.plunder.highestAtPort}; ${num(summary.plunder.averageLeftAtEnd)} left unspent at the end of a run`,
   );
   lines.push('');
   lines.push('Ship at the end of a run (average)');

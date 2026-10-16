@@ -1,6 +1,8 @@
 import type { MatchResult } from '@pirate/game-core/domain/MatchResult';
 import { buildBattle } from '../battle';
 import { applyAction, availableMoves } from '../engine';
+import { UPGRADE_PRICE } from '../rules';
+import { canTake } from '../upgrades';
 import type { RunAction, RunEvent, RunState, UpgradeId } from '../types';
 
 /** Applies an action that must be allowed, and returns the new state. */
@@ -50,12 +52,19 @@ export function losingResult(state: RunState): MatchResult {
 }
 
 /** Walks a run to its end with a fixed policy and made-up wins; returns every state seen. */
-export function playWithWins(start: RunState, pickUpgrade: (state: RunState) => UpgradeId): RunState[] {
+export function playWithWins(start: RunState, pickUpgrade: (state: RunState) => UpgradeId | undefined): RunState[] {
   const seen: RunState[] = [start];
   let state = start;
   for (let guard = 0; guard < 2000 && state.phase !== 'victory' && state.phase !== 'defeat'; guard += 1) {
     if (state.phase === 'port') {
-      state = step(state, { type: 'chooseUpgrade', upgrade: pickUpgrade(state) }).state;
+      // Buy what the policy picks while the ship can pay for it and use it, then sail on.
+      const pick = pickUpgrade(state);
+      state = step(
+        state,
+        pick !== undefined && state.offer?.includes(pick) && canTake(state, pick) && UPGRADE_PRICE[pick] <= state.plunder
+          ? { type: 'buyUpgrade', upgrade: pick }
+          : { type: 'leavePort' },
+      ).state;
     } else if (state.phase === 'map') {
       const moves = availableMoves(state);
       // Prefer a port when one is on offer, else the first way forward.

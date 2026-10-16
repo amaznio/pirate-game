@@ -7,8 +7,7 @@ export type UpgradeId =
   | 'addCannon'
   | 'cannonDamage'
   | 'cannonballs'
-  | 'repair'
-  | 'provisions';
+  | 'repair';
 
 export const UPGRADE_IDS: readonly UpgradeId[] = [
   'reinforceHull',
@@ -16,22 +15,21 @@ export const UPGRADE_IDS: readonly UpgradeId[] = [
   'cannonDamage',
   'cannonballs',
   'repair',
-  'provisions',
 ];
 
 /**
  * Where the voyage stands.
  *  - `map`: at a node whose business is done; choose the next stop.
- *  - `port`: just arrived at a port; an upgrade is on offer and must be picked.
+ *  - `port`: at a port, where the upgrades on offer can be bought with plunder until the ship sails on.
  *  - `battle`: at a battle or boss node; the fight is waiting for its result.
  *  - `victory`, `defeat`: the run is over.
  */
 export type RunPhase = 'map' | 'port' | 'battle' | 'victory' | 'defeat';
 
-export type DefeatReason = 'sunk' | 'starved' | 'abandoned';
+export type DefeatReason = 'sunk' | 'abandoned';
 
 /** Bumped when the saved shape changes, so an old save is refused, not misread. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /**
  * Everything about a run, as plain data so it can be saved and loaded. The map
@@ -60,7 +58,8 @@ export interface RunState {
   readonly cannonsPerSide: number;
   /** Extra damage of each cannon. */
   readonly cannonDamage: number;
-  readonly supplies: number;
+  /** The voyage's money: earned in fights, spent on upgrades at ports. */
+  readonly plunder: number;
 
   /**
    * Set once the fight at this stop has begun. A voyage found in this state when
@@ -68,7 +67,7 @@ export interface RunState {
    * is not a way to retry a fight.
    */
   readonly battleStarted?: boolean;
-  /** In a port: the upgrades on offer, until one is picked. */
+  /** In a port: the upgrades still for sale. */
   readonly offer?: readonly UpgradeId[];
   /** Every upgrade taken so far, in order. */
   readonly upgrades: readonly UpgradeId[];
@@ -79,7 +78,10 @@ export interface RunState {
 /** What the player can do. */
 export type RunAction =
   | { readonly type: 'travel'; readonly to: string }
-  | { readonly type: 'chooseUpgrade'; readonly upgrade: UpgradeId }
+  /** Buy one of the upgrades for sale at the port. */
+  | { readonly type: 'buyUpgrade'; readonly upgrade: UpgradeId }
+  /** Sail on from the port; the upgrades not bought are gone. */
+  | { readonly type: 'leavePort' }
   | { readonly type: 'finishBattle'; readonly result: MatchResult }
   /** The fight at the ship's stop has begun (and cannot be taken back). */
   | { readonly type: 'startBattle' }
@@ -89,14 +91,13 @@ export type RunAction =
 
 /** Things that happened, for the screens to tell the player about. */
 export type RunEvent =
-  | { readonly type: 'travelled'; readonly to: string; readonly suppliesSpent: number }
-  | { readonly type: 'starved'; readonly hullLost: number }
-  | { readonly type: 'portArrival'; readonly landfall: boolean; readonly repaired: number; readonly suppliesGained: number; readonly ammoGained: number }
-  | { readonly type: 'upgraded'; readonly upgrade: UpgradeId; readonly refit?: { readonly from: string; readonly to: string } }
+  | { readonly type: 'travelled'; readonly to: string }
+  | { readonly type: 'portArrival'; readonly landfall: boolean; readonly repaired: number; readonly ammoGained: number }
+  | { readonly type: 'upgraded'; readonly upgrade: UpgradeId; readonly price: number; readonly refit?: { readonly from: string; readonly to: string } }
   | {
       readonly type: 'battleWon';
       readonly kind: BattleKind | 'boss' | 'hunt';
-      readonly suppliesGained: number;
+      readonly plunderGained: number;
       /** A hunt: the treasure banked, and whether the Kraken was slain. */
       readonly haul?: number;
       readonly bossSlain?: boolean;

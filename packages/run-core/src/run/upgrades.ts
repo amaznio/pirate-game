@@ -4,9 +4,7 @@ import {
   CANNONBALLS_UPGRADE,
   CANNONS_PER_SIDE_CAP,
   HULL_LEVEL_CAP,
-  PROVISIONS_UPGRADE,
   REPAIR_UPGRADE,
-  cargoCapFor,
   classForHullLevel,
   maxHullFor,
 } from './rules';
@@ -22,7 +20,6 @@ const WEIGHTS: Readonly<Record<UpgradeId, number>> = {
   cannonDamage: 2,
   cannonballs: 2,
   repair: 2,
-  provisions: 2,
 };
 
 /**
@@ -54,8 +51,6 @@ export function canTake(state: RunState, upgrade: UpgradeId): boolean {
       return true;
     case 'repair':
       return state.hull < maxHullFor(state.hullLevel);
-    case 'provisions':
-      return state.supplies < cargoCapFor(state.hullLevel);
   }
 }
 
@@ -110,13 +105,6 @@ export function applyUpgrade(
     case 'repair':
       return {
         state: { ...state, hull: Math.min(maxHullFor(state.hullLevel), state.hull + REPAIR_UPGRADE) },
-      };
-    case 'provisions':
-      return {
-        state: {
-          ...state,
-          supplies: Math.min(cargoCapFor(state.hullLevel), state.supplies + PROVISIONS_UPGRADE),
-        },
       };
   }
 }

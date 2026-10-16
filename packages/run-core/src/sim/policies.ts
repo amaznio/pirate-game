@@ -1,6 +1,7 @@
 import { createRng } from '../rng';
 import type { RouteNode } from '../graph/types';
-import { cargoCapFor, maxHullFor } from '../run/rules';
+import { UPGRADE_PRICE, maxHullFor } from '../run/rules';
+import { canTake } from '../run/upgrades';
 import type { RunState, UpgradeId } from '../run/types';
 
 /**
@@ -22,7 +23,7 @@ const BATTLE_APPEAL: Readonly<Record<string, number>> = {
   hunt: -1,
 };
 
-/** Picks the next stop. A careful player heads for a port when hurt or short of supplies. */
+/** Picks the next stop. A careful player heads for a port when hurt. */
 export function chooseRoute(state: RunState, options: readonly RouteNode[], policy: RoutePolicy): RouteNode {
   if (policy === 'first' || options.length === 1) {
     return options[0]!;
@@ -32,13 +33,12 @@ export function chooseRoute(state: RunState, options: readonly RouteNode[], poli
     return options[Math.floor(rng() * options.length)]!;
   }
   const hurt = state.hull <= maxHullFor(state.hullLevel) * 0.6;
-  const hungry = state.supplies <= cargoCapFor(state.hullLevel) * 0.4;
   let best = options[0]!;
   let bestScore = -Infinity;
   for (const node of options) {
     const score =
       node.kind === 'port'
-        ? hurt || hungry
+        ? hurt
           ? 3
           : 1
         : (BATTLE_APPEAL[node.kind === 'boss' || node.kind === 'hunt' ? node.kind : node.battle ?? 'standard'] ?? 0);
@@ -56,19 +56,18 @@ const PRIORITY: readonly UpgradeId[] = [
   'addCannon',
   'cannonDamage',
   'cannonballs',
-  'provisions',
   'repair',
 ];
 
-/** Picks the upgrade: mend when badly hurt, stock up when short, else grow. */
-export function chooseUpgrade(state: RunState, offer: readonly UpgradeId[]): UpgradeId {
+/**
+ * The next upgrade to buy at a shop, or null to sail on: mend first when badly hurt, else the
+ * best thing on the list the ship can use and pay for. It never saves up for something dearer.
+ */
+export function chooseUpgrade(state: RunState, offer: readonly UpgradeId[]): UpgradeId | null {
+  const buyable = offer.filter((id) => canTake(state, id) && UPGRADE_PRICE[id] <= state.plunder);
   const hurt = state.hull <= maxHullFor(state.hullLevel) * 0.5;
-  const hungry = state.supplies <= cargoCapFor(state.hullLevel) * 0.35;
-  if (hurt && offer.includes('repair')) {
+  if (hurt && buyable.includes('repair')) {
     return 'repair';
   }
-  if (hungry && offer.includes('provisions')) {
-    return 'provisions';
-  }
-  return PRIORITY.find((id) => offer.includes(id)) ?? offer[0]!;
+  return PRIORITY.find((id) => buyable.includes(id) && id !== 'repair') ?? null;
 }

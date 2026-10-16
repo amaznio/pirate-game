@@ -7,19 +7,16 @@ import { buildBattle, graphFor } from './battle';
 import {
   BATTLE_REWARD,
   HUNT_BOSS_BONUS,
-  LANDFALL_FILLS_HOLD,
   LANDFALL_REPAIR,
   PORT_REPAIR,
-  PORT_SUPPLIES,
   START_AMMO,
-  STARVATION_HULL_COST,
-  TREASURE_PER_SUPPLY,
+  START_PLUNDER,
+  TREASURE_PER_PLUNDER,
+  UPGRADE_PRICE,
   ammoFullFor,
-  cargoCapFor,
   maxHullFor,
-  supplyUseFor,
 } from './rules';
-import { applyUpgrade, offerUpgrades } from './upgrades';
+import { applyUpgrade, canTake, offerUpgrades } from './upgrades';
 import {
   SAVE_VERSION,
   type RunAction,
@@ -36,8 +33,8 @@ export interface StartOptions {
 }
 
 /**
- * A new run: a Sloop at the landfall of the first area, with a full hold. The
- * landfall is a port, so the run opens with an upgrade to pick.
+ * A new run: a Sloop at the landfall of the first area, with a little plunder. The
+ * landfall is a port, so the run opens at a shop.
  */
 export function startRun(seed: number, options: StartOptions = {}): RunState {
   const specs = options.specs ?? AREAS;
@@ -57,7 +54,7 @@ export function startRun(seed: number, options: StartOptions = {}): RunState {
     ammoBonus: 0,
     cannonsPerSide: 1,
     cannonDamage: 0,
-    supplies: cargoCapFor(0),
+    plunder: START_PLUNDER,
     upgrades: [],
     battlesWon: 0,
     legs: 0,
@@ -71,13 +68,6 @@ export function availableMoves(state: RunState, specs: readonly AreaSpec[] = ARE
     return [];
   }
   return successors(graphFor(state, specs), state.nodeId);
-}
-
-/** What a leg to this node would cost now, in supplies. */
-export function legCost(state: RunState, to: string, specs: readonly AreaSpec[] = AREAS): number | null {
-  const graph = graphFor(state, specs);
-  const edge = graph.edges.find((candidate) => candidate.from === state.nodeId && candidate.to === to);
-  return edge === undefined ? null : supplyUseFor(state.hullLevel) * edge.cost;
 }
 
 const fail = (error: string): RunStep => ({ ok: false, error });
@@ -103,8 +93,10 @@ export function applyAction(state: RunState, action: RunAction, specs: readonly 
       ]);
     case 'travel':
       return travel(state, action.to, specs);
-    case 'chooseUpgrade':
-      return chooseUpgrade(state, action.upgrade);
+    case 'buyUpgrade':
+      return buyUpgrade(state, action.upgrade);
+    case 'leavePort':
+      return leavePort(state);
     case 'finishBattle':
       return finishBattle(state, action.result, specs);
     case 'startBattle':
@@ -122,38 +114,19 @@ export function applyAction(state: RunState, action: RunAction, specs: readonly 
 
 function travel(state: RunState, to: string, specs: readonly AreaSpec[]): RunStep {
   if (state.phase !== 'map') {
-    return fail('The ship cannot sail now: pick an upgrade or finish the battle first');
+    return fail('The ship cannot sail now: leave the port or finish the battle first');
   }
   const graph = graphFor(state, specs);
   const edge = graph.edges.find((candidate) => candidate.from === state.nodeId && candidate.to === to);
   if (!edge) {
     return fail(`There is no leg from ${state.nodeId} to ${to}`);
   }
-  const cost = supplyUseFor(state.hullLevel) * edge.cost;
-  const paid = Math.min(state.supplies, cost);
-  const events: RunEvent[] = [{ type: 'travelled', to, suppliesSpent: paid }];
-  let next: RunState = {
-    ...state,
-    nodeId: to,
-    path: [...state.path, to],
-    supplies: state.supplies - paid,
-    legs: state.legs + 1,
-  };
-
-  // A hold that cannot pay for the leg costs hull instead of ending the run.
-  if (paid < cost) {
-    next = { ...next, hull: next.hull - STARVATION_HULL_COST };
-    events.push({ type: 'starved', hullLost: STARVATION_HULL_COST });
-    if (next.hull <= 0) {
-      events.push({ type: 'defeat', reason: 'starved' });
-      return ok({ ...next, hull: 0, phase: 'defeat', defeatReason: 'starved' }, events);
-    }
-  }
+  const next: RunState = { ...state, nodeId: to, path: [...state.path, to], legs: state.legs + 1 };
   const arrived = arrive(next, nodeById(graph, to));
-  return ok(arrived.state, [...events, ...arrived.events]);
+  return ok(arrived.state, [{ type: 'travelled', to }, ...arrived.events]);
 }
 
-/** What happens on reaching a node: a port does its work and offers upgrades, a fight waits. */
+/** What happens on reaching a node: a port repairs the ship and puts its upgrades up for sale, a fight waits. */
 function arrive(state: RunState, node: RouteNode): { state: RunState; events: RunEvent[] } {
   if (node.kind !== 'port') {
     return { state: { ...state, nodeId: node.id, phase: 'battle' }, events: [] };
@@ -161,10 +134,8 @@ function arrive(state: RunState, node: RouteNode): { state: RunState; events: Ru
   const landfall = node.landfall === true;
   const maxHull = maxHullFor(state.hullLevel);
   const hull = Math.min(maxHull, state.hull + (landfall ? LANDFALL_REPAIR : PORT_REPAIR));
-  const cap = cargoCapFor(state.hullLevel);
-  const supplies = landfall && LANDFALL_FILLS_HOLD ? cap : Math.min(cap, state.supplies + PORT_SUPPLIES);
   const ammo = Math.max(state.ammo, ammoFullFor(state.hullLevel, state.ammoBonus));
-  const stocked: RunState = { ...state, nodeId: node.id, hull, supplies, ammo };
+  const stocked: RunState = { ...state, nodeId: node.id, hull, ammo };
   const offered: RunState = { ...stocked, phase: 'port', offer: offerUpgrades(stocked, node.id) };
   return {
     state: offered,
@@ -173,28 +144,41 @@ function arrive(state: RunState, node: RouteNode): { state: RunState; events: Ru
         type: 'portArrival',
         landfall,
         repaired: hull - state.hull,
-        suppliesGained: supplies - state.supplies,
         ammoGained: ammo - state.ammo,
       },
     ],
   };
 }
 
-function chooseUpgrade(state: RunState, upgrade: UpgradeId): RunStep {
+function buyUpgrade(state: RunState, upgrade: UpgradeId): RunStep {
   if (state.phase !== 'port' || state.offer === undefined) {
-    return fail('There is no upgrade on offer');
+    return fail('There is no port to buy at');
   }
   if (!state.offer.includes(upgrade)) {
-    return fail(`${upgrade} is not on offer here`);
+    return fail(`${upgrade} is not for sale here`);
+  }
+  if (!canTake(state, upgrade)) {
+    return fail(`${upgrade} would do nothing for this ship`);
+  }
+  const price = UPGRADE_PRICE[upgrade];
+  if (state.plunder < price) {
+    return fail(`${upgrade} costs ${price} plunder and the ship has ${state.plunder}`);
   }
   const applied = applyUpgrade(state, upgrade);
   const next: RunState = {
     ...applied.state,
-    phase: 'map',
-    offer: undefined,
+    plunder: state.plunder - price,
+    offer: state.offer.filter((id) => id !== upgrade),
     upgrades: [...state.upgrades, upgrade],
   };
-  return ok(next, [{ type: 'upgraded', upgrade, ...(applied.refit ? { refit: applied.refit } : {}) }]);
+  return ok(next, [{ type: 'upgraded', upgrade, price, ...(applied.refit ? { refit: applied.refit } : {}) }]);
+}
+
+function leavePort(state: RunState): RunStep {
+  if (state.phase !== 'port') {
+    return fail('The ship is not in a port');
+  }
+  return ok({ ...state, phase: 'map', offer: undefined }, []);
 }
 
 function finishBattle(
@@ -219,17 +203,16 @@ function finishBattle(
     ]);
   }
 
-  const cap = cargoCapFor(state.hullLevel);
   const haul = setup.kind === 'hunt' ? Math.max(0, result.hunt?.haul ?? 0) : 0;
   const bossSlain = setup.kind === 'hunt' && result.hunt?.bossSlain === true;
   const reward =
     BATTLE_REWARD[setup.kind] +
-    (setup.kind === 'hunt' ? Math.floor(haul / TREASURE_PER_SUPPLY) + (bossSlain ? HUNT_BOSS_BONUS : 0) : 0);
+    (setup.kind === 'hunt' ? Math.floor(haul / TREASURE_PER_PLUNDER) + (bossSlain ? HUNT_BOSS_BONUS : 0) : 0);
   const afterFight: RunState = {
     ...state,
     hull: Math.max(1, Math.min(maxHullFor(state.hullLevel), hero.hull)),
     ammo: Math.max(0, hero.ammo),
-    supplies: Math.min(cap, state.supplies + reward),
+    plunder: state.plunder + reward,
     battlesWon: state.battlesWon + 1,
     battleStarted: undefined,
   };
@@ -237,7 +220,7 @@ function finishBattle(
     {
       type: 'battleWon',
       kind: setup.kind,
-      suppliesGained: afterFight.supplies - state.supplies,
+      plunderGained: reward,
       ...(setup.kind === 'hunt' ? { haul, bossSlain } : {}),
     },
   ];

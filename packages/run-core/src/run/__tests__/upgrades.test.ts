@@ -5,9 +5,7 @@ import {
   CANNONS_PER_SIDE_CAP,
   CANNONBALLS_UPGRADE,
   HULL_LEVEL_CAP,
-  PROVISIONS_UPGRADE,
   REPAIR_UPGRADE,
-  cargoCapFor,
   maxHullFor,
 } from '../rules';
 import { OFFER_SIZE, applyUpgrade, canTake, offerUpgrades } from '../upgrades';
@@ -41,13 +39,11 @@ describe('offerUpgrades', () => {
       hull: maxHullFor(HULL_LEVEL_CAP),
       cannonsPerSide: CANNONS_PER_SIDE_CAP,
       cannonDamage: CANNON_DAMAGE_CAP,
-      supplies: cargoCapFor(HULL_LEVEL_CAP),
     };
     expect(canTake(maxed, 'reinforceHull')).toBe(false);
     expect(canTake(maxed, 'addCannon')).toBe(false);
     expect(canTake(maxed, 'cannonDamage')).toBe(false);
     expect(canTake(maxed, 'repair')).toBe(false);
-    expect(canTake(maxed, 'provisions')).toBe(false);
     expect(canTake(maxed, 'cannonballs')).toBe(true);
     expect(offerUpgrades(maxed, 'a4:7:0')).toEqual(['cannonballs']);
   });
@@ -102,12 +98,10 @@ describe('applyUpgrade', () => {
     expect(next.ammoBonus).toBe(base.ammoBonus + CANNONBALLS_UPGRADE);
   });
 
-  it('repair and provisions never overfill', () => {
-    const hurt = { ...base, hull: 1, supplies: 0 };
+  it('repair never overfills', () => {
+    const hurt = { ...base, hull: 1 };
     expect(applyUpgrade(hurt, 'repair').state.hull).toBe(1 + REPAIR_UPGRADE);
-    expect(applyUpgrade(hurt, 'provisions').state.supplies).toBe(PROVISIONS_UPGRADE);
     expect(applyUpgrade(base, 'repair').state.hull).toBe(base.hull);
-    expect(applyUpgrade(base, 'provisions').state.supplies).toBe(base.supplies);
   });
 
   it('knows every upgrade', () => {

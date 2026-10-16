@@ -1,6 +1,6 @@
 import { AREAS, type AreaSpec } from '../config/areas';
 import { generateArea } from '../graph/generateArea';
-import { HULL_LEVEL_CAP, CANNONS_PER_SIDE_CAP, CANNON_DAMAGE_CAP, maxHullFor, cargoCapFor } from './rules';
+import { HULL_LEVEL_CAP, CANNONS_PER_SIDE_CAP, CANNON_DAMAGE_CAP, maxHullFor } from './rules';
 import { SAVE_VERSION, UPGRADE_IDS, type DefeatReason, type RunPhase, type RunState } from './types';
 
 /** The highest damage any version has saved (the cap was 3 before it was lowered). */
@@ -12,7 +12,7 @@ export function serializeRun(state: RunState): string {
 }
 
 const PHASES: readonly RunPhase[] = ['map', 'port', 'battle', 'victory', 'defeat'];
-const DEFEATS: readonly DefeatReason[] = ['sunk', 'starved', 'abandoned'];
+const DEFEATS: readonly DefeatReason[] = ['sunk', 'abandoned'];
 
 function whole(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
@@ -50,6 +50,7 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
     !whole(s.hullLevel, 0, HULL_LEVEL_CAP) ||
     !whole(s.cannonsPerSide, 1, CANNONS_PER_SIDE_CAP) ||
     !whole(s.cannonDamage, 0, SAVED_DAMAGE_MAX) ||
+    !whole(s.plunder, 0, 100000) ||
     !whole(s.ammoBonus, 0, 1000) ||
     !whole(s.ammo, 0, 1000) ||
     !whole(s.battlesWon, 0, 100000) ||
@@ -62,9 +63,6 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
   const hullLevel = s.hullLevel as number;
   const phase = s.phase as RunPhase;
   if (!whole(s.hull, phase === 'defeat' ? 0 : 1, maxHullFor(hullLevel))) {
-    return null;
-  }
-  if (!whole(s.supplies, 0, cargoCapFor(hullLevel))) {
     return null;
   }
   if (phase === 'defeat' && !DEFEATS.includes(s.defeatReason as DefeatReason)) {
@@ -90,7 +88,7 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
     return null;
   }
   if (phase === 'port') {
-    if (node.kind !== 'port' || !Array.isArray(s.offer) || s.offer.length === 0) {
+    if (node.kind !== 'port' || !Array.isArray(s.offer)) {
       return null;
     }
     if (!s.offer.every((id) => typeof id === 'string' && UPGRADE_IDS.includes(id as never))) {

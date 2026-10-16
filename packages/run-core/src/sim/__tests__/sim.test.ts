@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AREAS } from '../../config/areas';
 import type { RouteNode } from '../../graph/types';
 import { startRun } from '../../run/engine';
-import { cargoCapFor, maxHullFor } from '../../run/rules';
+import { maxHullFor } from '../../run/rules';
 import type { RunState } from '../../run/types';
 import { playRun, scriptedHullLoss } from '../botPlayer';
 import { chooseRoute, chooseUpgrade } from '../policies';
@@ -26,11 +26,10 @@ describe('the bot chooses like a careful player', () => {
   const easy = node({ id: 'e', battle: 'standard' });
   const ambush = node({ id: 'a', battle: 'ambush' });
 
-  it('prefers an ordinary fight to an ambush, and a port when hurt or hungry', () => {
+  it('prefers an ordinary fight to an ambush, and a port when hurt', () => {
     expect(chooseRoute(state(), [ambush, easy], 'smart').id).toBe('e');
     expect(chooseRoute(state(), [port, easy], 'smart').id).toBe('p');
     expect(chooseRoute(state({ hull: 1 }), [easy, port], 'smart').id).toBe('p');
-    expect(chooseRoute(state({ supplies: 1 }), [easy, port], 'smart').id).toBe('p');
   });
 
   it('can simply take the first way, or a seeded random one', () => {
@@ -39,13 +38,14 @@ describe('the bot chooses like a careful player', () => {
     expect(chooseRoute(state(), [easy], 'smart').id).toBe('e');
   });
 
-  it('mends when badly hurt, stocks up when short, and otherwise grows', () => {
-    const all = ['reinforceHull', 'addCannon', 'cannonDamage', 'cannonballs', 'repair', 'provisions'] as const;
+  it('mends when badly hurt, otherwise grows, and buys only what it can pay for and use', () => {
+    const all = ['reinforceHull', 'addCannon', 'cannonDamage', 'cannonballs', 'repair'] as const;
     expect(chooseUpgrade(state(), all)).toBe('reinforceHull');
     expect(chooseUpgrade(state({ hull: 1 }), all)).toBe('repair');
-    expect(chooseUpgrade(state({ supplies: 0 }), all)).toBe('provisions');
-    expect(chooseUpgrade(state({ hull: 1 }), ['addCannon', 'provisions'])).toBe('addCannon');
-    expect(chooseUpgrade(state(), ['repair'])).toBe('repair');
+    expect(chooseUpgrade(state({ plunder: 0 }), all)).toBeNull();
+    expect(chooseUpgrade(state({ plunder: 12 }), ['addCannon', 'cannonDamage'])).toBe('addCannon');
+    expect(chooseUpgrade(state({ plunder: 12 }), ['cannonDamage'])).toBeNull();
+    expect(chooseUpgrade(state(), ['repair'])).toBeNull();
   });
 });
 
@@ -58,8 +58,8 @@ describe('playRun with scripted wins', () => {
     expect(a.areaReached).toBe(AREAS.length - 1);
     expect(a.battles.length).toBeGreaterThan(20);
     expect(a.battles.every((battle) => battle.won)).toBe(true);
-    expect(a.suppliesAtDeparture).toHaveLength(a.legs);
-    expect(a.upgrades.length).toBe(a.portsVisited);
+    expect(a.plunderAtPort).toHaveLength(a.portsVisited);
+    expect(a.upgrades.length).toBeGreaterThan(5);
   });
 
   it('can be a short voyage', () => {
@@ -74,12 +74,12 @@ describe('playRun with scripted wins', () => {
     expect(scriptedHullLoss(0)).toBeGreaterThan(0);
   });
 
-  it('never leaves the ship outside what its hull and hold allow', () => {
+  it('never leaves the ship outside what its hull and purse allow', () => {
     const report = playRun(12, { scripted: true });
-    for (const supplies of report.suppliesAtDeparture) {
-      expect(supplies).toBeGreaterThanOrEqual(0);
-      expect(supplies).toBeLessThanOrEqual(cargoCapFor(6));
+    for (const plunder of report.plunderAtPort) {
+      expect(plunder).toBeGreaterThanOrEqual(0);
     }
+    expect(report.plunderLeft).toBeGreaterThanOrEqual(0);
     expect(report.hullLevel).toBeLessThanOrEqual(6);
     expect(maxHullFor(report.hullLevel)).toBeGreaterThan(0);
   });
@@ -118,11 +118,10 @@ describe('summarize', () => {
     expect(summary.lostTo).toEqual({});
   });
 
-  it('averages the length, the supplies and the ship', () => {
+  it('averages the length, the plunder and the ship', () => {
     expect(summary.legsPerRun).toBeGreaterThan(10);
     expect(summary.battlesPerRun).toBeGreaterThan(5);
-    expect(summary.supplies.averageAtDeparture).toBeGreaterThan(0);
-    expect(summary.supplies.starvedLegShare).toBe(0);
+    expect(summary.plunder.averageAtPort).toBeGreaterThan(0);
     expect(summary.ship.upgradesPerRun).toBeGreaterThan(3);
     expect(summary.byArea).toHaveLength(2);
     expect(summary.byKind.boss!.battles).toBe(4);

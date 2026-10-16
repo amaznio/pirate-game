@@ -3,7 +3,7 @@ import type { MatchResult } from '@pirate/game-core/domain/MatchResult';
 import { AREAS } from '../../config/areas';
 import { generateArea } from '../../graph/generateArea';
 import { nodeById } from '../../graph/query';
-import { applyAction, availableMoves, legCost, startRun } from '../engine';
+import { applyAction, availableMoves, startRun } from '../engine';
 import { graphFor } from '../battle';
 import {
   BATTLE_REWARD,
@@ -11,14 +11,13 @@ import {
   HUNT_BOSS_BONUS,
   LANDFALL_REPAIR,
   PORT_REPAIR,
-  PORT_SUPPLIES,
-  TREASURE_PER_SUPPLY,
-  cargoCapFor,
+  START_PLUNDER,
+  TREASURE_PER_PLUNDER,
+  UPGRADE_PRICE,
   classForHullLevel,
   maxHullFor,
-  supplyUseFor,
 } from '../rules';
-import type { RunState } from '../types';
+import { UPGRADE_IDS, type RunState } from '../types';
 import { losingResult, playWithWins, step, winningResult } from './helpers';
 
 const SEED = 20261014;
@@ -29,7 +28,7 @@ function at(state: RunState, nodeId: string, patch: Partial<RunState> = {}): Run
 }
 
 describe('startRun', () => {
-  it('starts a full Sloop at the landfall, with an upgrade to pick', () => {
+  it('starts a full Sloop at the landfall shop, with a little plunder', () => {
     const run = startRun(SEED);
     const graph = graphFor(run);
     expect(run.nodeId).toBe(graph.startId);
@@ -38,7 +37,7 @@ describe('startRun', () => {
     expect(run.hullLevel).toBe(0);
     expect(classForHullLevel(run.hullLevel).id).toBe('sloop');
     expect(run.hull).toBe(maxHullFor(0));
-    expect(run.supplies).toBe(cargoCapFor(0));
+    expect(run.plunder).toBe(START_PLUNDER);
     expect(run.cannonsPerSide).toBe(1);
     expect(run.areaIndex).toBe(0);
     expect(run.areaCount).toBe(AREAS.length);
@@ -58,29 +57,49 @@ describe('startRun', () => {
 });
 
 describe('the port at the start', () => {
-  it('must be left by picking one of the offered upgrades', () => {
-    const run = startRun(SEED);
+  it('is a shop: it must be left to sail, and sells only what is on offer and affordable', () => {
+    const run: RunState = { ...startRun(SEED), offer: ['reinforceHull', 'addCannon'] };
     const refused = applyAction(run, { type: 'travel', to: availableMoves({ ...run, phase: 'map' })[0]!.id });
     expect(refused.ok).toBe(false);
 
-    const notOffered = (['reinforceHull', 'addCannon', 'cannonDamage', 'cannonballs', 'repair', 'provisions'] as const).find(
-      (id) => !run.offer!.includes(id),
-    )!;
-    expect(applyAction(run, { type: 'chooseUpgrade', upgrade: notOffered }).ok).toBe(false);
+    const notOffered = UPGRADE_IDS.find((id) => !run.offer!.includes(id))!;
+    expect(applyAction(run, { type: 'buyUpgrade', upgrade: notOffered }).ok).toBe(false);
+    // Offered but dearer than the ship has plunder for.
+    expect(UPGRADE_PRICE.addCannon).toBeGreaterThan(run.plunder);
+    expect(applyAction(run, { type: 'buyUpgrade', upgrade: 'addCannon' }).ok).toBe(false);
 
-    const picked = step(run, { type: 'chooseUpgrade', upgrade: run.offer![0]! });
-    expect(picked.state.phase).toBe('map');
-    expect(picked.state.offer).toBeUndefined();
-    expect(picked.state.upgrades).toEqual([run.offer![0]]);
-    expect(picked.events[0]).toMatchObject({ type: 'upgraded' });
-    expect(applyAction(picked.state, { type: 'chooseUpgrade', upgrade: run.offer![0]! }).ok).toBe(false);
+    const bought = step(run, { type: 'buyUpgrade', upgrade: 'reinforceHull' });
+    expect(bought.state.phase).toBe('port');
+    expect(bought.state.plunder).toBe(run.plunder - UPGRADE_PRICE.reinforceHull);
+    expect(bought.state.offer).toEqual(['addCannon']);
+    expect(bought.state.upgrades).toEqual(['reinforceHull']);
+    expect(bought.events[0]).toMatchObject({ type: 'upgraded', upgrade: 'reinforceHull', price: UPGRADE_PRICE.reinforceHull });
+    expect(applyAction(bought.state, { type: 'buyUpgrade', upgrade: 'reinforceHull' }).ok).toBe(false);
+
+    const left = step(bought.state, { type: 'leavePort' });
+    expect(left.state.phase).toBe('map');
+    expect(left.state.offer).toBeUndefined();
+    expect(applyAction(left.state, { type: 'leavePort' }).ok).toBe(false);
+  });
+
+  it('can be left with nothing bought', () => {
+    const left = step(startRun(SEED), { type: 'leavePort' });
+    expect(left.state.phase).toBe('map');
+    expect(left.state.plunder).toBe(START_PLUNDER);
+    expect(left.state.upgrades).toEqual([]);
+  });
+
+  it('will not sell an upgrade that would do nothing', () => {
+    const run: RunState = { ...startRun(SEED), offer: ['repair'] };
+    expect(run.hull).toBe(maxHullFor(0));
+    expect(applyAction(run, { type: 'buyUpgrade', upgrade: 'repair' }).ok).toBe(false);
   });
 });
 
 describe('travel', () => {
-  const free = (run: RunState) => step(run, { type: 'chooseUpgrade', upgrade: run.offer![0]! }).state;
+  const free = (run: RunState) => step(run, { type: 'leavePort' }).state;
 
-  it('only sails along a leg, and costs the class supply use', () => {
+  it('only sails along a leg, and the plunder stays in the hold', () => {
     const run = free(startRun(SEED));
     const moves = availableMoves(run);
     expect(moves.length).toBeGreaterThan(0);
@@ -88,49 +107,11 @@ describe('travel', () => {
     expect(applyAction(run, { type: 'travel', to: graphFor(run).bossId }).ok).toBe(false);
 
     const to = moves[0]!;
-    expect(legCost(run, to.id)).toBe(supplyUseFor(run.hullLevel));
     const sailed = step(run, { type: 'travel', to: to.id });
     expect(sailed.state.nodeId).toBe(to.id);
-    expect(sailed.state.supplies).toBe(run.supplies - supplyUseFor(0));
+    expect(sailed.state.plunder).toBe(run.plunder);
     expect(sailed.state.legs).toBe(1);
-    expect(sailed.events[0]).toMatchObject({ type: 'travelled', suppliesSpent: supplyUseFor(0) });
-  });
-
-  it('a bigger class costs more per leg', () => {
-    const run = free(startRun(SEED));
-    for (const level of [0, 2, 4]) {
-      const big = { ...run, hullLevel: level, hull: maxHullFor(level), supplies: cargoCapFor(level) };
-      const to = availableMoves(big)[0]!;
-      const sailed = step(big, { type: 'travel', to: to.id });
-      expect(big.supplies - sailed.state.supplies).toBe(supplyUseFor(level));
-    }
-    expect(supplyUseFor(0)).toBeLessThan(supplyUseFor(2));
-    expect(supplyUseFor(2)).toBeLessThan(supplyUseFor(4));
-  });
-
-  it('starves the hull, not the run, when the hold is empty', () => {
-    const run = { ...free(startRun(SEED)), supplies: 0 };
-    const sailed = step(run, { type: 'travel', to: availableMoves(run)[0]!.id });
-    expect(sailed.state.supplies).toBe(0);
-    expect(sailed.state.hull).toBe(run.hull - 1);
-    expect(sailed.state.phase).not.toBe('defeat');
-    expect(sailed.events.map((e) => e.type)).toContain('starved');
-  });
-
-  it('pays what it can and starves for the rest', () => {
-    const base = { ...free(startRun(SEED)), hullLevel: 4, hull: 8, supplies: 1 };
-    const sailed = step(base, { type: 'travel', to: availableMoves(base)[0]!.id });
-    expect(sailed.state.supplies).toBe(0);
-    expect(sailed.state.hull).toBe(7);
-  });
-
-  it('ends the run when starvation sinks the ship', () => {
-    const run = { ...free(startRun(SEED)), supplies: 0, hull: 1 };
-    const sailed = step(run, { type: 'travel', to: availableMoves(run)[0]!.id });
-    expect(sailed.state.phase).toBe('defeat');
-    expect(sailed.state.defeatReason).toBe('starved');
-    expect(sailed.state.hull).toBe(0);
-    expect(applyAction(sailed.state, { type: 'abandon' }).ok).toBe(false);
+    expect(sailed.events[0]).toEqual({ type: 'travelled', to: to.id });
   });
 });
 
@@ -192,18 +173,18 @@ describe('leaving a battle after being sunk', () => {
 describe('ports', () => {
   /** A middle port of area 0, reached on its own. */
   function ports(seed = SEED) {
-    const run = step(startRun(seed), { type: 'chooseUpgrade', upgrade: startRun(seed).offer![0]! }).state;
+    const run = step(startRun(seed), { type: 'leavePort' }).state;
     const graph = graphFor(run);
     return { run, port: graph.nodes.find((n) => n.kind === 'port' && !n.landfall && n.layer < graph.layers - 2)! };
   }
 
-  it('repairs, restocks and offers an upgrade on arrival', () => {
+  it('repairs, refills and puts upgrades up for sale on arrival', () => {
     const { run, port } = ports();
     const predecessor = graphFor(run).edges.find((e) => e.to === port.id)!.from;
     const hurt: RunState = at(run, predecessor, {
       phase: 'map',
       hull: 1,
-      supplies: 1,
+      plunder: 5,
       ammo: 0,
       offer: undefined,
     });
@@ -211,18 +192,17 @@ describe('ports', () => {
     expect(sailed.state.phase).toBe('port');
     expect(sailed.state.offer!.length).toBeGreaterThan(0);
     expect(sailed.state.hull).toBe(1 + PORT_REPAIR);
-    expect(sailed.state.supplies).toBe(1 - Math.min(1, supplyUseFor(0)) + PORT_SUPPLIES);
+    expect(sailed.state.plunder).toBe(5);
     expect(sailed.state.ammo).toBeGreaterThan(0);
     expect(sailed.events.find((e) => e.type === 'portArrival')).toMatchObject({ landfall: false });
   });
 
-  it('never overfills the hull or the hold', () => {
+  it('never overfills the hull', () => {
     const { run, port } = ports();
     const predecessor = graphFor(run).edges.find((e) => e.to === port.id)!.from;
     const full: RunState = at(run, predecessor, { phase: 'map', offer: undefined });
     const sailed = step(full, { type: 'travel', to: port.id });
     expect(sailed.state.hull).toBeLessThanOrEqual(maxHullFor(0));
-    expect(sailed.state.supplies).toBeLessThanOrEqual(cargoCapFor(0));
   });
 
   it('does more at a landfall', () => {
@@ -232,11 +212,11 @@ describe('ports', () => {
 
 describe('upgrades through the run', () => {
   it('reinforcing the hull steps the ship up the classes', () => {
-    let run: RunState = { ...startRun(SEED), phase: 'port', offer: ['reinforceHull'] };
+    let run: RunState = { ...startRun(SEED), phase: 'port', offer: ['reinforceHull'], plunder: 1000 };
     const classes: string[] = [];
     const refits: Array<{ from: string; to: string }> = [];
     for (let level = 1; level <= HULL_LEVEL_CAP; level += 1) {
-      const taken = step({ ...run, phase: 'port', offer: ['reinforceHull'] }, { type: 'chooseUpgrade', upgrade: 'reinforceHull' });
+      const taken = step({ ...run, phase: 'port', offer: ['reinforceHull'] }, { type: 'buyUpgrade', upgrade: 'reinforceHull' });
       run = taken.state;
       classes.push(classForHullLevel(run.hullLevel).id);
       const event = taken.events[0]!;
@@ -254,10 +234,20 @@ describe('upgrades through the run', () => {
   });
 
   it('adds one hull a level and mends it', () => {
-    const run: RunState = { ...startRun(SEED), phase: 'port', hull: 2, offer: ['reinforceHull'] };
-    const taken = step(run, { type: 'chooseUpgrade', upgrade: 'reinforceHull' }).state;
+    const run: RunState = { ...startRun(SEED), phase: 'port', hull: 2, offer: ['reinforceHull'], plunder: 100 };
+    const taken = step(run, { type: 'buyUpgrade', upgrade: 'reinforceHull' }).state;
     expect(taken.hull).toBe(3);
     expect(taken.hullLevel).toBe(1);
+    expect(taken.plunder).toBe(100 - UPGRADE_PRICE.reinforceHull);
+  });
+
+  it('charges each upgrade its own price', () => {
+    for (const upgrade of UPGRADE_IDS) {
+      const run: RunState = { ...startRun(SEED), phase: 'port', hull: 2, offer: [upgrade], plunder: 100 };
+      expect(step(run, { type: 'buyUpgrade', upgrade }).state.plunder).toBe(100 - UPGRADE_PRICE[upgrade]);
+      expect(applyAction({ ...run, plunder: UPGRADE_PRICE[upgrade] - 1 }, { type: 'buyUpgrade', upgrade }).ok).toBe(false);
+    }
+    expect(new Set(UPGRADE_IDS.map((id) => UPGRADE_PRICE[id])).size).toBeGreaterThan(3);
   });
 });
 
@@ -265,19 +255,19 @@ describe('finishing a battle', () => {
   /** The ship at the first battle node of area 0. */
   function atBattle(): RunState {
     let run = startRun(SEED);
-    run = step(run, { type: 'chooseUpgrade', upgrade: run.offer![0]! }).state;
+    run = step(run, { type: 'leavePort' }).state;
     for (let guard = 0; guard < 50 && run.phase === 'map'; guard += 1) {
       const next = availableMoves(run).find((n) => n.kind !== 'port') ?? availableMoves(run)[0]!;
       run = step(run, { type: 'travel', to: next.id }).state;
       if (run.phase === 'port') {
-        run = step(run, { type: 'chooseUpgrade', upgrade: run.offer![0]! }).state;
+        run = step(run, { type: 'leavePort' }).state;
       }
     }
     expect(run.phase).toBe('battle');
     return run;
   }
 
-  it('carries hull and ammo out of a won fight and pays supplies', () => {
+  it('carries hull and ammo out of a won fight and pays plunder', () => {
     const run = atBattle();
     const node = nodeById(graphFor(run), run.nodeId);
     const kind = node.kind === 'boss' ? 'boss' : node.battle!;
@@ -286,7 +276,7 @@ describe('finishing a battle', () => {
     expect(done.state.hull).toBe(Math.max(1, run.hull - 1));
     expect(done.state.ammo).toBe(Math.max(0, run.ammo - 1));
     expect(done.state.battlesWon).toBe(1);
-    expect(done.state.supplies).toBe(Math.min(cargoCapFor(run.hullLevel), run.supplies + BATTLE_REWARD[kind]));
+    expect(done.state.plunder).toBe(run.plunder + BATTLE_REWARD[kind]);
     expect(done.events[0]).toMatchObject({ type: 'battleWon', kind });
   });
 
@@ -328,8 +318,7 @@ describe('a whole run', () => {
       for (const state of seen) {
         expect(state.hull).toBeGreaterThanOrEqual(0);
         expect(state.hull).toBeLessThanOrEqual(maxHullFor(state.hullLevel));
-        expect(state.supplies).toBeGreaterThanOrEqual(0);
-        expect(state.supplies).toBeLessThanOrEqual(cargoCapFor(state.hullLevel));
+        expect(state.plunder).toBeGreaterThanOrEqual(0);
         expect(state.cannonsPerSide).toBeLessThanOrEqual(3);
       }
     }
@@ -369,7 +358,7 @@ describe('finishing a hunt', () => {
       const graph = generateArea(seed, 2);
       const node = graph.nodes.find((n) => n.kind === 'hunt');
       if (node) {
-        return { ...startRun(seed), areaIndex: 2, nodeId: node.id, phase: 'battle', offer: undefined, supplies: 0, ...patch };
+        return { ...startRun(seed), areaIndex: 2, nodeId: node.id, phase: 'battle', offer: undefined, plunder: 0, ...patch };
       }
     }
     throw new Error('No hunt node found');
@@ -383,12 +372,12 @@ describe('finishing a hunt', () => {
     };
   };
 
-  it('pays supplies for the treasure banked, and brings the hull the hero left with', () => {
+  it('pays plunder for the treasure banked, and brings the hull the hero left with', () => {
     const state = atHunt({ hullLevel: 3, hull: 6 });
     const after = step(state, { type: 'finishBattle', result: left(state, 12, false, 4) });
     expect(after.state.phase).toBe('map');
     expect(after.state.hull).toBe(4);
-    expect(after.state.supplies).toBe(BATTLE_REWARD.hunt + Math.floor(12 / TREASURE_PER_SUPPLY));
+    expect(after.state.plunder).toBe(BATTLE_REWARD.hunt + Math.floor(12 / TREASURE_PER_PLUNDER));
     expect(after.events).toContainEqual(
       expect.objectContaining({ type: 'battleWon', kind: 'hunt', haul: 12, bossSlain: false }),
     );
@@ -397,15 +386,9 @@ describe('finishing a hunt', () => {
   it('pays a bonus for the Kraken, and a left hunt with nothing still pays the base', () => {
     const state = atHunt({ hullLevel: 3, hull: 6 });
     const slain = step(state, { type: 'finishBattle', result: left(state, 0, true) });
-    expect(slain.state.supplies).toBe(BATTLE_REWARD.hunt + HUNT_BOSS_BONUS);
+    expect(slain.state.plunder).toBe(BATTLE_REWARD.hunt + HUNT_BOSS_BONUS);
     const empty = step(state, { type: 'finishBattle', result: left(state, 0) });
-    expect(empty.state.supplies).toBe(BATTLE_REWARD.hunt);
-  });
-
-  it('never fills the hold past its cap', () => {
-    const state = atHunt({ hullLevel: 3, hull: 6 });
-    const after = step(state, { type: 'finishBattle', result: left(state, 500, true) });
-    expect(after.state.supplies).toBeLessThanOrEqual(cargoCapFor(3));
+    expect(empty.state.plunder).toBe(BATTLE_REWARD.hunt);
   });
 
   it('is lost, like any battle, when the hero is sunk', () => {
