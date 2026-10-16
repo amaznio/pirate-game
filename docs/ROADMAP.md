@@ -974,8 +974,67 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
 - Whether a run can be abandoned from the map at any time without penalty (the
   default assumed here).
 
-### 8. Postgres persistence: `todo`
-Profile, run history, unlocks, hub shop. Anonymous accounts with a secret token.
+### 8. Postgres persistence and accounts: `todo` (planned, agreed with the user)
+Profile, run history, unlocks, hub shop, and a cloud copy of the solo voyage.
+
+**Decided with the user.**
+- **A login is the only way data reaches the database.** There are no anonymous
+  database accounts: a token in `localStorage` is as easy to lose as the save it
+  protects, so it would add nothing. Players who are not signed in keep playing
+  exactly as today (the voyage is saved in the browser only).
+- **Sign-in methods:** Discord and Google (OAuth), and **email and password**
+  (the manual way). OAuth comes first; email and password is its own later slice,
+  because it brings the most to build and secure: password hashing (argon2id),
+  email verification, password reset, rate limiting, and an email service
+  (sending needs the domain's DNS records set up).
+- **Accounts are linked only by a verified email**, so signing in with Google and
+  with a password under the same address reaches one account, and an unverified
+  address can never take over another.
+- **Domains:** the client is at `pirate.adrianmaznio.com`; the server (API) gets
+  its own subdomain, **`api.pirate.adrianmaznio.com`**. Both share the registrable
+  domain `adrianmaznio.com`, so the session cookie (HttpOnly, Secure,
+  SameSite=Lax, set on the API host) is sent with the client's requests and
+  WebSocket without any third-party-cookie trouble. `CLIENT_ORIGIN` becomes the
+  client's custom domain and `VITE_SERVER_URL` the API's.
+- **The first version stores** the active voyage, a history of finished voyages
+  and a display name. Unlocks and the hub shop come after, and wait on the
+  voyage tuning (slice E of phase 7).
+- **The database stays optional:** with no `DATABASE_URL` the server runs as
+  before and the sign-in controls are hidden.
+
+**Design.**
+- Postgres on Railway, a migration tool, tables: `users`, `identities`
+  (provider, provider id, verified email), `sessions`, `password_credentials`
+  (email and password, later slice), `voyages` (the `run-core` state as versioned
+  JSON; `parseRun` already validates it on load) and `run_history`.
+- Server-side sessions; no password is ever stored for OAuth users.
+- **Cloud voyage:** while signed in, each step is saved to the server. When a
+  device's local voyage differs from the server's, the player chooses which to
+  keep. A first sign-in with a local voyage offers to upload it. The server trusts
+  the client at first (single player); `run-core` is pure and deterministic, so it
+  could re-check the steps later.
+- **Privacy:** store the least (provider id, verified email, display name); a
+  "delete my account" action removes everything.
+- **Environment variables (names fixed here):** `DATABASE_URL`, `SESSION_SECRET`,
+  `PUBLIC_API_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+  `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`; for the email slice an email
+  service key and a from-address.
+- **OAuth callbacks:** `<PUBLIC_API_URL>/auth/google/callback` and
+  `<PUBLIC_API_URL>/auth/discord/callback` (and the same on
+  `http://localhost:3001` for development).
+
+**Slices, in order (none started).**
+- [ ] A. Database layer: connection and migrations, optional with no
+      `DATABASE_URL`, tests against a real test database (also in CI).
+- [ ] B. Sessions and sign-in with Discord and Google; the sign-in button, the
+      profile chip, sign-out; `/me`.
+- [ ] C. Cloud voyage save and load, with the keep-local-or-cloud choice and the
+      upload on first sign-in.
+- [ ] D. Voyage history and the profile (display name).
+- [ ] E. Email and password: sign-up, verification, login, reset, rate limits.
+- [ ] F. Account deletion, the privacy text, and the deployment guide (Railway
+      Postgres, the API domain, the OAuth apps).
+- [ ] G. Later: unlocks and the hub shop.
 
 ### 9. Sea monsters: `todo`
 Non-ship entities, telegraphed attack patterns, Kraken boss, hunt node.
