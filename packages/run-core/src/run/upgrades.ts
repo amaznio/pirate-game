@@ -25,6 +25,22 @@ const WEIGHTS: Readonly<Record<UpgradeId, number>> = {
   provisions: 2,
 };
 
+/**
+ * How likely the damage upgrade is to be offered in each area (indexed by area, the
+ * last entry holds for any later one). It doubles a hit against ordinary ships, so it
+ * stays out of the early ports and arrives once the ships met are stronger. A
+ * starting guess: tune it with the voyage harness.
+ */
+const CANNON_DAMAGE_WEIGHT_BY_AREA: readonly number[] = [0, 0.5, 1, 1.5, 2];
+
+function weightOf(state: RunState, upgrade: UpgradeId): number {
+  if (upgrade === 'cannonDamage') {
+    const last = CANNON_DAMAGE_WEIGHT_BY_AREA.length - 1;
+    return CANNON_DAMAGE_WEIGHT_BY_AREA[Math.min(state.areaIndex, last)] ?? WEIGHTS.cannonDamage;
+  }
+  return WEIGHTS[upgrade];
+}
+
 /** Whether this upgrade would do something for the ship as it is. */
 export function canTake(state: RunState, upgrade: UpgradeId): boolean {
   switch (upgrade) {
@@ -50,8 +66,8 @@ export function canTake(state: RunState, upgrade: UpgradeId): boolean {
 export function offerUpgrades(state: RunState, portNodeId: string): UpgradeId[] {
   const rng = createRng(state.seed, 'offer', portNodeId);
   let pool = (Object.keys(WEIGHTS) as UpgradeId[])
-    .filter((upgrade) => canTake(state, upgrade))
-    .map((upgrade) => ({ item: upgrade, weight: WEIGHTS[upgrade] }));
+    .map((upgrade) => ({ item: upgrade, weight: weightOf(state, upgrade) }))
+    .filter((entry) => entry.weight > 0 && canTake(state, entry.item));
   const offer: UpgradeId[] = [];
   while (offer.length < OFFER_SIZE && pool.length > 0) {
     const pick = pickWeighted(rng, pool);

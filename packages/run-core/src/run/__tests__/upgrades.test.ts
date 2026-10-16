@@ -52,6 +52,21 @@ describe('offerUpgrades', () => {
     expect(offerUpgrades(maxed, 'a4:7:0')).toEqual(['cannonballs']);
   });
 
+  it('keeps the damage upgrade out of the first area and offers it more often later', () => {
+    const count = (areaIndex: number): number => {
+      let seen = 0;
+      for (let node = 0; node < 300; node += 1) {
+        if (offerUpgrades({ ...base, areaIndex }, `a${areaIndex}:${node}:0`).includes('cannonDamage')) {
+          seen += 1;
+        }
+      }
+      return seen;
+    };
+    expect(count(0)).toBe(0);
+    expect(count(1)).toBeGreaterThan(0);
+    expect(count(4)).toBeGreaterThan(count(1));
+  });
+
   it('always has something to offer', () => {
     for (const hullLevel of [0, 3, HULL_LEVEL_CAP]) {
       expect(offerUpgrades({ ...base, hullLevel }, 'a1:2:0').length).toBeGreaterThan(0);

@@ -41,7 +41,7 @@ export const START_CANNONS_PER_SIDE = 1;
 export const CANNONS_PER_SIDE_CAP = 3;
 
 /** The most extra damage a cannon can have from upgrades. */
-export const CANNON_DAMAGE_CAP = 3;
+export const CANNON_DAMAGE_CAP = 2;
 
 /** Cannonballs the Sloop starts with, and what "restock" fills back up to (plus upgrades). */
 export const START_AMMO = getShipType(START_SHIP_TYPE_ID).cannons?.ammo ?? CANNON_STARTING_AMMO;
