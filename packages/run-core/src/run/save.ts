@@ -1,6 +1,6 @@
 import { AREAS, type AreaSpec } from '../config/areas';
 import { generateArea } from '../graph/generateArea';
-import { HULL_LEVEL_CAP, CANNONS_PER_SIDE_CAP, CANNON_DAMAGE_CAP, maxHullFor } from './rules';
+import { HULL_LEVEL_CAP, CANNONS_PER_SIDE_CAP, CANNON_DAMAGE_CAP, RELOAD_BONUS_CAP, maxHullFor } from './rules';
 import { SAVE_VERSION, UPGRADE_IDS, type DefeatReason, type RunPhase, type RunState } from './types';
 
 /** The highest damage any version has saved (the cap was 3 before it was lowered). */
@@ -50,6 +50,7 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
     !whole(s.hullLevel, 0, HULL_LEVEL_CAP) ||
     !whole(s.cannonsPerSide, 1, CANNONS_PER_SIDE_CAP) ||
     !whole(s.cannonDamage, 0, SAVED_DAMAGE_MAX) ||
+    !whole(s.reloadBonus, 0, RELOAD_BONUS_CAP) ||
     !whole(s.plunder, 0, 100000) ||
     !whole(s.ammoBonus, 0, 1000) ||
     !whole(s.ammo, 0, 1000) ||

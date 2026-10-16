@@ -7,6 +7,7 @@ export type UpgradeId =
   | 'addCannon'
   | 'cannonDamage'
   | 'cannonballs'
+  | 'quickLoaders'
   | 'repair';
 
 export const UPGRADE_IDS: readonly UpgradeId[] = [
@@ -14,6 +15,7 @@ export const UPGRADE_IDS: readonly UpgradeId[] = [
   'addCannon',
   'cannonDamage',
   'cannonballs',
+  'quickLoaders',
   'repair',
 ];
 
@@ -29,7 +31,7 @@ export type RunPhase = 'map' | 'port' | 'battle' | 'victory' | 'defeat';
 export type DefeatReason = 'sunk' | 'abandoned';
 
 /** Bumped when the saved shape changes, so an old save is refused, not misread. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /**
  * Everything about a run, as plain data so it can be saved and loaded. The map
@@ -58,6 +60,8 @@ export interface RunState {
   readonly cannonsPerSide: number;
   /** Extra damage of each cannon. */
   readonly cannonDamage: number;
+  /** Extra cannonballs reloaded each turn. */
+  readonly reloadBonus: number;
   /** The voyage's money: earned in fights, spent on upgrades at ports. */
   readonly plunder: number;
 

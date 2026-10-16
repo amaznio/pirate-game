@@ -44,6 +44,14 @@ export function depthOf(state: RunState, graph: RouteGraph, node: RouteNode): nu
   return (state.areaIndex + node.layer / (graph.layers - 1)) / state.areaCount;
 }
 
+/** What the hero's upgrades bring into a battle besides hull, cannons and ammunition. */
+function heroModifiers(state: RunState): Modifier[] {
+  return [
+    ...(state.cannonDamage > 0 ? [{ kind: 'cannonDamage' as const, bonus: state.cannonDamage }] : []),
+    ...(state.reloadBonus > 0 ? [{ kind: 'reload' as const, bonus: state.reloadBonus }] : []),
+  ];
+}
+
 interface Fleet {
   readonly shipTypeIds: readonly string[];
   readonly aiDifficulty: AiDifficulty;
@@ -85,7 +93,7 @@ function buildHunt(state: RunState, graph: RouteGraph, node: RouteNode, depth: n
   if (!hero) {
     throw new Error('The hunt has no hero ship');
   }
-  const mine: Modifier[] = state.cannonDamage > 0 ? [{ kind: 'cannonDamage', bonus: state.cannonDamage }] : [];
+  const mine = heroModifiers(state);
   const carry: CarryOver = {
     maxHull: maxHullFor(state.hullLevel),
     cannonsPerSide: state.cannonsPerSide,
@@ -163,7 +171,7 @@ export function buildBattle(state: RunState, specs: readonly AreaSpec[] = AREAS)
 
   // Keep any modifier the match already gave the hero (an ambush's veteran guns).
   const existing = base.carryOver?.[hero.playerId];
-  const mine: Modifier[] = state.cannonDamage > 0 ? [{ kind: 'cannonDamage', bonus: state.cannonDamage }] : [];
+  const mine = heroModifiers(state);
   const carry: CarryOver = {
     ...existing,
     maxHull: maxHullFor(state.hullLevel),

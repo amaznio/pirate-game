@@ -5,6 +5,7 @@ import {
   CANNONS_PER_SIDE_CAP,
   CANNONBALLS_UPGRADE,
   HULL_LEVEL_CAP,
+  RELOAD_BONUS_CAP,
   REPAIR_UPGRADE,
   maxHullFor,
 } from '../rules';
@@ -39,13 +40,35 @@ describe('offerUpgrades', () => {
       hull: maxHullFor(HULL_LEVEL_CAP),
       cannonsPerSide: CANNONS_PER_SIDE_CAP,
       cannonDamage: CANNON_DAMAGE_CAP,
+      reloadBonus: RELOAD_BONUS_CAP,
     };
     expect(canTake(maxed, 'reinforceHull')).toBe(false);
     expect(canTake(maxed, 'addCannon')).toBe(false);
     expect(canTake(maxed, 'cannonDamage')).toBe(false);
+    expect(canTake(maxed, 'quickLoaders')).toBe(false);
     expect(canTake(maxed, 'repair')).toBe(false);
     expect(canTake(maxed, 'cannonballs')).toBe(true);
     expect(offerUpgrades(maxed, 'a4:7:0')).toEqual(['cannonballs']);
+  });
+
+  it('keeps the quick loaders out of the first area, offers them later, and stops at the cap', () => {
+    const count = (areaIndex: number): number => {
+      let seen = 0;
+      for (let node = 0; node < 200; node += 1) {
+        if (offerUpgrades({ ...base, areaIndex }, `a${areaIndex}:${node}:0`).includes('quickLoaders')) {
+          seen += 1;
+        }
+      }
+      return seen;
+    };
+    expect(count(0)).toBe(0);
+    expect(count(1)).toBeGreaterThan(0);
+    const once = applyUpgrade(base, 'quickLoaders').state;
+    expect(once.reloadBonus).toBe(base.reloadBonus + 1);
+    const twice = applyUpgrade(once, 'quickLoaders').state;
+    expect(twice.reloadBonus).toBe(RELOAD_BONUS_CAP);
+    expect(canTake(twice, 'quickLoaders')).toBe(false);
+    expect(applyUpgrade(twice, 'quickLoaders').state.reloadBonus).toBe(RELOAD_BONUS_CAP);
   });
 
   it('keeps the damage upgrade out of the first area and offers it more often later', () => {

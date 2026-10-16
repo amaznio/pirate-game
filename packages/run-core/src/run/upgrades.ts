@@ -4,6 +4,7 @@ import {
   CANNONBALLS_UPGRADE,
   CANNONS_PER_SIDE_CAP,
   HULL_LEVEL_CAP,
+  RELOAD_BONUS_CAP,
   REPAIR_UPGRADE,
   classForHullLevel,
   maxHullFor,
@@ -19,6 +20,7 @@ const WEIGHTS: Readonly<Record<UpgradeId, number>> = {
   addCannon: 2,
   cannonDamage: 2,
   cannonballs: 2,
+  quickLoaders: 2,
   repair: 2,
 };
 
@@ -31,6 +33,10 @@ const WEIGHTS: Readonly<Record<UpgradeId, number>> = {
 const CANNON_DAMAGE_WEIGHT_BY_AREA: readonly number[] = [0, 0.5, 1, 1.5, 2];
 
 function weightOf(state: RunState, upgrade: UpgradeId): number {
+  // Faster reloading is for the longer fights, so the first area does not offer it.
+  if (upgrade === 'quickLoaders') {
+    return state.areaIndex >= 1 ? WEIGHTS.quickLoaders : 0;
+  }
   if (upgrade === 'cannonDamage') {
     const last = CANNON_DAMAGE_WEIGHT_BY_AREA.length - 1;
     return CANNON_DAMAGE_WEIGHT_BY_AREA[Math.min(state.areaIndex, last)] ?? WEIGHTS.cannonDamage;
@@ -49,6 +55,8 @@ export function canTake(state: RunState, upgrade: UpgradeId): boolean {
       return state.cannonDamage < CANNON_DAMAGE_CAP;
     case 'cannonballs':
       return true;
+    case 'quickLoaders':
+      return state.reloadBonus < RELOAD_BONUS_CAP;
     case 'repair':
       return state.hull < maxHullFor(state.hullLevel);
   }
@@ -102,6 +110,8 @@ export function applyUpgrade(
           ammo: state.ammo + CANNONBALLS_UPGRADE,
         },
       };
+    case 'quickLoaders':
+      return { state: { ...state, reloadBonus: Math.min(RELOAD_BONUS_CAP, state.reloadBonus + 1) } };
     case 'repair':
       return {
         state: { ...state, hull: Math.min(maxHullFor(state.hullLevel), state.hull + REPAIR_UPGRADE) },

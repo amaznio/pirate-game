@@ -12,7 +12,7 @@ import { createBoard } from '../domain/Board';
 import type { Monster, MonsterMap } from '../domain/Monster';
 import { getMonsterType } from '../config/monsterTypes';
 import { planMonsterTurn } from './monsters';
-import { cannonDamageBonus, carriedCannons, carriedMaxHull } from '../domain/CarryOver';
+import { cannonDamageBonus, carriedCannons, carriedMaxHull, reloadBonus } from '../domain/CarryOver';
 import {
   cloneInventory,
   emptyCannonQueue,
@@ -107,6 +107,7 @@ export function createGame(
     );
     const shipType = getShipType(participant.shipTypeId);
     const bonusDamage = cannonDamageBonus(carried?.modifiers);
+    const bonusReload = reloadBonus(carried?.modifiers);
     const carriedShip = ships[id];
     ships[id] = {
       ...carriedShip,
@@ -115,6 +116,7 @@ export function createGame(
           ? carriedShip.hp
           : Math.min(carriedShip.maxHp, Math.max(1, Math.round(carried.hull))),
       ...(bonusDamage > 0 ? { bonusDamage } : {}),
+      ...(bonusReload > 0 ? { bonusReload } : {}),
     };
     const stats = shipType.tokens;
     players[participant.playerId] = {

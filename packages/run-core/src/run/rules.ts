@@ -41,6 +41,9 @@ export function maxHullFor(level: number): number {
 export const START_CANNONS_PER_SIDE = 1;
 export const CANNONS_PER_SIDE_CAP = 3;
 
+/** The most extra cannonballs a ship can reload each turn from upgrades. */
+export const RELOAD_BONUS_CAP = 2;
+
 /** The most extra damage a cannon can have from upgrades. */
 export const CANNON_DAMAGE_CAP = 2;
 
@@ -71,6 +74,7 @@ export const START_PLUNDER = 8;
 export const UPGRADE_PRICE: Readonly<Record<UpgradeId, number>> = {
   repair: 4,
   cannonballs: 5,
+  quickLoaders: 14,
   reinforceHull: 8,
   addCannon: 12,
   cannonDamage: 16,

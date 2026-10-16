@@ -54,6 +54,7 @@ export function startRun(seed: number, options: StartOptions = {}): RunState {
     ammoBonus: 0,
     cannonsPerSide: 1,
     cannonDamage: 0,
+    reloadBonus: 0,
     plunder: START_PLUNDER,
     upgrades: [],
     battlesWon: 0,

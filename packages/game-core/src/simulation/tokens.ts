@@ -250,7 +250,7 @@ export function beginNextTurn(state: GameState): NextTurnResult {
     const shipTypeId = state.ships[player.shipId]?.shipTypeId;
     const shipType = shipTypeId ? getShipType(shipTypeId) : null;
     const economy = shipType ? tokenEconomyOf(shipType) : DEFAULT_TOKEN_ECONOMY;
-    const reload = shipType?.cannons?.reload ?? CANNON_RELOAD_AMOUNT;
+    const reload = (shipType?.cannons?.reload ?? CANNON_RELOAD_AMOUNT) + (state.ships[player.shipId]?.bonusReload ?? 0);
     // A ship that has not arrived yet earns nothing while it waits.
     const waiting = state.ships[player.shipId]?.arrivesOnTurn !== undefined;
     const income = waiting

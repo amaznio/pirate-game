@@ -67,6 +67,8 @@ export interface Ship extends Entity {
   readonly weapons: readonly WeaponMount[];
   /** Extra damage each cannon does, brought in from earlier battles. None when absent. */
   readonly bonusDamage?: number;
+  /** Extra cannonballs reloaded each turn, brought in from earlier battles. None when absent. */
+  readonly bonusReload?: number;
   /** The ship got clean away (it is out of the match with no hull left). None when absent. */
   readonly escaped?: boolean;
   /** The hull a ship had when it left a hunt (its hull is 0 once it is gone). None when absent. */

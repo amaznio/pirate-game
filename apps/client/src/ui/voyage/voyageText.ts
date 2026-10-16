@@ -20,6 +20,7 @@ const UPGRADE_KEYS = {
   addCannon: { name: 'voyage.upgrades.addCannon.name', blurb: 'voyage.upgrades.addCannon.blurb' },
   cannonDamage: { name: 'voyage.upgrades.cannonDamage.name', blurb: 'voyage.upgrades.cannonDamage.blurb' },
   cannonballs: { name: 'voyage.upgrades.cannonballs.name', blurb: 'voyage.upgrades.cannonballs.blurb' },
+  quickLoaders: { name: 'voyage.upgrades.quickLoaders.name', blurb: 'voyage.upgrades.quickLoaders.blurb' },
   repair: { name: 'voyage.upgrades.repair.name', blurb: 'voyage.upgrades.repair.blurb' },
 } as const satisfies Record<UpgradeId, { name: string; blurb: string }>;
 

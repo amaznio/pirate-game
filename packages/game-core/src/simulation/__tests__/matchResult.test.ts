@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from '../../domain/GameState';
+import { CARRY_MAX_RELOAD, reloadBonus } from '../../domain/CarryOver';
 import { EMPTY_PICKUP_TALLY } from '../../domain/MatchResult';
 import { createDuelConfig } from '../../config/matchConfig';
 import { createGame } from '../createGame';
 import { buildMatchResult } from '../matchResult';
 import { resolveTurn } from '../resolveTurn';
+import { beginNextTurn } from '../tokens';
 import { redactState } from '../../view/redact';
 import { totalTokens } from '../../domain/Action';
 import { defaultEnemy, defaultPlayer, gameWith, submitted } from './testUtils';
@@ -94,6 +96,27 @@ describe('carry-over', () => {
     const plain = createGame(base);
     const carried = createGame({ ...base, carryOver: { player: { hull: 1, ammo: 1 } } });
     expect(carried.players.player.tokens).toEqual(plain.players.player.tokens);
+  });
+
+  it('brings a reload modifier in as extra cannonballs each turn, held to the limit', () => {
+    const config = {
+      ...createDuelConfig({ sea: 'open' }),
+      carryOver: { player: { modifiers: [{ kind: 'reload' as const, bonus: 2 }] } },
+    };
+    const start = createGame(config);
+    expect(start.ships['player-ship'].bonusReload).toBe(2);
+    expect('bonusReload' in start.ships['enemy-ship']).toBe(false);
+    const gained = (state: typeof start, id: string) => beginNextTurn(state).state.players[id].ammo - state.players[id].ammo;
+    expect(gained(start, 'player')).toBe(1 + 2);
+    expect(gained(start, 'enemy')).toBe(1);
+
+    const tooMany = createGame({
+      ...createDuelConfig({ sea: 'open' }),
+      carryOver: { player: { modifiers: [{ kind: 'reload' as const, bonus: 99 }] } },
+    });
+    expect(tooMany.ships['player-ship'].bonusReload).toBe(CARRY_MAX_RELOAD);
+    expect(reloadBonus(undefined)).toBe(0);
+    expect(reloadBonus([{ kind: 'cannonDamage', bonus: 2 }])).toBe(0);
   });
 
   it('adds a cannon damage modifier to every shot', () => {

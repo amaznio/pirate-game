@@ -1,8 +1,10 @@
 /**
  * A change a ship brings into a battle from earlier ones (an upgrade, say).
- * Only one kind exists so far: cannons that hit harder.
+ * Two kinds exist: cannons that hit harder, and cannonballs that reload faster.
  */
-export type Modifier = { readonly kind: 'cannonDamage'; readonly bonus: number };
+export type Modifier =
+  | { readonly kind: 'cannonDamage'; readonly bonus: number }
+  | { readonly kind: 'reload'; readonly bonus: number };
 
 /**
  * What one ship brings into a battle instead of the class defaults. Every part
@@ -38,6 +40,18 @@ export function cannonDamageBonus(modifiers: readonly Modifier[] | undefined): n
     0,
   );
 }
+
+/** The extra cannonballs a ship reloads each turn, from its modifiers (a whole number, 0 to `CARRY_MAX_RELOAD`). */
+export function reloadBonus(modifiers: readonly Modifier[] | undefined): number {
+  const total = (modifiers ?? []).reduce(
+    (sum, modifier) => (modifier.kind === 'reload' ? sum + Math.max(0, Math.round(modifier.bonus)) : sum),
+    0,
+  );
+  return Math.min(CARRY_MAX_RELOAD, total);
+}
+
+/** The most extra cannonballs a carried ship can reload each turn. */
+export const CARRY_MAX_RELOAD = 3;
 
 /** The most hull a carried ship can have, and the most cannons on a side. */
 export const CARRY_MAX_HULL = 20;

@@ -91,6 +91,29 @@ describe('buildBattle', () => {
     expect(ship.bonusDamage).toBe(2);
   });
 
+  it('brings the reload bonus into a battle, and into a hunt', () => {
+    const graph = generateArea(SEED, 0);
+    const node = battleNodes(graph, 'standard')[0]!;
+    const setup = buildBattle(standingAt(0, node.id, { reloadBonus: 2 }));
+    const ship = Object.values(createGame(setup.config).ships).find((s) => s.ownerId === setup.heroPlayerId)!;
+    expect(ship.bonusReload).toBe(2);
+    const plain = buildBattle(standingAt(0, node.id, {}));
+    expect(Object.values(createGame(plain.config).ships).some((s) => s.bonusReload !== undefined)).toBe(false);
+
+    for (let seed = 1; seed < 100; seed += 1) {
+      const area = generateArea(seed, 2);
+      const hunt = area.nodes.find((n) => n.kind === 'hunt');
+      if (hunt) {
+        const state = { ...standingAt(2, hunt.id, { seed, reloadBonus: 1 }), areaIndex: 2 };
+        const huntSetup = buildBattle(state);
+        const huntShip = Object.values(createGame(huntSetup.config).ships).find((s) => s.ownerId === huntSetup.heroPlayerId)!;
+        expect(huntShip.bonusReload).toBe(1);
+        return;
+      }
+    }
+    throw new Error('No hunt node found');
+  });
+
   it('brings the hull level and the cannons the run has grown to, whatever the class', () => {
     const graph = generateArea(SEED, 0);
     const node = battleNodes(graph, 'standard')[0]!;

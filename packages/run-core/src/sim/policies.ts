@@ -55,6 +55,7 @@ const PRIORITY: readonly UpgradeId[] = [
   'reinforceHull',
   'addCannon',
   'cannonDamage',
+  'quickLoaders',
   'cannonballs',
   'repair',
 ];

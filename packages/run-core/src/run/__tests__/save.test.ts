@@ -53,12 +53,15 @@ describe('a save that cannot be trusted gives nothing', () => {
     expect(parseRun(tweak({ version: 1 }))).toBeNull();
     expect(parseRun(tweak({ version: 2 }))).toBeNull();
     expect(parseRun(tweak({ version: 3 }))).toBeNull();
+    expect(parseRun(tweak({ version: 4 }))).toBeNull();
   });
 
   it('refuses numbers outside what the engine can make', () => {
     expect(parseRun(tweak({ hull: 99 }))).toBeNull();
     expect(parseRun(tweak({ hull: 0 }))).toBeNull();
     expect(parseRun(tweak({ hullLevel: 9 }))).toBeNull();
+    expect(parseRun(tweak({ reloadBonus: 3 }))).toBeNull();
+    expect(parseRun(tweak({ reloadBonus: -1 }))).toBeNull();
     expect(parseRun(tweak({ plunder: 500000 }))).toBeNull();
     expect(parseRun(tweak({ plunder: -1 }))).toBeNull();
     expect(parseRun(tweak({ plunder: 2.5 }))).toBeNull();
