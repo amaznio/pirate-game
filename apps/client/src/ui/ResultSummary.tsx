@@ -23,6 +23,34 @@ export function ResultSummary() {
   const loot = mine ? mine.pickups.barrel + mine.pickups.crate + mine.pickups.plank : 0;
   const others = battle.ships.filter((ship) => ship.playerId !== viewerId);
 
+  // A hunt has no enemy ships and no "objective met": it is about the treasure, the monsters and the boss.
+  if (battle.hunt) {
+    const { hunt } = battle;
+    const left = hunt.ending === 'left';
+    const lost = !left && (mine?.haul ?? 0) > 0 ? (mine?.haul ?? 0) : 0;
+    return (
+      <dl className="grid grid-cols-2 gap-2 text-left">
+        <Stat value={hunt.haul} label={t('result.hunt.treasureBanked')} />
+        {lost > 0 && <Stat value={lost} label={t('result.hunt.treasureLost')} />}
+        <Stat value={hunt.monstersSunk} label={t('result.hunt.monstersSunk')} />
+        <Stat
+          value={hunt.bossSlain ? t('result.hunt.bossSlain') : t('result.hunt.bossAfloat')}
+          label={t('result.hunt.boss')}
+        />
+        <Stat value={battle.turns} label={t('result.turnsPlayed')} />
+        {mine && (
+          <>
+            <Stat
+              value={`${mine.hull}/${mine.maxHull}`}
+              label={left ? t('result.hunt.hullOnLeaving') : t('result.yourHull')}
+            />
+            <Stat value={mine.ammo} label={t('result.cannonballsLeft')} />
+          </>
+        )}
+      </dl>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3 text-left">
       <dl className="grid grid-cols-2 gap-2">

@@ -69,6 +69,8 @@ export interface Ship extends Entity {
   readonly bonusDamage?: number;
   /** The ship got clean away (it is out of the match with no hull left). None when absent. */
   readonly escaped?: boolean;
+  /** The hull a ship had when it left a hunt (its hull is 0 once it is gone). None when absent. */
+  readonly hullOnExit?: number;
   /**
    * The ship is not on the board yet: it arrives at the start of this turn, and
    * until then it has no hull, so every rule ignores it. None when absent.

@@ -303,6 +303,20 @@
     "lootTaken": "Zebrane łupy",
     "otherShips": "Pozostałe statki",
     "sunkShort": "Zatopiony",
+    "hunt": {
+      "leftTitle": "Udało się uciec!",
+      "leftBodyHaul": "Odpływasz z {{count}} skarbu.",
+      "leftBodyEmpty": "Odpływasz z pustymi rękami.",
+      "leftBodyBoss": "Boss został pokonany.",
+      "sunkBody": "Potwory zatopiły twój statek, a razem z nim skarb.",
+      "treasureBanked": "Skarb w bezpiecznym miejscu",
+      "treasureLost": "Utracony ze statkiem",
+      "monstersSunk": "Zatopione potwory",
+      "boss": "Boss",
+      "bossSlain": "Pokonany",
+      "bossAfloat": "Wciąż na wodzie",
+      "hullOnLeaving": "Kadłub przy odpłynięciu"
+    },
     "note": {
       "survived": "Utrzymałeś się na wodzie do końca.",
       "objectiveFailed": "Twój statek zatonął przed upływem czasu.",

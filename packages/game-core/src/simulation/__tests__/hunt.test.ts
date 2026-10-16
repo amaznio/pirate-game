@@ -278,6 +278,16 @@ describe('hunt: leaving', () => {
     expect(buildMatchResult(result.nextState)?.hunt).toMatchObject({ ending: 'left', haul: 6 });
   });
 
+  it('reports the hull the hero left with, not the zero a departed ship is left at', () => {
+    const state = inExit(hunt());
+    const before = state.ships['player-ship'];
+    const hurt = { ...state, ships: { ...state.ships, 'player-ship': { ...before, hp: 2 } } };
+    const result = resolveTurn(hurt, { player: leaving });
+    const mine = buildMatchResult(result.nextState)?.ships.find((ship) => ship.playerId === 'player');
+    expect(result.nextState.ships['player-ship'].hp).toBe(0);
+    expect(mine).toMatchObject({ hull: 2, maxHull: before.maxHp, afloat: false, escaped: true });
+  });
+
   it('can leave with an empty hold', () => {
     const result = resolveTurn(inExit(hunt()), { player: leaving });
     expect(buildMatchResult(result.nextState)?.hunt).toMatchObject({ ending: 'left', haul: 0 });

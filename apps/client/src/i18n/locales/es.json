@@ -293,6 +293,20 @@
     "lootTaken": "Botín recogido",
     "otherShips": "Otros barcos",
     "sunkShort": "Hundido",
+    "hunt": {
+      "leftTitle": "¡Has escapado!",
+      "leftBodyHaul": "Te marchas con {{count}} de tesoro.",
+      "leftBodyEmpty": "Te marchas con las manos vacías.",
+      "leftBodyBoss": "El jefe ha caído.",
+      "sunkBody": "Los monstruos hundieron tu barco, y el tesoro con él.",
+      "treasureBanked": "Tesoro a salvo",
+      "treasureLost": "Perdido con el barco",
+      "monstersSunk": "Monstruos hundidos",
+      "boss": "Jefe",
+      "bossSlain": "Abatido",
+      "bossAfloat": "Aún a flote",
+      "hullOnLeaving": "Casco al salir"
+    },
     "note": {
       "survived": "Te mantuviste a flote hasta el final.",
       "objectiveFailed": "Tu barco se hundió antes de que acabara el tiempo.",

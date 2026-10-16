@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { EndNote } from '../presentation/objectiveProgress';
-import type { MatchResult } from '../store/useGameUIStore';
+import { useGameUIStore, type MatchResult } from '../store/useGameUIStore';
 import { ResultSummary } from './ResultSummary';
 
 /** Shown when the battle is over: the result, a few numbers, and what to do next. */
@@ -29,19 +29,34 @@ export function GameOverDialog({
   onContinue?: () => void;
 }) {
   const { t } = useTranslation();
-  const title =
-    result === 'win'
+  const hunt = useGameUIStore((state) => state.battle?.hunt);
+  // A hunt is not a victory over a fleet: you either got out with the haul or went down with it.
+  const huntBody = hunt
+    ? hunt.ending === 'left'
+      ? [
+          hunt.haul > 0 ? t('result.hunt.leftBodyHaul', { count: hunt.haul }) : t('result.hunt.leftBodyEmpty'),
+          ...(hunt.bossSlain ? [t('result.hunt.leftBodyBoss')] : []),
+        ].join(' ')
+      : t('result.hunt.sunkBody')
+    : null;
+  const title = hunt
+    ? hunt.ending === 'left'
+      ? t('result.hunt.leftTitle')
+      : t('result.sunkTitle')
+    : result === 'win'
       ? t('result.victoryTitle')
       : result === 'draw'
         ? t('result.drawTitle')
         : t('result.sunkTitle');
-  const body = note
-    ? t(`result.note.${note}`)
-    : result === 'win'
-      ? t('result.victoryBody')
-      : result === 'draw'
-        ? t('result.drawBody')
-        : t('result.sunkBodyAlt');
+  const body =
+    huntBody ??
+    (note
+      ? t(`result.note.${note}`)
+      : result === 'win'
+        ? t('result.victoryBody')
+        : result === 'draw'
+          ? t('result.drawBody')
+          : t('result.sunkBodyAlt'));
 
   return (
     <Dialog open>

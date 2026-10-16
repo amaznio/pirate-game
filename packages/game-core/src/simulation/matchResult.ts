@@ -44,7 +44,7 @@ export function buildMatchResult(state: GameState): MatchResult | null {
         name: player.name,
         teamId: player.teamId,
         shipTypeId: ship?.shipTypeId ?? '',
-        hull: Math.max(0, ship?.hp ?? 0),
+        hull: ship?.escaped && ship.hullOnExit !== undefined ? ship.hullOnExit : Math.max(0, ship?.hp ?? 0),
         maxHull: ship?.maxHp ?? 0,
         afloat: (ship?.hp ?? 0) > 0,
         ...(ship?.escaped ? { escaped: true } : {}),

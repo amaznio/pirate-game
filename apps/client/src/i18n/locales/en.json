@@ -293,6 +293,20 @@
     "lootTaken": "Loot taken",
     "otherShips": "Other ships",
     "sunkShort": "Sunk",
+    "hunt": {
+      "leftTitle": "You made it out!",
+      "leftBodyHaul": "You sailed off with {{count}} in treasure.",
+      "leftBodyEmpty": "You sailed off empty-handed.",
+      "leftBodyBoss": "The boss is slain.",
+      "sunkBody": "The monsters took your ship, and the treasure with it.",
+      "treasureBanked": "Treasure banked",
+      "treasureLost": "Lost with the ship",
+      "monstersSunk": "Monsters sunk",
+      "boss": "Boss",
+      "bossSlain": "Slain",
+      "bossAfloat": "Still afloat",
+      "hullOnLeaving": "Hull on leaving"
+    },
     "note": {
       "survived": "You stayed afloat to the end.",
       "objectiveFailed": "Your ship went down before the time was up.",

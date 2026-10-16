@@ -85,7 +85,7 @@ function resolveLeaving(state: MutableGameState, phase: number, submitted: Submi
     ) {
       continue;
     }
-    state.ships[ship.id] = { ...ship, hp: 0, escaped: true };
+    state.ships[ship.id] = { ...ship, hp: 0, escaped: true, hullOnExit: ship.hp };
     events.push({ type: 'SHIP_ESCAPED', shipId: ship.id, at: { ...ship.position }, phase });
   }
   return events;
