@@ -1,5 +1,6 @@
 import {
   createDuelConfig,
+  createHuntConfig,
   createSkirmishConfig,
   type MatchConfig,
 } from '@pirate/game-core/config/matchConfig';
@@ -12,7 +13,7 @@ import { generateArea } from '../graph/generateArea';
 import { nodeById } from '../graph/query';
 import type { BattleKind, RouteGraph, RouteNode } from '../graph/types';
 import { createRng } from '../rng';
-import { bossLoadout, classForHullLevel, maxHullFor } from './rules';
+import { bossLoadout, classForHullLevel, huntBossHull, huntMonsters, maxHullFor } from './rules';
 import type { RunState } from './types';
 
 /** A battle ready to start, and what is needed to read its result afterwards. */
@@ -20,7 +21,7 @@ export interface BattleSetup {
   readonly config: MatchConfig;
   /** The player id of the hero's ship in `config` and in the match result. */
   readonly heroPlayerId: string;
-  readonly kind: BattleKind | 'boss';
+  readonly kind: BattleKind | 'boss' | 'hunt';
   readonly nodeId: string;
   /** What the player is told before the fight: the hero's class and who is against it. */
   readonly briefing: {
@@ -66,6 +67,48 @@ export function bossFleetFor(areaIndex: number): Fleet {
 }
 
 /**
+ * The hunt at a hunt node: the hero alone against the sea monsters, the Kraken among them with a hull
+ * that grows by area, and chests to take. The hero brings its hull, cannonballs and guns as in any
+ * battle, and what it carries out through the exit pays supplies (see `finishBattle`).
+ */
+function buildHunt(state: RunState, graph: RouteGraph, node: RouteNode, depth: number): BattleSetup {
+  const heroShipTypeId = classForHullLevel(state.hullLevel).id;
+  const seed = Math.floor(createRng(state.seed, 'battle', node.id)() * 4294967296);
+  const base = createHuntConfig({
+    seed,
+    sea: graph.sea,
+    shipTypeId: heroShipTypeId,
+    monsters: huntMonsters(state.areaIndex),
+    bossHull: huntBossHull(state.areaIndex),
+  });
+  const hero = base.participants.find((participant) => participant.controller === 'human');
+  if (!hero) {
+    throw new Error('The hunt has no hero ship');
+  }
+  const mine: Modifier[] = state.cannonDamage > 0 ? [{ kind: 'cannonDamage', bonus: state.cannonDamage }] : [];
+  const carry: CarryOver = {
+    maxHull: maxHullFor(state.hullLevel),
+    cannonsPerSide: state.cannonsPerSide,
+    hull: state.hull,
+    ammo: state.ammo,
+    modifiers: mine,
+  };
+  return {
+    config: { ...base, carryOver: { ...base.carryOver, [hero.playerId]: carry } },
+    heroPlayerId: hero.playerId,
+    kind: 'hunt',
+    nodeId: node.id,
+    depth,
+    briefing: {
+      heroShipTypeId,
+      enemyShipTypeIds: [],
+      aiDifficulty: 'normal',
+      sea: graph.sea,
+    },
+  };
+}
+
+/**
  * The battle for the node the ship is at. It is built from the state alone, so it
  * is the same every time it is asked for, and nothing about it needs saving.
  *
@@ -80,8 +123,12 @@ export function buildBattle(state: RunState, specs: readonly AreaSpec[] = AREAS)
   }
   const graph = graphFor(state, specs);
   const node = nodeById(graph, state.nodeId);
-  const kind: BattleKind | 'boss' = node.kind === 'boss' ? 'boss' : (node.battle ?? 'standard');
+  const kind: BattleKind | 'boss' | 'hunt' =
+    node.kind === 'boss' ? 'boss' : node.kind === 'hunt' ? 'hunt' : (node.battle ?? 'standard');
   const depth = depthOf(state, graph, node);
+  if (kind === 'hunt') {
+    return buildHunt(state, graph, node, depth);
+  }
   const fleet = kind === 'boss' ? bossFleetFor(state.areaIndex) : fleetFor(depth);
   const objectiveKind = kind === 'boss' || kind === 'standard' ? undefined : kind;
   const objective = objectiveKind === undefined ? undefined : DEFAULT_OBJECTIVES[objectiveKind];

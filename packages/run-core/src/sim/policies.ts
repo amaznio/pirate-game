@@ -19,6 +19,7 @@ const BATTLE_APPEAL: Readonly<Record<string, number>> = {
   merchant: -0.5,
   ambush: -1.5,
   boss: 0,
+  hunt: -1,
 };
 
 /** Picks the next stop. A careful player heads for a port when hurt or short of supplies. */
@@ -40,7 +41,7 @@ export function chooseRoute(state: RunState, options: readonly RouteNode[], poli
         ? hurt || hungry
           ? 3
           : 1
-        : (BATTLE_APPEAL[node.kind === 'boss' ? 'boss' : node.battle ?? 'standard'] ?? 0);
+        : (BATTLE_APPEAL[node.kind === 'boss' || node.kind === 'hunt' ? node.kind : node.battle ?? 'standard'] ?? 0);
     if (score > bestScore) {
       best = node;
       bestScore = score;

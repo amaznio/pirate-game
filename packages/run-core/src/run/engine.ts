@@ -6,12 +6,14 @@ import type { RouteGraph, RouteNode } from '../graph/types';
 import { buildBattle, graphFor } from './battle';
 import {
   BATTLE_REWARD,
+  HUNT_BOSS_BONUS,
   LANDFALL_FILLS_HOLD,
   LANDFALL_REPAIR,
   PORT_REPAIR,
   PORT_SUPPLIES,
   START_AMMO,
   STARVATION_HULL_COST,
+  TREASURE_PER_SUPPLY,
   ammoFullFor,
   cargoCapFor,
   maxHullFor,
@@ -205,7 +207,12 @@ function finishBattle(
   }
   const setup = buildBattle(state, specs);
   const hero = result.ships.find((ship) => ship.playerId === setup.heroPlayerId);
-  const won = hero !== undefined && result.outcome.kind === 'win' && result.outcome.teamId === hero.teamId && hero.afloat;
+  // A hunt is won by leaving through the exit with what the hold carries, not by being afloat at the end.
+  const won =
+    hero !== undefined &&
+    result.outcome.kind === 'win' &&
+    result.outcome.teamId === hero.teamId &&
+    (setup.kind === 'hunt' ? result.hunt?.ending === 'left' && hero.escaped === true : hero.afloat);
   if (!hero || !won) {
     return ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk', battleStarted: undefined }, [
       { type: 'defeat', reason: 'sunk' },
@@ -213,7 +220,11 @@ function finishBattle(
   }
 
   const cap = cargoCapFor(state.hullLevel);
-  const reward = BATTLE_REWARD[setup.kind];
+  const haul = setup.kind === 'hunt' ? Math.max(0, result.hunt?.haul ?? 0) : 0;
+  const bossSlain = setup.kind === 'hunt' && result.hunt?.bossSlain === true;
+  const reward =
+    BATTLE_REWARD[setup.kind] +
+    (setup.kind === 'hunt' ? Math.floor(haul / TREASURE_PER_SUPPLY) + (bossSlain ? HUNT_BOSS_BONUS : 0) : 0);
   const afterFight: RunState = {
     ...state,
     hull: Math.max(1, Math.min(maxHullFor(state.hullLevel), hero.hull)),
@@ -223,7 +234,12 @@ function finishBattle(
     battleStarted: undefined,
   };
   const events: RunEvent[] = [
-    { type: 'battleWon', kind: setup.kind, suppliesGained: afterFight.supplies - state.supplies },
+    {
+      type: 'battleWon',
+      kind: setup.kind,
+      suppliesGained: afterFight.supplies - state.supplies,
+      ...(setup.kind === 'hunt' ? { haul, bossSlain } : {}),
+    },
   ];
 
   if (setup.kind !== 'boss') {

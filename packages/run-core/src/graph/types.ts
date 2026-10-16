@@ -2,13 +2,16 @@ import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import type { ObjectiveKind } from '@pirate/game-core/domain/Objective';
 
 /** What a battle node asks of the player: an ordinary fight, or one of the objectives. */
-/** The kinds of battle a voyage node can be. A hunt is not one yet (it becomes a node of its own). */
+/** The kinds of battle a voyage node can be. A hunt is not one: it is a node of its own. */
 export type BattleKind = 'standard' | Exclude<ObjectiveKind, 'hunt'>;
 
 export const BATTLE_KINDS: readonly BattleKind[] = ['standard', 'survive', 'salvage', 'merchant', 'ambush'];
 
-/** What a stop on the map is. Fortress and hunt nodes come with later phases. */
-export type NodeKind = 'port' | 'battle' | 'boss';
+/**
+ * What a stop on the map is. A hunt is its own kind of stop (the sea monsters, treasure
+ * and the Kraken), not one of the battle kinds. Fortress nodes come with a later phase.
+ */
+export type NodeKind = 'port' | 'battle' | 'boss' | 'hunt';
 
 /**
  * One stop on a route. A route is drawn in layers from the first node at the

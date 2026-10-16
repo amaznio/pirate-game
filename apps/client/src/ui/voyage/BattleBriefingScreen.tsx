@@ -35,6 +35,7 @@ export function BattleBriefingScreen({
   const setup = buildBattle(run);
   const { briefing, kind } = setup;
   const boss = kind === 'boss';
+  const hunt = kind === 'hunt';
 
   return (
     <ScreenFrame
@@ -50,10 +51,12 @@ export function BattleBriefingScreen({
     >
       <VoyageStats run={run} />
       <Card>
-        <CardTitle>{boss ? t('voyage.bossBattle') : t('voyage.kindBattle')}</CardTitle>
-        <p className="font-head text-2xl font-bold">{boss ? t('voyage.boss') : objectiveLabel(t, kind)}</p>
+        <CardTitle>{boss ? t('voyage.bossBattle') : hunt ? t('voyage.kindHunt') : t('voyage.kindBattle')}</CardTitle>
+        <p className="font-head text-2xl font-bold">
+          {boss ? t('voyage.boss') : hunt ? t('menu.huntTitle') : objectiveLabel(t, kind)}
+        </p>
         <p className="text-sm text-muted-foreground">
-          {boss ? t('voyage.bossBlurb') : objectiveBlurb(t, kind)}
+          {boss ? t('voyage.bossBlurb') : hunt ? t('voyage.huntBriefing') : objectiveBlurb(t, kind)}
         </p>
       </Card>
       <Card>
@@ -66,13 +69,17 @@ export function BattleBriefingScreen({
           </div>
           <div className="flex flex-col gap-0.5">
             <dt className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">{t('voyage.against')}</dt>
-            <dd className="font-bold">{fleetText(t, briefing.enemyShipTypeIds)}</dd>
+            <dd className="font-bold">
+              {hunt ? t('voyage.huntAgainst') : fleetText(t, briefing.enemyShipTypeIds)}
+            </dd>
           </div>
         </dl>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">
-            {t('menu.skill')}: {aiLevelLabel(t, briefing.aiDifficulty)}
-          </Badge>
+          {!hunt && (
+            <Badge variant="secondary">
+              {t('menu.skill')}: {aiLevelLabel(t, briefing.aiDifficulty)}
+            </Badge>
+          )}
           <Badge variant="secondary">
             {t('menu.seas')}: {mapStyleLabel(t, briefing.sea)}
           </Badge>

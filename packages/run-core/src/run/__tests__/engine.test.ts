@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { MatchResult } from '@pirate/game-core/domain/MatchResult';
 import { AREAS } from '../../config/areas';
 import { generateArea } from '../../graph/generateArea';
 import { nodeById } from '../../graph/query';
@@ -7,9 +8,11 @@ import { graphFor } from '../battle';
 import {
   BATTLE_REWARD,
   HULL_LEVEL_CAP,
+  HUNT_BOSS_BONUS,
   LANDFALL_REPAIR,
   PORT_REPAIR,
   PORT_SUPPLIES,
+  TREASURE_PER_SUPPLY,
   cargoCapFor,
   classForHullLevel,
   maxHullFor,
@@ -357,5 +360,70 @@ describe('a whole run', () => {
   it('gives the player plenty of upgrades over a run', () => {
     const seen = playWithWins(startRun(SEED), policy);
     expect(seen[seen.length - 1]!.upgrades.length).toBeGreaterThanOrEqual(12);
+  });
+});
+
+describe('finishing a hunt', () => {
+  const atHunt = (patch: Partial<RunState> = {}): RunState => {
+    for (let seed = 1; seed < 100; seed += 1) {
+      const graph = generateArea(seed, 2);
+      const node = graph.nodes.find((n) => n.kind === 'hunt');
+      if (node) {
+        return { ...startRun(seed), areaIndex: 2, nodeId: node.id, phase: 'battle', offer: undefined, supplies: 0, ...patch };
+      }
+    }
+    throw new Error('No hunt node found');
+  };
+  const left = (state: RunState, haul: number, bossSlain = false, hull = 3): MatchResult => {
+    const won = winningResult(state);
+    return {
+      ...won,
+      hunt: { ending: 'left', bossSlain, monstersSunk: 2, haul },
+      ships: won.ships.map((ship) => ({ ...ship, hull, afloat: false, escaped: true })),
+    };
+  };
+
+  it('pays supplies for the treasure banked, and brings the hull the hero left with', () => {
+    const state = atHunt({ hullLevel: 3, hull: 6 });
+    const after = step(state, { type: 'finishBattle', result: left(state, 12, false, 4) });
+    expect(after.state.phase).toBe('map');
+    expect(after.state.hull).toBe(4);
+    expect(after.state.supplies).toBe(BATTLE_REWARD.hunt + Math.floor(12 / TREASURE_PER_SUPPLY));
+    expect(after.events).toContainEqual(
+      expect.objectContaining({ type: 'battleWon', kind: 'hunt', haul: 12, bossSlain: false }),
+    );
+  });
+
+  it('pays a bonus for the Kraken, and a left hunt with nothing still pays the base', () => {
+    const state = atHunt({ hullLevel: 3, hull: 6 });
+    const slain = step(state, { type: 'finishBattle', result: left(state, 0, true) });
+    expect(slain.state.supplies).toBe(BATTLE_REWARD.hunt + HUNT_BOSS_BONUS);
+    const empty = step(state, { type: 'finishBattle', result: left(state, 0) });
+    expect(empty.state.supplies).toBe(BATTLE_REWARD.hunt);
+  });
+
+  it('never fills the hold past its cap', () => {
+    const state = atHunt({ hullLevel: 3, hull: 6 });
+    const after = step(state, { type: 'finishBattle', result: left(state, 500, true) });
+    expect(after.state.supplies).toBeLessThanOrEqual(cargoCapFor(3));
+  });
+
+  it('is lost, like any battle, when the hero is sunk', () => {
+    const state = atHunt();
+    const sunk: MatchResult = {
+      ...losingResult(state),
+      hunt: { ending: 'sunk', bossSlain: false, monstersSunk: 0, haul: 0 },
+    };
+    const after = step(state, { type: 'finishBattle', result: sunk });
+    expect(after.state).toMatchObject({ phase: 'defeat', defeatReason: 'sunk' });
+  });
+
+  it('is not won by simply being afloat when the match ended some other way', () => {
+    const state = atHunt();
+    const made = winningResult(state);
+    // A hero afloat and no word of leaving: that is not a way out of a hunt.
+    const afloat: MatchResult = { outcome: made.outcome, turns: made.turns, ships: made.ships.map((s) => ({ ...s, afloat: true, escaped: false })) };
+    const after = step(state, { type: 'finishBattle', result: afloat });
+    expect(after.state.phase).toBe('defeat');
   });
 });

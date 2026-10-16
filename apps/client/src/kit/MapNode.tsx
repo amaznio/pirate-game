@@ -1,7 +1,7 @@
-import { Anchor, Check, House, Lock, Skull, Swords, Wrench } from 'lucide-react';
+import { Anchor, Check, Gem, House, Lock, Skull, Swords, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type MapNodeKind = 'start' | 'battle' | 'port' | 'boss';
+export type MapNodeKind = 'start' | 'battle' | 'port' | 'boss' | 'hunt';
 export type MapNodeState = 'cleared' | 'current' | 'available' | 'locked';
 
 const KIND_ICONS = {
@@ -9,6 +9,7 @@ const KIND_ICONS = {
   battle: Swords,
   port: Wrench,
   boss: Skull,
+  hunt: Gem,
 } as const;
 
 /**

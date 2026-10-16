@@ -5,7 +5,7 @@ import { buildMatchResult } from '@pirate/game-core/simulation/matchResult';
 import { runMatch } from '@pirate/game-core/testing/matchRunner';
 import { AREAS, type AreaSpec } from '../config/areas';
 import type { BattleKind } from '../graph/types';
-import { buildBattle, graphFor } from '../run/battle';
+import { buildBattle, graphFor, type BattleSetup } from '../run/battle';
 import { applyAction, availableMoves, legCost, startRun } from '../run/engine';
 import { classForHullLevel } from '../run/rules';
 import type { DefeatReason, RunState, UpgradeId } from '../run/types';
@@ -39,7 +39,7 @@ export interface BotOptions {
 export interface BattleRecord {
   readonly areaIndex: number;
   readonly layer: number;
-  readonly kind: BattleKind | 'boss';
+  readonly kind: BattleKind | 'boss' | 'hunt';
   /** The hero's class when the fight began. */
   readonly heroClass: string;
   readonly enemies: number;
@@ -125,8 +125,10 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
           participant.playerId === setup.heroPlayerId ? { ...participant, aiDifficulty: pilot } : participant,
         ),
       };
-      const record = options.scripted ? null : runMatch(config, { maxTurns });
-      const result = record ? buildMatchResult(record.finalState) : scriptedWin(state, setup.heroPlayerId, setup.config, setup.depth);
+      // The match AI does not know how to leave a hunt yet, so a hunt is always scripted: the hero gets out with a set haul.
+      const scripted = options.scripted === true || setup.kind === 'hunt';
+      const record = scripted ? null : runMatch(config, { maxTurns });
+      const result = record ? buildMatchResult(record.finalState) : scriptedResult(state, setup);
       const before = state;
       let won = false;
       if (result) {
@@ -139,11 +141,11 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
         if (!won && options.playOn) {
           // Count the loss, then sail on as though the hero had won.
           state = before;
-          state = act({ type: 'finishBattle', result: scriptedWin(before, setup.heroPlayerId, setup.config, setup.depth) });
+          state = act({ type: 'finishBattle', result: scriptedResult(before, setup) });
         }
       } else if (options.playOn) {
         // The match did not finish in time: a loss, but the voyage goes on.
-        state = act({ type: 'finishBattle', result: scriptedWin(before, setup.heroPlayerId, setup.config, setup.depth) });
+        state = act({ type: 'finishBattle', result: scriptedResult(before, setup) });
       } else {
         timedOut = true;
         state = act({ type: 'loseBattle' });
@@ -192,6 +194,22 @@ function outcomeOf(result: MatchResult | null, heroPlayerId: string, config: Mat
   }
   const hero = config.participants.find((participant) => participant.playerId === heroPlayerId);
   return hero && result.outcome.teamId === hero.teamId ? 'draw' : 'loss';
+}
+
+/** The treasure a scripted hunt banks (the simulated hero does not really hunt). */
+export const SCRIPTED_HUNT_HAUL = 10;
+
+/** A made-up result for a battle: a win, or for a hunt a clean exit with a set haul. */
+function scriptedResult(state: RunState, setup: BattleSetup): MatchResult {
+  const win = scriptedWin(state, setup.heroPlayerId, setup.config, setup.depth);
+  if (setup.kind !== 'hunt') {
+    return win;
+  }
+  return {
+    ...win,
+    ships: win.ships.map((ship) => ({ ...ship, afloat: false, escaped: true })),
+    hunt: { ending: 'left', bossSlain: false, monstersSunk: 0, haul: SCRIPTED_HUNT_HAUL },
+  };
 }
 
 /** Hull a scripted win costs: a little early on, more in the late seas. */

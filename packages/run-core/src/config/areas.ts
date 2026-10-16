@@ -19,6 +19,8 @@ export interface AreaSpec {
   readonly openingStandardLayers: number;
   /** How likely each battle kind is, before the area number tilts it. */
   readonly battleWeights: Readonly<Record<BattleKind, number>>;
+  /** Hunts on the route: 0 or 1 (a middle layer of a choice, never the opening layers). None when left out. */
+  readonly hunts?: 0 | 1;
 }
 
 const BASE_WEIGHTS: Readonly<Record<BattleKind, number>> = {
@@ -35,11 +37,11 @@ const BASE_WEIGHTS: Readonly<Record<BattleKind, number>> = {
  * roadmap; the harness will tune them.
  */
 export const AREAS: readonly AreaSpec[] = [
-  { layers: 10, maxWidth: 3, portEvery: 3, sea: 'calm', openingStandardLayers: 2, battleWeights: BASE_WEIGHTS },
-  { layers: 12, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 1, battleWeights: BASE_WEIGHTS },
-  { layers: 14, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS },
-  { layers: 16, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS },
-  { layers: 18, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS },
+  { layers: 10, maxWidth: 3, portEvery: 3, sea: 'calm', openingStandardLayers: 2, battleWeights: BASE_WEIGHTS, hunts: 0 },
+  { layers: 12, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 1, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 14, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 16, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 18, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
 ];
 
 /** Checks a spec and says what is wrong with it, or returns nothing if it is fine. */
@@ -55,6 +57,9 @@ export function specProblem(spec: AreaSpec): string | null {
   }
   if (!Number.isInteger(spec.openingStandardLayers) || spec.openingStandardLayers < 0) {
     return 'openingStandardLayers must be a whole number, 0 or more';
+  }
+  if (spec.hunts !== undefined && spec.hunts !== 0 && spec.hunts !== 1) {
+    return 'hunts must be 0 or 1';
   }
   if (!BATTLE_KINDS.some((kind) => (spec.battleWeights[kind] ?? 0) > 0)) {
     return 'battleWeights needs at least one kind with a positive weight';

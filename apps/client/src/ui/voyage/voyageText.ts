@@ -41,6 +41,9 @@ export function nodeTitle(t: TFunction, node: RouteNode): string {
   if (node.kind === 'port') {
     return node.landfall ? t('voyage.landfall') : t('voyage.port');
   }
+  if (node.kind === 'hunt') {
+    return t('menu.huntTitle');
+  }
   return objectiveLabel(t, node.battle ?? 'standard');
 }
 
@@ -59,6 +62,8 @@ export function kindLabel(t: TFunction, kind: MapNodeKind): string {
       return t('voyage.kindPort');
     case 'boss':
       return t('voyage.kindBoss');
+    case 'hunt':
+      return t('voyage.kindHunt');
   }
 }
 
@@ -83,6 +88,9 @@ export function nodeBlurb(t: TFunction, node: RouteNode): string {
   if (node.kind === 'port') {
     return t('voyage.chooseUpgrade');
   }
+  if (node.kind === 'hunt') {
+    return t('voyage.huntBlurb');
+  }
   return objectiveBlurb(t, node.battle ?? 'standard');
 }
 
@@ -100,7 +108,16 @@ export function eventMessages(t: TFunction, events: readonly RunEvent[]): EventM
         messages.push({ tone: 'warning', text: t('voyage.eventStarved', { count: event.hullLost }) });
         break;
       case 'battleWon':
-        messages.push({ tone: 'info', text: t('voyage.eventBattleWon', { count: event.suppliesGained }) });
+        messages.push({
+          tone: 'info',
+          text:
+            event.kind === 'hunt'
+              ? t('voyage.eventHuntWon', { haul: event.haul ?? 0, count: event.suppliesGained })
+              : t('voyage.eventBattleWon', { count: event.suppliesGained }),
+        });
+        if (event.bossSlain) {
+          messages.push({ tone: 'info', text: t('voyage.eventKrakenSlain') });
+        }
         break;
       case 'areaCleared':
         messages.push({ tone: 'info', text: t('voyage.eventAreaCleared', { n: event.areaIndex + 1 }) });

@@ -68,14 +68,38 @@ export const LANDFALL_FILLS_HOLD = true;
 export const STARVATION_HULL_COST = 1;
 
 /** Supplies a won battle pays; a merchant kill pays the most. */
-export const BATTLE_REWARD: Readonly<Record<BattleKind | 'boss', number>> = {
+export const BATTLE_REWARD: Readonly<Record<BattleKind | 'boss' | 'hunt', number>> = {
   standard: 2,
   survive: 3,
   salvage: 3,
   merchant: 4,
   ambush: 4,
   boss: 4,
+  hunt: 1,
 };
+
+/**
+ * What a hunt pays on top of that: each this many treasure banked is one supply (a
+ * full clear of the water is worth a hold or more), and the boss slain is worth a bonus.
+ */
+export const TREASURE_PER_SUPPLY = 5;
+export const HUNT_BOSS_BONUS = 3;
+
+/** The Kraken's hull in the hunt of an area: its own 15 in the first hunt, 3 more each later area. */
+export function huntBossHull(areaIndex: number): number {
+  return 15 + 3 * Math.max(0, areaIndex - 1);
+}
+
+/** The monsters of an area's hunt, the boss first: more of them in the later seas. */
+export function huntMonsters(areaIndex: number): readonly ('giant-squid' | 'squid' | 'shark')[] {
+  return [
+    'giant-squid',
+    'squid',
+    'shark',
+    ...(areaIndex >= 2 ? (['shark'] as const) : []),
+    ...(areaIndex >= 3 ? (['squid'] as const) : []),
+  ];
+}
 
 /** Supplies one leg of the route costs the ship at this hull level, before the leg's own cost. */
 export function supplyUseFor(level: number): number {

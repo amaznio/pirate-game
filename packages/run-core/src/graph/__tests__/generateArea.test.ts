@@ -225,3 +225,51 @@ describe('area specs', () => {
     expect(generateAreas(5, AREAS.slice(0, 2))).toHaveLength(2);
   });
 });
+
+describe('generateArea: the hunt', () => {
+  const huntsIn = (seed: number, area: number) => generateArea(seed, area).nodes.filter((node) => node.kind === 'hunt');
+
+  it('has no hunt in the first area, and one in each later area', () => {
+    for (const seed of SEEDS) {
+      expect(huntsIn(seed, 0)).toHaveLength(0);
+      for (let area = 1; area < AREAS.length; area += 1) {
+        expect(huntsIn(seed, area)).toHaveLength(1);
+      }
+    }
+  });
+
+  it('sits in a layer of a choice, past the opening, never on a port layer, and is no battle kind', () => {
+    for (const seed of SEEDS) {
+      for (let area = 1; area < AREAS.length; area += 1) {
+        const graph = generateArea(seed, area);
+        const hunt = huntsIn(seed, area)[0]!;
+        const spec = AREAS[area]!;
+        expect(nodesInLayer(graph, hunt.layer).length).toBeGreaterThanOrEqual(2);
+        expect(hunt.layer).toBeGreaterThan(spec.openingStandardLayers + 1);
+        expect(hunt.layer).toBeLessThanOrEqual(spec.layers - 4);
+        expect(portLayers(spec).has(hunt.layer)).toBe(false);
+        expect(hunt.battle).toBeUndefined();
+      }
+    }
+  });
+
+  it('changes nothing else about the map: without the hunt the same stop is an ordinary battle', () => {
+    for (const seed of SEEDS) {
+      const spec = AREAS[2]!;
+      const withHunt = generateArea(seed, 2, spec);
+      const without = generateArea(seed, 2, { ...spec, hunts: 0 });
+      expect(withHunt.edges).toEqual(without.edges);
+      withHunt.nodes.forEach((node, i) => {
+        if (node.kind === 'hunt') {
+          expect(without.nodes[i]!.kind).toBe('battle');
+        } else {
+          expect(node).toEqual(without.nodes[i]);
+        }
+      });
+    }
+  });
+
+  it('is refused by a spec that asks for more than one', () => {
+    expect(specProblem({ ...AREAS[1]!, hunts: 2 as never })).toMatch(/hunts/);
+  });
+});

@@ -16,7 +16,9 @@ export function step(state: RunState, action: RunAction): { state: RunState; eve
 export function winningResult(state: RunState, hullLost = 1, ammoSpent = 1): MatchResult {
   const setup = buildBattle(state);
   const hero = setup.config.participants.find((p) => p.playerId === setup.heroPlayerId)!;
+  const hunting = setup.kind === 'hunt';
   return {
+    ...(hunting ? { hunt: { ending: 'left' as const, bossSlain: false, monstersSunk: 0, haul: 10 } } : {}),
     outcome: { kind: 'win', teamId: hero.teamId },
     turns: 6,
     ships: [
@@ -27,7 +29,8 @@ export function winningResult(state: RunState, hullLost = 1, ammoSpent = 1): Mat
         shipTypeId: hero.shipTypeId,
         hull: Math.max(1, state.hull - hullLost),
         maxHull: state.hull,
-        afloat: true,
+        afloat: !hunting,
+        ...(hunting ? { escaped: true } : {}),
         ammo: Math.max(0, state.ammo - ammoSpent),
         tokens: 0,
         pickups: { barrel: 0, crate: 0, plank: 0 },

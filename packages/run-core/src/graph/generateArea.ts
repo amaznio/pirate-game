@@ -90,6 +90,35 @@ function battleKinds(
 }
 
 /**
+ * Where an area's hunt goes: a battle stop in a middle layer that is two or more wide (so the ship
+ * can choose another way), past the gentle opening and not right before the pre-boss port.
+ * Null when no layer fits.
+ */
+function pickHuntStop(
+  spec: AreaSpec,
+  widths: readonly number[],
+  ports: ReadonlySet<number>,
+  runSeed: number,
+  areaIndex: number,
+): { layer: number; index: number } | null {
+  const rng = createRng(runSeed, 'hunt', areaIndex);
+  const candidates: { layer: number; index: number }[] = [];
+  for (let layer = spec.openingStandardLayers + 2; layer <= spec.layers - 4; layer += 1) {
+    const width = widths[layer]!;
+    if (width < 2) {
+      continue;
+    }
+    for (let index = 0; index < width; index += 1) {
+      // A port in the layer takes one stop of its own; only the others are battles.
+      candidates.push({ layer, index });
+    }
+  }
+  const fitting = candidates.filter(({ layer }) => !ports.has(layer));
+  const pool = fitting.length > 0 ? fitting : [];
+  return pool.length === 0 ? null : pool[randomInt(rng, 0, pool.length - 1)]!;
+}
+
+/**
  * Builds one area of the voyage from the run seed. The same seed and area
  * number always give the same graph.
  *
@@ -115,6 +144,10 @@ export function generateArea(
   const midPorts = portLayers(spec);
   const lastLayer = spec.layers - 1;
 
+  // The hunt (if the area has one) takes a battle stop in a layer of a choice, so it can be sailed round.
+  // It draws from a stream of its own, so the rest of the map is the same with or without it.
+  const huntAt = (spec.hunts ?? 0) > 0 ? pickHuntStop(spec, widths, midPorts, runSeed, areaIndex) : null;
+
   const layers: RouteNode[][] = widths.map((width, layer) => {
     const portIndex = midPorts.has(layer) ? randomInt(rng, 0, width - 1) : -1;
     const kinds = battleKinds(spec, areaIndex, layer, width, rng);
@@ -134,6 +167,9 @@ export function generateArea(
       }
       if (layer === lastLayer - 1 || index === portIndex) {
         return { ...base, kind: 'port' };
+      }
+      if (huntAt !== null && huntAt.layer === layer && huntAt.index === index) {
+        return { ...base, kind: 'hunt' };
       }
       return { ...base, kind: 'battle', battle: kinds[index]! };
     });

@@ -9,7 +9,7 @@ import { generateArea } from '../../graph/generateArea';
 import type { BattleKind, RouteGraph } from '../../graph/types';
 import { buildBattle, bossFleetFor, depthOf, fleetFor, graphFor } from '../battle';
 import { applyAction, startRun } from '../engine';
-import { bossLoadout, maxHullFor } from '../rules';
+import { bossLoadout, huntBossHull, huntMonsters, maxHullFor } from '../rules';
 import type { RunState } from '../types';
 import { step } from './helpers';
 
@@ -53,7 +53,7 @@ describe('buildBattle', () => {
       const fights = graph.nodes.filter((node) => node.kind !== 'port');
       const seenKinds = new Set<string>();
       for (const node of fights) {
-        const key = node.kind === 'boss' ? 'boss' : node.battle!;
+        const key = node.kind === 'boss' ? 'boss' : node.kind === 'hunt' ? 'hunt' : node.battle!;
         if (seenKinds.has(key)) {
           continue;
         }
@@ -259,5 +259,44 @@ describe('real battles feed the run', () => {
       }
     }
     expect(finished).toBeGreaterThan(0);
+  });
+});
+
+describe('buildBattle: a hunt', () => {
+  const huntState = (patch: Partial<RunState> = {}) => {
+    for (let seed = 1; seed < 100; seed += 1) {
+      const graph = generateArea(seed, 2);
+      const node = graph.nodes.find((n) => n.kind === 'hunt');
+      if (node) {
+        return { ...standingAt(2, node.id, { seed, ...patch }) };
+      }
+    }
+    throw new Error('No hunt node found');
+  };
+
+  it('is the hero alone against the sea monsters, with the boss grown for the area', () => {
+    const setup = buildBattle(huntState());
+    expect(setup.kind).toBe('hunt');
+    expect(setup.config.objective?.kind).toBe('hunt');
+    expect(setup.config.participants).toHaveLength(1);
+    expect(setup.briefing.enemyShipTypeIds).toEqual([]);
+    const boss = setup.config.monsters?.find((monster) => monster.maxHp !== undefined);
+    expect(boss?.maxHp).toBe(huntBossHull(2));
+    expect((setup.config.monsters ?? []).length).toBe(huntMonsters(2).length);
+  });
+
+  it('brings the hull, cannonballs and guns the run has grown to, and can be started', () => {
+    const setup = buildBattle(huntState({ hullLevel: 3, hull: 5, ammo: 4, cannonsPerSide: 2 }));
+    const game = createGame(setup.config);
+    const ship = Object.values(game.ships).find((candidate) => candidate.ownerId === setup.heroPlayerId)!;
+    expect(ship.hp).toBe(5);
+    expect(ship.maxHp).toBe(maxHullFor(3));
+    expect(game.players[setup.heroPlayerId]!.ammo).toBe(4);
+    expect(cannonCountsOf(ship).left).toBe(2);
+  });
+
+  it('is the same every time it is asked for', () => {
+    const state = huntState();
+    expect(buildBattle(state)).toEqual(buildBattle(state));
   });
 });

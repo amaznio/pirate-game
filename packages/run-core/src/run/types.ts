@@ -31,7 +31,7 @@ export type RunPhase = 'map' | 'port' | 'battle' | 'victory' | 'defeat';
 export type DefeatReason = 'sunk' | 'starved' | 'abandoned';
 
 /** Bumped when the saved shape changes, so an old save is refused, not misread. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /**
  * Everything about a run, as plain data so it can be saved and loaded. The map
@@ -93,7 +93,14 @@ export type RunEvent =
   | { readonly type: 'starved'; readonly hullLost: number }
   | { readonly type: 'portArrival'; readonly landfall: boolean; readonly repaired: number; readonly suppliesGained: number; readonly ammoGained: number }
   | { readonly type: 'upgraded'; readonly upgrade: UpgradeId; readonly refit?: { readonly from: string; readonly to: string } }
-  | { readonly type: 'battleWon'; readonly kind: BattleKind | 'boss'; readonly suppliesGained: number }
+  | {
+      readonly type: 'battleWon';
+      readonly kind: BattleKind | 'boss' | 'hunt';
+      readonly suppliesGained: number;
+      /** A hunt: the treasure banked, and whether the Kraken was slain. */
+      readonly haul?: number;
+      readonly bossSlain?: boolean;
+    }
   | { readonly type: 'areaCleared'; readonly areaIndex: number }
   | { readonly type: 'victory' }
   | { readonly type: 'defeat'; readonly reason: DefeatReason };
