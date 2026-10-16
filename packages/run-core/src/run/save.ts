@@ -3,6 +3,9 @@ import { generateArea } from '../graph/generateArea';
 import { HULL_LEVEL_CAP, CANNONS_PER_SIDE_CAP, CANNON_DAMAGE_CAP, maxHullFor, cargoCapFor } from './rules';
 import { SAVE_VERSION, UPGRADE_IDS, type DefeatReason, type RunPhase, type RunState } from './types';
 
+/** The highest damage any version has saved (the cap was 3 before it was lowered). */
+const SAVED_DAMAGE_MAX = 3;
+
 /** A run as text, for `localStorage`. */
 export function serializeRun(state: RunState): string {
   return JSON.stringify(state);
@@ -46,7 +49,7 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
     !PHASES.includes(s.phase as RunPhase) ||
     !whole(s.hullLevel, 0, HULL_LEVEL_CAP) ||
     !whole(s.cannonsPerSide, 1, CANNONS_PER_SIDE_CAP) ||
-    !whole(s.cannonDamage, 0, CANNON_DAMAGE_CAP) ||
+    !whole(s.cannonDamage, 0, SAVED_DAMAGE_MAX) ||
     !whole(s.ammoBonus, 0, 1000) ||
     !whole(s.ammo, 0, 1000) ||
     !whole(s.battlesWon, 0, 100000) ||
@@ -96,6 +99,10 @@ export function parseRun(text: string | null, specs: readonly AreaSpec[] = AREAS
   }
   if (phase === 'battle' && node.kind === 'port') {
     return null;
+  }
+  // A save from when the cap was higher keeps working, at the cap.
+  if ((s.cannonDamage as number) > CANNON_DAMAGE_CAP) {
+    return { ...(raw as RunState), cannonDamage: CANNON_DAMAGE_CAP };
   }
   return raw as RunState;
 }

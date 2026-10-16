@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { availableMoves, startRun } from '../engine';
 import { parseRun, serializeRun } from '../save';
+import { CANNON_DAMAGE_CAP } from '../rules';
 import type { RunState } from '../types';
 import { playWithWins, step } from './helpers';
 
@@ -20,6 +21,12 @@ describe('saving a run', () => {
     const loaded = parseRun(serializeRun(run))!;
     const move = availableMoves(loaded)[0]!;
     expect(step(loaded, { type: 'travel', to: move.id }).state.nodeId).toBe(move.id);
+  });
+
+  it('loads a save from when the damage cap was higher, at the cap now', () => {
+    const old = { ...startRun(5), cannonDamage: CANNON_DAMAGE_CAP + 1 };
+    expect(parseRun(serializeRun(old))!.cannonDamage).toBe(CANNON_DAMAGE_CAP);
+    expect(parseRun(serializeRun({ ...old, cannonDamage: CANNON_DAMAGE_CAP + 2 }))).toBeNull();
   });
 
   it('keeps a finished run readable', () => {
