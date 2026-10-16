@@ -12,7 +12,7 @@ import type { TerrainMap } from '../domain/Terrain';
 import type { PickupMap } from '../domain/Pickup';
 import type { CarryOver } from '../domain/CarryOver';
 import { generateMonsters, type MonsterSpawn } from '../board/generateMonsters';
-import { generateTreasure } from '../board/generateTreasure';
+import { generateHuntLoot, generateTreasure } from '../board/generateTreasure';
 import type { MonsterTypeId } from '../domain/Monster';
 import { SELECTABLE_MONSTER_TYPE_IDS } from './monsterTypes';
 import {
@@ -338,7 +338,7 @@ export function createHuntConfig(options: HuntOptions = {}): MatchConfig {
             spawn.id === HUNT_BOSS_ID ? { ...spawn, maxHp: Math.max(1, Math.floor(options.bossHull!)) } : spawn,
           ),
         };
-  const pickups = generateTreasure({
+  const huntBoard = {
     width,
     height,
     seed,
@@ -347,7 +347,11 @@ export function createHuntConfig(options: HuntOptions = {}): MatchConfig {
     obstacles: water.obstacles,
     terrain: water.terrain,
     monsters: monsters.monsters ?? [],
-  });
+  };
+  const chests = generateTreasure(huntBoard);
+  // Barrels, crates and planks as in any Loot match, so a long hunt can refill its cannonballs.
+  const loot = generateHuntLoot({ ...huntBoard, spawns, chests });
+  const pickups = { ...loot, ...chests };
 
   return {
     seed,

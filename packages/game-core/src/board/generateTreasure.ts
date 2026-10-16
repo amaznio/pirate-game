@@ -6,6 +6,7 @@ import { getMonsterType } from '../config/monsterTypes';
 import { createRng } from '../ai/rng';
 import type { ObstacleConfig } from '../config/matchConfig';
 import type { MonsterSpawn } from './generateMonsters';
+import { generatePickups } from './generatePickups';
 
 export interface GenerateTreasureOptions {
   readonly width: number;
@@ -98,4 +99,53 @@ export function generateTreasure(options: GenerateTreasureOptions): PickupMap {
     place(SPREAD_VALUE, () => true);
   }
   return chests;
+}
+
+export interface GenerateHuntLootOptions extends GenerateTreasureOptions {
+  /** Every ship start and the exit strip: loot keeps clear of them (as in any Loot match). */
+  readonly spawns: readonly Position[];
+  /** Chests already placed: loot never shares a cell with one. */
+  readonly chests: PickupMap;
+  /** How many barrels, crates and planks to keep; a few when left out. */
+  readonly count?: number;
+}
+
+const DEFAULT_LOOT_COUNT = 6;
+
+/**
+ * The ordinary pickups of a hunt (barrels of cannonballs, crates of tokens, planks
+ * for the hull), scattered like any Loot match does, so a long hunt can refill. They
+ * use the Loot generator and its own random stream, then drop any that would sit on a
+ * chest, a monster, or in the exit area, and keep the first few. Pure and
+ * deterministic from the seed, and it never changes the rocks, winds, monsters or
+ * chests of a seed.
+ */
+export function generateHuntLoot(options: GenerateHuntLootOptions): PickupMap {
+  const count = options.count ?? DEFAULT_LOOT_COUNT;
+  const monsterCellKeys = new Set(
+    options.monsters.flatMap((m) => monsterCells(m, getMonsterType(m.typeId).length)).map(cellKey),
+  );
+  // Ask for more than wanted: some will be dropped below.
+  const scattered = generatePickups({
+    width: options.width,
+    height: options.height,
+    seed: options.seed,
+    spawns: options.spawns,
+    obstacles: options.obstacles,
+    terrain: options.terrain,
+    count: count + 4,
+  });
+  const loot: Record<string, PickupMap[string]> = {};
+  for (const [key, pickup] of Object.entries(scattered)) {
+    const [, y] = key.split(',').map(Number);
+    if (
+      Object.keys(loot).length < count &&
+      options.chests[key] === undefined &&
+      !monsterCellKeys.has(key) &&
+      y < options.height - options.exitDepth
+    ) {
+      loot[key] = pickup;
+    }
+  }
+  return loot;
 }

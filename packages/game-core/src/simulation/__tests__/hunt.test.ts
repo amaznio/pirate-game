@@ -174,6 +174,25 @@ describe('hunt: treasure', () => {
     }
   });
 
+  it('also scatters barrels, crates and planks, so a long hunt can refill', () => {
+    const kinds = new Set<string>();
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const config = createHuntConfig({ seed, sea: 'normal' });
+      const loot = Object.values(config.pickups ?? {}).filter((pickup) => pickup.kind !== 'chest');
+      expect(loot.length, `seed ${seed}`).toBeGreaterThanOrEqual(3);
+      expect(loot.length, `seed ${seed}`).toBeLessThanOrEqual(6);
+      loot.forEach((pickup) => kinds.add(pickup.kind));
+    }
+    expect([...kinds].sort()).toEqual(['barrel', 'crate', 'plank']);
+  });
+
+  it('keeps the chests of a seed where they were: loot only adds to them', () => {
+    const config = createHuntConfig({ seed: 5, sea: 'normal' });
+    const chests = Object.entries(config.pickups ?? {}).filter(([, pickup]) => pickup.kind === 'chest');
+    expect(chests.length).toBeGreaterThanOrEqual(8);
+    expect(createHuntConfig({ seed: 5, sea: 'normal' })).toEqual(config);
+  });
+
   it('adds a collected chest to the haul, not to the loot tally', () => {
     const state = hunt();
     const hero = state.ships['player-ship'];
