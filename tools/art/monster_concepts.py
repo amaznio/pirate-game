@@ -1,6 +1,6 @@
 """Draws proof-of-concept sprite sheets for five new sea monsters.
 
-Same pipeline as shark.py and giant_squid.py (numpy layers, nearest-neighbour
+Same pipeline as sea_monsters.py (numpy layers, nearest-neighbour
 pixel art, one 64 x 64 board cell a frame, nose to the bottom), but they are
 concepts: nothing here is wired into the game. Each sheet has the rows idle (4),
 attack (3), hurt (2) and death (3).
@@ -16,10 +16,9 @@ import sys
 
 import numpy as np
 from PIL import Image, ImageDraw
-from scipy import ndimage
 
 sys.path.insert(0, os.path.dirname(__file__))
-from giant_squid import blank, fade, mask_of, paste, shrink, tint  # noqa: E402
+from pixel import blank, erode, fade, interior, mask_of, paste, render, scales, shrink, tint  # noqa: E402
 
 S = 64
 G = 2
@@ -37,34 +36,15 @@ def noise(x, y, salt=0):
 
 
 def shade(mask, pal, alpha=255):
-    """Shade a mask into a lit blob: outline, then shadow, base, light and highlight by slope.
+    """Fill a mask in the ship style (pixel.render): outline, flat base, a light top-left rim, a shadow bottom-right.
 
-    pal is (outline, dark, base, light, bright). Thin parts (a tentacle, a spine)
-    skip the outline and take the dark colour on their edge, so they stay readable.
+    Thin parts (a tentacle, a spine) skip the rim bands, so they stay readable. pal is
+    (outline, dark, base, light, bright).
     """
-    h, w = mask.shape
-    out = blank(w, h)
-    if not mask.any():
-        return out
-    outline, dark, base, light, bright = pal
-    dist = ndimage.distance_transform_edt(mask)
-    thin = dist.max() < 2.6
-    height = ndimage.gaussian_filter(np.minimum(dist, 5.0), 1.0)
-    gy, gx = np.gradient(height)
-    lit = -(gx * LIGHT_DIR[0] + gy * LIGHT_DIR[1])
-    for y, x in zip(*np.nonzero(mask)):
-        d = dist[y, x]
-        if thin:
-            col = base if d > 1.0 else dark
-            if lit[y, x] > 0.25:
-                col = light
-        elif d <= 1.0:
-            col = outline
-        else:
-            q = lit[y, x]
-            col = bright if q > 0.62 else light if q > 0.22 else base if q > -0.22 else dark
-        out[y, x] = (*col, alpha)
-    return out
+    layer = render(mask, pal, rim=bool(erode(mask, 2).any()))
+    if alpha != 255:
+        layer[..., 3] = np.where(layer[..., 3] > 0, alpha, 0)
+    return layer
 
 
 def ell(w, h, cx, cy, rx, ry):
@@ -162,12 +142,9 @@ def crab_frame(step=0.0, claw=0.3, lunge=0, eyes='open'):
         (32 + 15, cy - 2), (32 + 13, cy + 7), (32 + 6, cy + 12), (32 - 6, cy + 12), (32 - 13, cy + 7),
     ])
     body = shade(shell, CRAB)
-    ys, xs = inside(layer, body)
-    for y, x in zip(ys, xs):
-        if noise(x, y, 4) > 0.93 and body[y, x, 3] and tuple(body[y, x, :3]) in (CRAB[2], CRAB[1]):
-            body[y, x] = (*CRAB[4], 255)
-        elif noise(x, y, 9) > 0.96:
-            body[y, x] = (*CRAB[1], 255)
+    for dx, dy in ((-8, -4), (-5, -7), (0, -8), (5, -7), (8, -4), (-9, 1), (9, 1), (-3, -2), (3, -2), (-6, 3), (6, 3)):
+        put(body, 32 + dx, cy + dy, CRAB[4])  # tubercles on the shell, each with a shadow under it
+        put(body, 32 + dx, cy + dy + 1, CRAB[1])
     for dx in range(-9, 10):  # a brow ridge across the front
         y = cy + 5 - int(abs(dx) * 0.18)
         if shell[y, 32 + dx]:
@@ -326,6 +303,7 @@ def serpent_frame(phase=0.0, lunge=0, jaw=0.0, eyes='open', rear=0.0):
     ])
     whole = body | skull
     shaded = shade(whole, SERP)
+    scales(shaded, interior(body) & (np.arange(SH)[:, None] < hy - 12), SERP, sw=6, sh=4)
     ys, xs = np.nonzero(body)
     for y, x in zip(ys, xs):
         if shaded[y, x, 3] == 0 or y > hy - 12:
@@ -333,8 +311,6 @@ def serpent_frame(phase=0.0, lunge=0, jaw=0.0, eyes='open', rear=0.0):
         cxl, _ = centre(y)
         if abs(x - cxl) < 1.1 and tuple(shaded[y, x, :3]) != SERP[0]:
             shaded[y, x] = (*BELLY, 255)
-        elif (y // 4 + (x // 3) % 2) % 2 == 0 and noise(x, y, 2) > 0.45 and tuple(shaded[y, x, :3]) in (SERP[2], SERP[3]):
-            shaded[y, x] = (*SERP[1], 255)
     # a crest of ridges over the brow, and pale scale flecks on the cheeks
     for dx in (-3, 0, 3):
         for dy in range(-12, -3):
@@ -440,12 +416,7 @@ def angler_frame(bob=0.0, jaw=0.0, glow=0.0, eyes='open', lure_pull=0.0):
     # body, then the mouth over its front
     body_mask = ell(S, S, cx, cy + 2, 16, 16)
     body = shade(body_mask, ANG)
-    ys, xs = np.nonzero(body_mask)
-    for y, x in zip(ys, xs):  # pale lantern dots down the flanks, and warty skin
-        if body[y, x, 3] == 0:
-            continue
-        if noise(x, y, 5) > 0.95 and tuple(body[y, x, :3]) != ANG[0]:
-            body[y, x] = (*ANG[4], 255)
+    scales(body, interior(body_mask), ANG, sw=6, sh=4)
     for side in (-1, 1):
         for k in range(4):
             put(body, cx + side * (13 - (k % 2)), cy - 6 + k * 5, DOT)
@@ -498,7 +469,7 @@ def urchin_frame(turn=0.0, reach=0.0, flash=0.0, eyes='open'):
         a = (i / n) * 2 * math.pi + turn * (math.pi / n) * 2
         long_spike = i % 2 == 0
         length = (14 if long_spike else 10) + reach * (8 if long_spike else 5)
-        length += (noise(i, 3, 1) - 0.5) * 2.5
+        length += ((i * 7) % 5 - 2) * 0.5
         base_r = 7.5
         x0, y0 = cx + math.cos(a) * base_r, cy + math.sin(a) * base_r
         x1, y1 = cx + math.cos(a) * (base_r + length), cy + math.sin(a) * (base_r + length)
@@ -509,11 +480,7 @@ def urchin_frame(turn=0.0, reach=0.0, flash=0.0, eyes='open'):
         put(shaded, int(round(x1)), int(round(y1)), SPIKE[4])
         paste(layer, shaded)
     core = shade(ell(S, S, cx, cy, 10, 10), URCH)
-    # short tube feet between the spikes and a pale mouth star at the front
-    ys, xs = np.nonzero(core[..., 3] > 0)
-    for y, x in zip(ys, xs):
-        if noise(x, y, 7) > 0.94 and tuple(core[y, x, :3]) != URCH[0]:
-            core[y, x] = (*URCH[4], 255)
+    scales(core, interior(ell(S, S, cx, cy, 10, 10)), URCH, sw=4, sh=3)
     paste(layer, core)
     for k in range(5):
         a = math.pi / 2 + (k - 2) * 0.55
