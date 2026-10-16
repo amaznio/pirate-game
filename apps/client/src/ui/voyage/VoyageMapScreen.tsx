@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button } from '@/components/ui/button';
@@ -14,14 +14,16 @@ import {
 import { Banner } from '@/kit/Banner';
 import { MapNode, type MapNodeState } from '@/kit/MapNode';
 import { ScreenFrame } from '@/kit/ScreenFrame';
-import { graphFor } from '@pirate/run-core/run/battle';
-import { availableMoves, legCost } from '@pirate/run-core/run/engine';
+import { buildBattle, graphFor } from '@pirate/run-core/run/battle';
+import { applyAction, availableMoves, legCost } from '@pirate/run-core/run/engine';
 import { BATTLE_REWARD, HUNT_BOSS_BONUS, TREASURE_PER_SUPPLY, classForHullLevel } from '@pirate/run-core/run/rules';
 import type { RouteNode } from '@pirate/run-core/graph/types';
 import type { RunState } from '@pirate/run-core/run/types';
 import { runStore, useRun } from '../../run/runStore';
 import { AbandonButton, EventBanners, VoyageStats } from './VoyageParts';
-import { mapKindOf, nodeBlurb, nodeTitle, stateLabel } from './voyageText';
+import { aiLevelLabel } from '../menu/aiLevels';
+import { mapStyleLabel } from '../menu/mapStyles';
+import { fleetText, mapKindOf, nodeBlurb, nodeTitle, stateLabel } from './voyageText';
 
 /** Pixels of map for each layer of the route. */
 const ROW = 132;
@@ -72,6 +74,14 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
   const cost = selected ? legCost(run, selected.id) : null;
   const short = cost !== null && run.supplies < cost;
   const reward = selected ? rewardText(t, selected) : null;
+  // Who is in the fight at the chosen stop: the battle it would be, built as if the ship had sailed there.
+  const fight = useMemo(() => {
+    if (!selected || selected.kind === 'port') {
+      return null;
+    }
+    const arrived = applyAction(run, { type: 'travel', to: selected.id });
+    return arrived.ok && arrived.state.phase === 'battle' ? buildBattle(arrived.state) : null;
+  }, [run, selected]);
   const shipSrc = `/assets/map/ship-${classForHullLevel(run.hullLevel).id}.png`;
 
   return (
@@ -135,6 +145,18 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
               </DialogHeader>
               <p className="text-sm font-bold">{t('voyage.legCost', { count: cost ?? 0 })}</p>
               {reward && <p className="text-sm font-bold">{reward}</p>}
+              {fight && (
+                <div className="flex flex-col gap-0.5 text-sm">
+                  <p className="font-bold">
+                    {t('voyage.against')}:{' '}
+                    {fight.kind === 'hunt' ? t('voyage.huntAgainst') : fleetText(t, fight.briefing.enemyShipTypeIds)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {fight.kind !== 'hunt' && `${t('menu.skill')}: ${aiLevelLabel(t, fight.briefing.aiDifficulty)} · `}
+                    {t('menu.seas')}: {mapStyleLabel(t, fight.briefing.sea)}
+                  </p>
+                </div>
+              )}
               {short && <Banner tone="warning">{t('voyage.willStarve')}</Banner>}
               <DialogFooter className="gap-2 sm:flex-col-reverse">
                 <DialogClose asChild>

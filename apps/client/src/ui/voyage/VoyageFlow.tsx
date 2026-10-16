@@ -1,17 +1,30 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScreenFrame } from '@/kit/ScreenFrame';
-import type { BattleSetup } from '@pirate/run-core/run/battle';
+import { buildBattle, type BattleSetup } from '@pirate/run-core/run/battle';
+import type { RunState } from '@pirate/run-core/run/types';
 import { runStore, useRun } from '../../run/runStore';
-import { BattleBriefingScreen } from './BattleBriefingScreen';
 import { PortScreen } from './PortScreen';
 import { VoyageEndScreen } from './VoyageEndScreen';
 import { VoyageMapScreen } from './VoyageMapScreen';
 
 /**
+ * The ship has reached a fight: start it at once. What the player needs to know (who is in it, what it
+ * pays, what the leg costs) was shown on the map before they chose to sail, so there is no screen between.
+ */
+function SailIntoBattle({ run, onSail }: { run: RunState; onSail: (setup: BattleSetup) => void }) {
+  useEffect(() => {
+    onSail(buildBattle(run));
+    // Once, on arrival: starting the battle changes the run, which must not start it again.
+  }, []);
+  return null;
+}
+
+/**
  * The solo voyage: shows the screen for wherever the voyage stands (no voyage
- * yet, at a port, choosing a route, facing a battle, or over). The voyage itself
+ * yet, at a port, choosing a route, or over; a fight starts as soon as the ship reaches it). The voyage itself
  * lives in the run store, so leaving and coming back finds it where it was.
  */
 export function VoyageFlow({
@@ -52,7 +65,7 @@ export function VoyageFlow({
     return <PortScreen run={run} onBack={onBack} />;
   }
   if (run.phase === 'battle') {
-    return <BattleBriefingScreen run={run} onBack={onBack} onSail={onSail} />;
+    return <SailIntoBattle run={run} onSail={onSail} />;
   }
   return <VoyageMapScreen run={run} onBack={onBack} />;
 }

@@ -5,6 +5,15 @@ import type { DefeatReason, RunEvent, UpgradeId } from '@pirate/run-core/run/typ
 import { objectiveBlurb, objectiveLabel } from '../menu/objectiveChoices';
 import { shipLabel } from '../menu/shipClasses';
 
+/** "2 × Brigantine, 1 × Galleon": a fleet as the player reads it. */
+export function fleetText(t: TFunction, shipTypeIds: readonly string[]): string {
+  const counts = new Map<string, number>();
+  for (const id of shipTypeIds) {
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return [...counts].map(([id, count]) => `${count} × ${shipLabel(t, id)}`).join(', ');
+}
+
 /** Typed keys for each upgrade's words, so a wrong key is a compile error. */
 const UPGRADE_KEYS = {
   reinforceHull: { name: 'voyage.upgrades.reinforceHull.name', blurb: 'voyage.upgrades.reinforceHull.blurb' },
