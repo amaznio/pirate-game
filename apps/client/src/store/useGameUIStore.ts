@@ -108,6 +108,10 @@ interface GameUIStore extends GameUISnapshot {
   setActiveSlot: (slot: number | null) => void;
   queuePlayerAction: (action: MovementAction) => void;
   removePlayerAction: (index: number) => void;
+  /** Puts a token in exactly this slot (dropping it there), replacing what is there. */
+  placePlayerAction: (action: MovementAction, slot: number) => void;
+  /** Moves the token in one slot to another, swapping when the other is filled. */
+  movePlayerAction: (from: number, to: number) => void;
   toggleCannon: (phase: number, side: CannonSide) => void;
   /** Sets how many cannons a side fires in a phase. */
   setCannonShots: (phase: number, side: CannonSide, shots: number) => void;
@@ -292,6 +296,11 @@ export const useGameUIStore = create<GameUIStore>(() => ({
     useGameUIStore.setState({ activeSlot: null });
   },
   removePlayerAction: (index) => currentClient?.removeToken(index),
+  placePlayerAction: (action, slot) => {
+    currentClient?.placeToken(action, slot);
+    useGameUIStore.setState({ activeSlot: null });
+  },
+  movePlayerAction: (from, to) => currentClient?.moveToken(from, to),
   toggleCannon: (phase, side) => currentClient?.toggleCannon(phase, side),
   setCannonShots: (phase, side, shots) => currentClient?.setCannonShots(phase, side, shots),
   clearPlayerActions: () => {

@@ -12,6 +12,8 @@ import { viewToState } from '../view/redact';
 import type { GameTransport } from './GameTransport';
 import {
   copyDraft,
+  moveToken,
+  placeToken,
   queueToken,
   remainingAmmo,
   remainingTokens,
@@ -120,6 +122,20 @@ export class GameClient {
   removeToken(index: number): void {
     if (this.snapshot.canEdit) {
       this.setDraft(removeToken(this.snapshot.draft, index));
+    }
+  }
+
+  /** Puts a token in exactly this slot, replacing what is there (dragging a token onto a slot). */
+  placeToken(action: MovementAction, slot: number): void {
+    if (this.snapshot.canEdit) {
+      this.setDraft(placeToken(this.snapshot.draft, this.snapshot.view.self.tokens, action, slot));
+    }
+  }
+
+  /** Moves the token in one slot to another, swapping when the other is filled. */
+  moveToken(from: number, to: number): void {
+    if (this.snapshot.canEdit) {
+      this.setDraft(moveToken(this.snapshot.draft, from, to));
     }
   }
 

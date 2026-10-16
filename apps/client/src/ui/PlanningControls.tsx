@@ -4,6 +4,7 @@ import { Banner } from '@/kit/Banner';
 import { Segmented } from '@/kit/Segmented';
 import { useGameUIStore } from '../store/useGameUIStore';
 import { MoveTokenTray } from './MoveTokenTray';
+import { PlanDnd } from './PlanDnd';
 import { PlannedMoves } from './PlannedMoves';
 import { CannonballChip } from './CannonballChip';
 import { TOKEN_ORDER, tokenLabel } from './tokenMeta';
@@ -80,20 +81,22 @@ export function PlanningControls({ compact = false }: { compact?: boolean }) {
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        {!compact && <SectionTitle>{t('plan.moveTokens')}</SectionTitle>}
-        <MoveTokenTray />
-      </div>
+      <PlanDnd>
+        <div className="flex flex-col gap-1.5">
+          {!compact && <SectionTitle>{t('plan.moveTokens')}</SectionTitle>}
+          <MoveTokenTray />
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        {!compact && (
-          <div className="flex items-center justify-between">
-            <SectionTitle>{t('plan.plan')}</SectionTitle>
-            <CannonballChip />
-          </div>
-        )}
-        <PlannedMoves />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          {!compact && (
+            <div className="flex items-center justify-between">
+              <SectionTitle>{t('plan.plan')}</SectionTitle>
+              <CannonballChip />
+            </div>
+          )}
+          <PlannedMoves />
+        </div>
+      </PlanDnd>
 
       {canLeave && (
         <div className="flex flex-col gap-1.5">

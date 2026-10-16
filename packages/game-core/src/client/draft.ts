@@ -122,6 +122,40 @@ export function removeToken(draft: PlanDraft, index: number): PlanDraft {
 }
 
 /**
+ * Puts a token into exactly this slot, replacing what is there (which goes back to the pool).
+ * Nothing changes when the slot does not exist, when it already holds that token, or when no
+ * token is left, counting the one it would replace.
+ */
+export function placeToken(
+  draft: PlanDraft,
+  pool: TokenInventory,
+  action: MovementAction,
+  slot: number,
+): PlanDraft {
+  if (slot < 0 || slot >= draft.movement.length || draft.movement[slot] === action) {
+    return draft;
+  }
+  const freed = removeToken(draft, slot);
+  if (remainingTokens(pool, freed)[action] <= 0) {
+    return draft;
+  }
+  const movement = [...freed.movement];
+  movement[slot] = action;
+  return { ...freed, movement };
+}
+
+/** Moves the token in one slot to another; if the other holds one too, the two swap. */
+export function moveToken(draft: PlanDraft, from: number, to: number): PlanDraft {
+  const size = draft.movement.length;
+  if (from === to || from < 0 || to < 0 || from >= size || to >= size || draft.movement[from] === null) {
+    return draft;
+  }
+  const movement = [...draft.movement];
+  [movement[from], movement[to]] = [movement[to]!, movement[from]!];
+  return { ...draft, movement };
+}
+
+/**
  * Sets how many cannons a side fires in a phase. It cannot be more than the
  * side has, and it cannot be more than the cannonballs still free allow, so the
  * result is the nearest legal number.
