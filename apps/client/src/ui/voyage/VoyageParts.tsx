@@ -1,4 +1,4 @@
-import { Circle, Package, Ship } from 'lucide-react';
+import { Circle, Coins, Ship } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,13 +13,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Banner } from '@/kit/Banner';
-import { cargoCapFor, classForHullLevel, maxHullFor } from '@pirate/run-core/run/rules';
+import { classForHullLevel, maxHullFor } from '@pirate/run-core/run/rules';
 import type { RunEvent, RunState } from '@pirate/run-core/run/types';
 import { shipLabel } from '../menu/shipClasses';
 import { runStore } from '../../run/runStore';
 import { eventMessages } from './voyageText';
 
-/** The ship's numbers at a glance: area, class, hull, supplies and cannonballs. */
+/** The ship's numbers at a glance: area, class, hull, plunder and cannonballs. */
 export function VoyageStats({ run }: { run: RunState }) {
   const { t } = useTranslation();
   return (
@@ -32,8 +32,8 @@ export function VoyageStats({ run }: { run: RunState }) {
         {shipLabel(t, classForHullLevel(run.hullLevel).id)} · {t('voyage.hull')}: {run.hull}/{maxHullFor(run.hullLevel)}
       </Badge>
       <Badge variant="secondary" className="gap-1.5 text-sm">
-        <Package aria-hidden />
-        {t('voyage.supplies')}: {run.supplies}/{cargoCapFor(run.hullLevel)}
+        <Coins aria-hidden />
+        {t('voyage.plunder')}: {run.plunder}
       </Badge>
       <Badge variant="secondary" className="gap-1.5 text-sm">
         <Circle aria-hidden />

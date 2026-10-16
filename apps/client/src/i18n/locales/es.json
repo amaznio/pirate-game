@@ -379,7 +379,6 @@
     "ambushProgress": "Asaltantes: {{afloat}} a flote, {{coming}} en camino · turno {{turn}} de {{turns}}"
   },
   "voyage": {
-    "supplies": "Provisiones",
     "hull": "Casco",
     "cannonballs": "Balas de cañón",
     "nextBattle": "Próxima batalla",
@@ -404,18 +403,12 @@
     "centreShip": "Centrar en mi barco",
     "sailHere": "Navegar hasta aquí",
     "cancel": "Cancelar",
-    "legCost_one": "El tramo cuesta {{count}} provisión.",
-    "legCost_other": "El tramo cuesta {{count}} provisiones.",
-    "willStarve": "No hay provisiones suficientes: el casco recibirá 1 de daño.",
-    "reward": "Recompensa: provisiones +{{count}}.",
-    "rewardHunt": "Recompensa: provisiones +{{count}}, y más por el tesoro que saques (cada {{per}} de tesoro es una provisión), y +{{boss}} por el Kraken.",
+    "reward": "Recompensa: botín +{{count}}.",
+    "rewardHunt": "Recompensa: botín +{{count}}, y más por el tesoro que saques (cada {{per}} de tesoro es 1 de botín), y +{{boss}} por el Kraken.",
     "landfall": "Arribada",
     "portArrival": "Llegas a {{name}}.",
     "repaired": "Casco reparado: +{{count}}",
-    "restocked": "Provisiones: +{{count}}",
     "reloaded": "Balas de cañón repuestas: +{{count}}",
-    "chooseUpgrade": "Elige una mejora",
-    "takeUpgrade": "Elegir mejora",
     "bossBlurb": "Un buque insignia vigila estas aguas. Hunde para poder seguir.",
     "huntBlurb": "Monstruos marinos y un Kraken, y tesoro para quien lo coja. Sal por las aguas someras cuando quieras.",
     "huntAgainst": "Los monstruos marinos y el Kraken",
@@ -425,7 +418,6 @@
     "defeatTitle": "Fin de la travesía",
     "defeatReason": {
       "sunk": "Tu barco se hundió.",
-      "starved": "La bodega se vació y el barco se hundió.",
       "abandoned": "Abandonaste la travesía."
     },
     "statBattles": "Batallas ganadas",
@@ -435,13 +427,12 @@
     "statShip": "Barco final",
     "mainMenu": "Menú principal",
     "seeResult": "Ver el resultado",
-    "eventStarved": "La bodega se vació: casco -{{count}}.",
-    "eventBattleWon": "¡Victoria! Provisiones: +{{count}}.",
-    "eventHuntWon": "Te marchas con {{haul}} de tesoro. Provisiones: +{{count}}.",
-    "eventKrakenSlain": "El Kraken ha caído: un extra en provisiones.",
+    "eventBattleWon": "¡Victoria! Botín: +{{count}}.",
+    "eventHuntWon": "Te marchas con {{haul}} de tesoro. Botín: +{{count}}.",
+    "eventKrakenSlain": "El Kraken ha caído: un extra de botín.",
     "eventAreaCleared": "¡Zona {{n}} superada!",
     "eventRefit": "¡Tu {{from}} se transforma en {{to}}!",
-    "eventUpgraded": "Mejora elegida: {{name}}.",
+    "eventUpgraded": "Comprado: {{name}}.",
     "upgrades": {
       "reinforceHull": {
         "name": "Reforzar el casco",
@@ -462,11 +453,15 @@
       "repair": {
         "name": "Carpintero",
         "blurb": "Repara 2 de casco."
-      },
-      "provisions": {
-        "name": "Provisiones",
-        "blurb": "+4 provisiones."
       }
-    }
+    },
+    "plunder": "Botín",
+    "shopTitle": "En venta",
+    "buy": "Comprar",
+    "sailOn": "Zarpar",
+    "notEnough": "Botín insuficiente",
+    "soldOut": "Aquí ya no queda nada útil para tu barco.",
+    "priceLabel": "Precio: {{price}}",
+    "portBlurb": "Gasta tu botín en mejoras."
   }
 }

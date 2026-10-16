@@ -21,7 +21,6 @@ const UPGRADE_KEYS = {
   cannonDamage: { name: 'voyage.upgrades.cannonDamage.name', blurb: 'voyage.upgrades.cannonDamage.blurb' },
   cannonballs: { name: 'voyage.upgrades.cannonballs.name', blurb: 'voyage.upgrades.cannonballs.blurb' },
   repair: { name: 'voyage.upgrades.repair.name', blurb: 'voyage.upgrades.repair.blurb' },
-  provisions: { name: 'voyage.upgrades.provisions.name', blurb: 'voyage.upgrades.provisions.blurb' },
 } as const satisfies Record<UpgradeId, { name: string; blurb: string }>;
 
 export function upgradeName(t: TFunction, id: UpgradeId): string {
@@ -34,7 +33,6 @@ export function upgradeBlurb(t: TFunction, id: UpgradeId): string {
 
 const DEFEAT_KEYS = {
   sunk: 'voyage.defeatReason.sunk',
-  starved: 'voyage.defeatReason.starved',
   abandoned: 'voyage.defeatReason.abandoned',
 } as const satisfies Record<DefeatReason, string>;
 
@@ -83,7 +81,7 @@ export function nodeBlurb(t: TFunction, node: RouteNode): string {
     return t('voyage.bossBlurb');
   }
   if (node.kind === 'port') {
-    return t('voyage.chooseUpgrade');
+    return t('voyage.portBlurb');
   }
   if (node.kind === 'hunt') {
     return t('voyage.huntBlurb');
@@ -101,16 +99,13 @@ export function eventMessages(t: TFunction, events: readonly RunEvent[]): EventM
   const messages: EventMessage[] = [];
   for (const event of events) {
     switch (event.type) {
-      case 'starved':
-        messages.push({ tone: 'warning', text: t('voyage.eventStarved', { count: event.hullLost }) });
-        break;
       case 'battleWon':
         messages.push({
           tone: 'info',
           text:
             event.kind === 'hunt'
-              ? t('voyage.eventHuntWon', { haul: event.haul ?? 0, count: event.suppliesGained })
-              : t('voyage.eventBattleWon', { count: event.suppliesGained }),
+              ? t('voyage.eventHuntWon', { haul: event.haul ?? 0, count: event.plunderGained })
+              : t('voyage.eventBattleWon', { count: event.plunderGained }),
         });
         if (event.bossSlain) {
           messages.push({ tone: 'info', text: t('voyage.eventKrakenSlain') });

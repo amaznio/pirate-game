@@ -26,7 +26,6 @@ export function MapNode({
   state,
   label,
   stateLabel,
-  cost,
   shipSrc,
   onSelect,
   style,
@@ -37,8 +36,6 @@ export function MapNode({
   label: string;
   /** The state in words, for screen readers. */
   stateLabel: string;
-  /** What the leg to this stop costs in supplies, when it is in reach. */
-  cost?: number | null;
   /** The picture of our ship, shown in the badge of the stop we are at. */
   shipSrc?: string;
   onSelect?: () => void;
@@ -77,11 +74,6 @@ export function MapNode({
         {state === 'cleared' && (
           <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Check className="size-3.5" aria-hidden />
-          </span>
-        )}
-        {state === 'available' && cost != null && (
-          <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
-            −{cost}
           </span>
         )}
       </Body>

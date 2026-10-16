@@ -16,8 +16,8 @@ import { Banner } from '@/kit/Banner';
 import { MapNode, type MapNodeState } from '@/kit/MapNode';
 import { ScreenFrame } from '@/kit/ScreenFrame';
 import { buildBattle, graphFor } from '@pirate/run-core/run/battle';
-import { applyAction, availableMoves, legCost } from '@pirate/run-core/run/engine';
-import { BATTLE_REWARD, HUNT_BOSS_BONUS, TREASURE_PER_SUPPLY, classForHullLevel } from '@pirate/run-core/run/rules';
+import { applyAction, availableMoves } from '@pirate/run-core/run/engine';
+import { BATTLE_REWARD, HUNT_BOSS_BONUS, TREASURE_PER_PLUNDER, classForHullLevel } from '@pirate/run-core/run/rules';
 import type { RouteNode } from '@pirate/run-core/graph/types';
 import type { RunState } from '@pirate/run-core/run/types';
 import { runStore, useRun } from '../../run/runStore';
@@ -37,7 +37,7 @@ function rewardText(t: TFunction, node: RouteNode): string | null {
     return null;
   }
   if (node.kind === 'hunt') {
-    return t('voyage.rewardHunt', { count: BATTLE_REWARD.hunt, per: TREASURE_PER_SUPPLY, boss: HUNT_BOSS_BONUS });
+    return t('voyage.rewardHunt', { count: BATTLE_REWARD.hunt, per: TREASURE_PER_PLUNDER, boss: HUNT_BOSS_BONUS });
   }
   return t('voyage.reward', { count: BATTLE_REWARD[node.kind === 'boss' ? 'boss' : (node.battle ?? 'standard')] });
 }
@@ -95,8 +95,6 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
     })
     .sort((a, b) => a.rank - b.rank);
 
-  const cost = selected ? legCost(run, selected.id) : null;
-  const short = cost !== null && run.supplies < cost;
   const reward = selected ? rewardText(t, selected) : null;
   // Who is in the fight at the chosen stop: the battle it would be, built as if the ship had sailed there.
   const fight = useMemo(() => {
@@ -161,7 +159,6 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
                 state={state}
                 label={nodeTitle(t, node)}
                 stateLabel={stateLabel(t, state)}
-                cost={state === 'available' ? legCost(run, node.id) : null}
                 {...(state === 'current' ? { shipSrc } : {})}
                 {...(state === 'available' ? { onSelect: () => setSelectedId(node.id) } : {})}
                 style={{ left: node.x * WORLD_W, top: yOf(node) }}
@@ -192,7 +189,6 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
                 <DialogTitle className="font-head text-2xl font-bold">{nodeTitle(t, selected)}</DialogTitle>
                 <DialogDescription className="text-base">{nodeBlurb(t, selected)}</DialogDescription>
               </DialogHeader>
-              <p className="text-sm font-bold">{t('voyage.legCost', { count: cost ?? 0 })}</p>
               {reward && <p className="text-sm font-bold">{reward}</p>}
               {fight && (
                 <div className="flex flex-col gap-0.5 text-sm">
@@ -206,7 +202,6 @@ export function VoyageMapScreen({ run, onBack }: { run: RunState; onBack: () => 
                   </p>
                 </div>
               )}
-              {short && <Banner tone="warning">{t('voyage.willStarve')}</Banner>}
               <DialogFooter className="gap-2 sm:flex-col-reverse">
                 <DialogClose asChild>
                   <Button variant="secondary">{t('voyage.cancel')}</Button>

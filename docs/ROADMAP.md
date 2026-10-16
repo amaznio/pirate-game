@@ -1135,6 +1135,17 @@ runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 
 ## Log
 
+- 2026-10-16: the solo voyage's supplies became **plunder**, the voyage's money (PIR-140).
+  A leg no longer costs anything and there is no hold, cap or starvation. Fights, treasure and
+  bosses pay plunder; a port is a shop that sells the upgrades it offers for set prices
+  (repair 4, cannonballs 5, hull 8, cannon 12, damage 16), and the player buys any they can
+  afford and then sails on. The provisions upgrade is gone. The ship starts with 8. New
+  actions `buyUpgrade` and `leavePort` replace `chooseUpgrade`; save version 4. The same day:
+  areas of 7, 9, 10, 11 and 12 layers (about 31 battles, was 46), the damage upgrade capped
+  at +2 and offered later, and ordinary-fight fleets that step up later. The harness bot
+  shops greedily; it ends a voyage with about 12 plunder unspent and +0.3 damage, so the
+  budget is roughly right. All of it is a first guess for the user to play (PIR-67).
+
 - 2026-10-16: phase 9 (sea monsters and the hunt) is playable on `feature/sea-monster-hunting`:
   monsters, the hunt objective with treasure, leaving and the Kraken, a hunt node on the voyage
   map, the Hunt mode in the menu, redrawn monster art, an Atlantean ship sheet, a map you drag, a

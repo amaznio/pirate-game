@@ -379,7 +379,6 @@
     "ambushProgress": "Raiders: {{afloat}} afloat, {{coming}} on the way · turn {{turn}} of {{turns}}"
   },
   "voyage": {
-    "supplies": "Supplies",
     "hull": "Hull",
     "cannonballs": "Cannonballs",
     "nextBattle": "Next battle",
@@ -404,18 +403,12 @@
     "centreShip": "Centre on my ship",
     "sailHere": "Sail here",
     "cancel": "Cancel",
-    "legCost_one": "The leg costs {{count}} supply.",
-    "legCost_other": "The leg costs {{count}} supplies.",
-    "willStarve": "Not enough supplies: the hull will take 1 damage.",
-    "reward": "Reward: supplies +{{count}}.",
-    "rewardHunt": "Reward: supplies +{{count}}, and more for the treasure you bring out ({{per}} treasure is one supply), and +{{boss}} for the Kraken.",
+    "reward": "Reward: plunder +{{count}}.",
+    "rewardHunt": "Reward: plunder +{{count}}, and more for the treasure you bring out ({{per}} treasure is one plunder), and +{{boss}} for the Kraken.",
     "landfall": "Landfall",
     "portArrival": "You reach {{name}}.",
     "repaired": "Hull mended: +{{count}}",
-    "restocked": "Supplies: +{{count}}",
     "reloaded": "Cannonballs restocked: +{{count}}",
-    "chooseUpgrade": "Choose an upgrade",
-    "takeUpgrade": "Take upgrade",
     "bossBlurb": "A flagship guards these waters. Sink it to sail on.",
     "huntBlurb": "Sea monsters and a Kraken, and treasure for whoever takes it. Leave through the shallows when you choose.",
     "huntAgainst": "The sea monsters, and the Kraken",
@@ -425,7 +418,6 @@
     "defeatTitle": "Voyage over",
     "defeatReason": {
       "sunk": "Your ship was sunk.",
-      "starved": "The hold ran dry and the ship went down.",
       "abandoned": "You abandoned the voyage."
     },
     "statBattles": "Battles won",
@@ -435,13 +427,12 @@
     "statShip": "Final ship",
     "mainMenu": "Main menu",
     "seeResult": "See the result",
-    "eventStarved": "The hold ran dry: hull -{{count}}.",
-    "eventBattleWon": "Victory! Supplies: +{{count}}.",
-    "eventHuntWon": "You left with {{haul}} in treasure. Supplies: +{{count}}.",
-    "eventKrakenSlain": "The Kraken is slain: a bonus in supplies.",
+    "eventBattleWon": "Victory! Plunder: +{{count}}.",
+    "eventHuntWon": "You left with {{haul}} in treasure. Plunder: +{{count}}.",
+    "eventKrakenSlain": "The Kraken is slain: a bonus in plunder.",
     "eventAreaCleared": "Area {{n}} cleared!",
     "eventRefit": "Your {{from}} is refitted as a {{to}}!",
-    "eventUpgraded": "Upgrade taken: {{name}}.",
+    "eventUpgraded": "Bought: {{name}}.",
     "upgrades": {
       "reinforceHull": {
         "name": "Reinforce the hull",
@@ -462,11 +453,15 @@
       "repair": {
         "name": "Carpenter",
         "blurb": "Mend 2 hull."
-      },
-      "provisions": {
-        "name": "Provisions",
-        "blurb": "+4 supplies."
       }
-    }
+    },
+    "plunder": "Plunder",
+    "shopTitle": "For sale",
+    "buy": "Buy",
+    "sailOn": "Sail on",
+    "notEnough": "Not enough plunder",
+    "soldOut": "Nothing else here is of use to your ship.",
+    "priceLabel": "Price: {{price}}",
+    "portBlurb": "Spend your plunder on upgrades."
   }
 }

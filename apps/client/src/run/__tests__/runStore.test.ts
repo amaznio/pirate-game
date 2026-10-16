@@ -38,9 +38,12 @@ describe('the run store', () => {
     const storage = memoryStorage();
     const store = createRunStore(storage);
     store.getState().start(99);
-    const offer = store.getState().run!.offer![0]!;
-    expect(store.getState().apply({ type: 'chooseUpgrade', upgrade: offer })).toBe(true);
-    expect(store.getState().events[0]).toMatchObject({ type: 'upgraded', upgrade: offer });
+    // The first port sells a hull upgrade for exactly what the ship starts with.
+    expect(store.getState().run!.offer).toContain('reinforceHull');
+    expect(store.getState().apply({ type: 'buyUpgrade', upgrade: 'reinforceHull' })).toBe(true);
+    expect(store.getState().events[0]).toMatchObject({ type: 'upgraded', upgrade: 'reinforceHull' });
+    expect(store.getState().run!.phase).toBe('port');
+    expect(store.getState().apply({ type: 'leavePort' })).toBe(true);
     expect(store.getState().run!.phase).toBe('map');
 
     const next = availableMoves(store.getState().run!)[0]!;
@@ -66,11 +69,11 @@ describe('the run store', () => {
     const store = createRunStore(storage);
     store.getState().start(5);
     // Sail to the first fight and begin it.
-    store.getState().apply({ type: 'chooseUpgrade', upgrade: store.getState().run!.offer![0]! });
+    store.getState().apply({ type: 'leavePort' });
     for (let guard = 0; guard < 40 && store.getState().run!.phase !== 'battle'; guard += 1) {
       store.getState().apply({ type: 'travel', to: availableMoves(store.getState().run!)[0]!.id });
       if (store.getState().run!.phase === 'port') {
-        store.getState().apply({ type: 'chooseUpgrade', upgrade: store.getState().run!.offer![0]! });
+        store.getState().apply({ type: 'leavePort' });
       }
     }
     expect(store.getState().run!.phase).toBe('battle');

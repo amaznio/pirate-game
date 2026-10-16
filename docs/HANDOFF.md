@@ -306,6 +306,11 @@ Known open issues for E: a scripted always-win run is about 65 legs and 45 to 49
 battles and never runs short of supplies, so supplies add no tension and the run
 may be too long.
 
+**Plunder (16 Oct 2026):** supplies are now money. No leg cost, hold or starvation; ports are shops
+(`buyUpgrade`, `leavePort`, prices in `UPGRADE_PRICE` in `run/rules.ts`), save version 4. See the
+ROADMAP log. The voyage was also shortened to about 31 battles. The user still has to play it
+(PIR-67); the harness bot cannot judge how fights feel.
+
 ## 7b. UI next steps
 
 1. The user has looked at the screens listed under "Not seen in a browser"

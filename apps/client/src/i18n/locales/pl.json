@@ -387,7 +387,6 @@
     "ambushProgress": "Najeźdźcy: {{afloat}} na wodzie, {{coming}} w drodze · tura {{turn}} z {{turns}}"
   },
   "voyage": {
-    "supplies": "Zapasy",
     "hull": "Kadłub",
     "cannonballs": "Kule armatnie",
     "nextBattle": "Następna bitwa",
@@ -412,20 +411,12 @@
     "centreShip": "Wyśrodkuj na moim statku",
     "sailHere": "Płyń tutaj",
     "cancel": "Anuluj",
-    "legCost_one": "Ten odcinek kosztuje {{count}} zapas.",
-    "legCost_few": "Ten odcinek kosztuje {{count}} zapasy.",
-    "legCost_many": "Ten odcinek kosztuje {{count}} zapasów.",
-    "legCost_other": "Ten odcinek kosztuje {{count}} zapasu.",
-    "willStarve": "Za mało zapasów: kadłub dostanie 1 obrażenie.",
-    "reward": "Nagroda: zapasy +{{count}}.",
-    "rewardHunt": "Nagroda: zapasy +{{count}}, a do tego za wywieziony skarb (każde {{per}} skarbu to jeden zapas) i +{{boss}} za Krakena.",
+    "reward": "Nagroda: łup +{{count}}.",
+    "rewardHunt": "Nagroda: łup +{{count}}, a więcej za skarb, który wywieziesz ({{per}} skarbu to 1 łup), i +{{boss}} za Krakena.",
     "landfall": "Zawinięcie do portu",
     "portArrival": "Docierasz do portu: {{name}}.",
     "repaired": "Kadłub naprawiony: +{{count}}",
-    "restocked": "Zapasy: +{{count}}",
     "reloaded": "Kule armatnie uzupełnione: +{{count}}",
-    "chooseUpgrade": "Wybierz ulepszenie",
-    "takeUpgrade": "Weź ulepszenie",
     "bossBlurb": "Okręt flagowy strzeże tych wód. Zatop go, by płynąć dalej.",
     "huntBlurb": "Morskie potwory i Kraken, a skarb dla tego, kto go zabierze. Opuść łowy przez płyciznę, kiedy zechcesz.",
     "huntAgainst": "Morskie potwory i Kraken",
@@ -435,7 +426,6 @@
     "defeatTitle": "Koniec wyprawy",
     "defeatReason": {
       "sunk": "Twój statek zatonął.",
-      "starved": "Ładownia opustoszała i statek poszedł na dno.",
       "abandoned": "Porzuciłeś wyprawę."
     },
     "statBattles": "Wygrane bitwy",
@@ -445,13 +435,12 @@
     "statShip": "Statek na końcu",
     "mainMenu": "Menu główne",
     "seeResult": "Zobacz wynik",
-    "eventStarved": "Ładownia opustoszała: kadłub -{{count}}.",
-    "eventBattleWon": "Zwycięstwo! Zapasy: +{{count}}.",
-    "eventHuntWon": "Odpływasz z {{haul}} skarbu. Zapasy: +{{count}}.",
-    "eventKrakenSlain": "Kraken pokonany: premia w zapasach.",
+    "eventBattleWon": "Zwycięstwo! Łup: +{{count}}.",
+    "eventHuntWon": "Odpływasz ze skarbem: {{haul}}. Łup: +{{count}}.",
+    "eventKrakenSlain": "Kraken pokonany: premia w łupach.",
     "eventAreaCleared": "Obszar {{n}} ukończony!",
     "eventRefit": "Twój statek ({{from}}) zostaje przebudowany na: {{to}}!",
-    "eventUpgraded": "Wybrane ulepszenie: {{name}}.",
+    "eventUpgraded": "Kupiono: {{name}}.",
     "upgrades": {
       "reinforceHull": {
         "name": "Wzmocnij kadłub",
@@ -472,11 +461,15 @@
       "repair": {
         "name": "Cieśla",
         "blurb": "Napraw 2 kadłuba."
-      },
-      "provisions": {
-        "name": "Prowiant",
-        "blurb": "+4 zapasy."
       }
-    }
+    },
+    "plunder": "Łup",
+    "shopTitle": "Na sprzedaż",
+    "buy": "Kup",
+    "sailOn": "Płyń dalej",
+    "notEnough": "Za mało łupów",
+    "soldOut": "Nic więcej tu nie przyda się twojemu statkowi.",
+    "priceLabel": "Cena: {{price}}",
+    "portBlurb": "Wydaj łup na ulepszenia."
   }
 }
