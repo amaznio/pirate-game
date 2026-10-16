@@ -135,9 +135,10 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
         if (!step.ok) {
           throw new Error(`The bot could not finish a battle: ${step.error}`);
         }
-        won = step.state.phase !== 'defeat';
+        won = step.events.some((event) => event.type === 'battleWon');
+        const sunk = step.state.phase === 'defeat';
         state = step.state;
-        if (!won && options.playOn) {
+        if (sunk && options.playOn) {
           // Count the loss, then sail on as though the hero had won.
           state = before;
           state = act({ type: 'finishBattle', result: scriptedResult(before, setup) });
@@ -161,7 +162,7 @@ export function playRun(seed: number, options: BotOptions = {}): RunReport {
         outcome: won ? 'win' : outcomeOf(result, setup.heroPlayerId, setup.config),
         timedOut: result === null,
         hullBefore: before.hull,
-        hullAfter: won ? state.hull : 0,
+        hullAfter: state.phase === 'defeat' ? 0 : state.hull,
       });
     }
   }

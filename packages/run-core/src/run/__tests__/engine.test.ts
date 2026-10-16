@@ -292,6 +292,46 @@ describe('finishing a battle', () => {
     expect(step(run, { type: 'finishBattle', result: nobody }).state.phase).toBe('defeat');
   });
 
+  describe('a salvage race', () => {
+    /** The ship at a salvage node of area 0, with a fight to finish. */
+    function atSalvage(): RunState {
+      for (let seed = SEED; seed < SEED + 200; seed += 1) {
+        const run = startRun(seed);
+        const node = graphFor(run).nodes.find((n) => n.battle === 'salvage');
+        if (node) {
+          return { ...run, phase: 'battle', nodeId: node.id };
+        }
+      }
+      throw new Error('No salvage node in 200 seeds');
+    }
+
+    it('lets the run go on, with no reward, when the race is lost with the ship afloat', () => {
+      const run = atSalvage();
+      const lost = { ...winningResult(run), outcome: { kind: 'win' as const, teamId: 'someone-else' } };
+      const done = step(run, { type: 'finishBattle', result: lost });
+      expect(done.state.phase).toBe('map');
+      expect(done.state.plunder).toBe(run.plunder);
+      expect(done.state.battlesWon).toBe(run.battlesWon);
+      expect(done.state.hull).toBe(Math.max(1, run.hull - 1));
+      expect(done.state.ammo).toBe(Math.max(0, run.ammo - 1));
+      expect(done.events).toEqual([{ type: 'battleLost', kind: 'salvage' }]);
+    });
+
+    it('lets the run go on when the race is drawn with the ship afloat', () => {
+      const run = atSalvage();
+      const drawn = { ...winningResult(run), outcome: { kind: 'draw' as const } };
+      const done = step(run, { type: 'finishBattle', result: drawn });
+      expect(done.state.phase).toBe('map');
+      expect(done.state.plunder).toBe(run.plunder);
+    });
+
+    it('still ends the run when the hero is sunk', () => {
+      const run = atSalvage();
+      const done = step(run, { type: 'finishBattle', result: losingResult(run) });
+      expect(done.state).toMatchObject({ phase: 'defeat', defeatReason: 'sunk', hull: 0 });
+    });
+  });
+
   it('refuses a result when there is no battle', () => {
     const run = startRun(SEED);
     expect(applyAction(run, { type: 'finishBattle', result: winningResult(atBattle()) }).ok).toBe(false);

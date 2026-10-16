@@ -106,6 +106,8 @@ export type RunEvent =
       readonly haul?: number;
       readonly bossSlain?: boolean;
     }
+  /** An objective failed with the ship still afloat: no reward, but the voyage goes on. */
+  | { readonly type: 'battleLost'; readonly kind: BattleKind }
   | { readonly type: 'areaCleared'; readonly areaIndex: number }
   | { readonly type: 'victory' }
   | { readonly type: 'defeat'; readonly reason: DefeatReason };

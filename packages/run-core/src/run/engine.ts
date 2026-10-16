@@ -198,6 +198,19 @@ function finishBattle(
     result.outcome.kind === 'win' &&
     result.outcome.teamId === hero.teamId &&
     (setup.kind === 'hunt' ? result.hunt?.ending === 'left' && hero.escaped === true : hero.afloat);
+  // A salvage race lost or drawn with the ship still afloat costs the cargo (no reward), not the voyage.
+  if (hero !== undefined && !won && setup.kind === 'salvage' && hero.afloat) {
+    return ok(
+      {
+        ...state,
+        hull: Math.max(1, Math.min(maxHullFor(state.hullLevel), hero.hull)),
+        ammo: Math.max(0, hero.ammo),
+        battleStarted: undefined,
+        phase: 'map',
+      },
+      [{ type: 'battleLost', kind: 'salvage' }],
+    );
+  }
   if (!hero || !won) {
     return ok({ ...state, hull: 0, phase: 'defeat', defeatReason: 'sunk', battleStarted: undefined }, [
       { type: 'defeat', reason: 'sunk' },

@@ -295,6 +295,7 @@
     "victoryTitle": "Zwycięstwo!",
     "drawTitle": "Wzajemne zniszczenie",
     "sunkTitle": "Twój statek zatonął",
+    "salvageLostTitle": "Ładunek przepadł",
     "victoryBody": "Wrogą flotę zamieniono w szczątki.",
     "drawBody": "Wszystkie statki poszły na dno razem.",
     "sunkBodyAlt": "Więcej szczęścia w następnym rejsie, kapitanie.",

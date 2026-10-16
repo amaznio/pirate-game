@@ -47,7 +47,9 @@ export function GameOverDialog({
       ? t('result.victoryTitle')
       : result === 'draw'
         ? t('result.drawTitle')
-        : t('result.sunkTitle');
+        : note === 'salvageLost'
+          ? t('result.salvageLostTitle')
+          : t('result.sunkTitle');
   const body =
     huntBody ??
     (note
@@ -87,7 +89,7 @@ export function GameOverDialog({
         <div className="flex flex-col gap-2">
           {onContinue && (
             <Button size="lg" onClick={onContinue}>
-              {result === 'win' ? t('voyage.continue') : t('voyage.seeResult')}
+              {result === 'win' || note === 'salvageLost' ? t('voyage.continue') : t('voyage.seeResult')}
             </Button>
           )}
           {!onContinue && canRestart && (

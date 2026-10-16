@@ -287,6 +287,7 @@
     "victoryTitle": "Victory!",
     "drawTitle": "Mutual destruction",
     "sunkTitle": "Your ship has sunk",
+    "salvageLostTitle": "The cargo is lost",
     "victoryBody": "The enemy fleet is wreckage.",
     "drawBody": "Every ship went down together.",
     "sunkBodyAlt": "Better luck next voyage, captain.",
