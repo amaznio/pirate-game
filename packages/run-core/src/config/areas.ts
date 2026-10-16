@@ -33,15 +33,15 @@ const BASE_WEIGHTS: Readonly<Record<BattleKind, number>> = {
 
 /**
  * The five areas to start with, each a bigger route than the one before and on
- * rougher water. Starting guesses (10, 12, 14, 16 and 18 layers) from the
- * roadmap; the harness will tune them.
+ * rougher water. 7, 9, 10, 11 and 12 layers, about 33 battles a voyage (it was 10 to
+ * 18 and 46 battles, which the tuning in PIR-66 judged too long).
  */
 export const AREAS: readonly AreaSpec[] = [
-  { layers: 10, maxWidth: 3, portEvery: 3, sea: 'calm', openingStandardLayers: 2, battleWeights: BASE_WEIGHTS, hunts: 0 },
-  { layers: 12, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 1, battleWeights: BASE_WEIGHTS, hunts: 1 },
-  { layers: 14, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
-  { layers: 16, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
-  { layers: 18, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 7, maxWidth: 3, portEvery: 3, sea: 'calm', openingStandardLayers: 2, battleWeights: BASE_WEIGHTS, hunts: 0 },
+  { layers: 9, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 10, maxWidth: 3, portEvery: 3, sea: 'normal', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 11, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
+  { layers: 12, maxWidth: 3, portEvery: 3, sea: 'stormy', openingStandardLayers: 0, battleWeights: BASE_WEIGHTS, hunts: 1 },
 ];
 
 /** Checks a spec and says what is wrong with it, or returns nothing if it is fine. */

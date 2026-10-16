@@ -51,7 +51,7 @@ describe('a save that cannot be trusted gives nothing', () => {
   it('refuses an old version', () => {
     expect(parseRun(tweak({ version: 0 }))).toBeNull();
     expect(parseRun(tweak({ version: 1 }))).toBeNull();
-    expect(parseRun(tweak({ version: 3 }))).toBeNull();
+    expect(parseRun(tweak({ version: 2 }))).toBeNull();
   });
 
   it('refuses numbers outside what the engine can make', () => {

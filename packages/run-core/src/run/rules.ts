@@ -55,12 +55,12 @@ export function ammoFullFor(level: number, ammoBonus: number): number {
 export const CANNONBALLS_UPGRADE = 2;
 /** What the repair upgrade mends, and the provisions upgrade adds. */
 export const REPAIR_UPGRADE = 2;
-export const PROVISIONS_UPGRADE = 4;
+export const PROVISIONS_UPGRADE = 3;
 
 /** What a port does for the ship on arrival; a landfall (the start of an area) does more. */
 export const PORT_REPAIR = 2;
 export const LANDFALL_REPAIR = 4;
-export const PORT_SUPPLIES = 3;
+export const PORT_SUPPLIES = 2;
 /** A landfall restocks the hold to the top. */
 export const LANDFALL_FILLS_HOLD = true;
 
@@ -69,12 +69,12 @@ export const STARVATION_HULL_COST = 1;
 
 /** Supplies a won battle pays; a merchant kill pays the most. */
 export const BATTLE_REWARD: Readonly<Record<BattleKind | 'boss' | 'hunt', number>> = {
-  standard: 2,
-  survive: 3,
-  salvage: 3,
-  merchant: 4,
-  ambush: 4,
-  boss: 4,
+  standard: 1,
+  survive: 2,
+  salvage: 2,
+  merchant: 3,
+  ambush: 3,
+  boss: 3,
   hunt: 1,
 };
 

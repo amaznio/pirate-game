@@ -31,7 +31,7 @@ export type RunPhase = 'map' | 'port' | 'battle' | 'victory' | 'defeat';
 export type DefeatReason = 'sunk' | 'starved' | 'abandoned';
 
 /** Bumped when the saved shape changes, so an old save is refused, not misread. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /**
  * Everything about a run, as plain data so it can be saved and loaded. The map
