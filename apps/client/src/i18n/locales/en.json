@@ -77,9 +77,6 @@
     "voyageBlurb": "A map of battles and ports, with a boss at the end.",
     "comingSoon": "Coming soon",
     "advanced": "Advanced",
-    "yourBattle": "Your battle",
-    "opponentsCount_one": "{{count}} opponent",
-    "opponentsCount_other": "{{count}} opponents",
     "play": "Play",
     "chooseMode": "Choose a mode",
     "details": "About {{name}}"
@@ -389,11 +386,6 @@
     "homePort": "Home port",
     "port": "Port",
     "boss": "Boss",
-    "kindStart": "Start",
-    "kindBattle": "Battle",
-    "kindPort": "Repair",
-    "kindHunt": "Hunt",
-    "kindBoss": "Boss battle",
     "cleared": "cleared",
     "here": "you are here",
     "locked": "locked",
@@ -424,15 +416,10 @@
     "reloaded": "Cannonballs restocked: +{{count}}",
     "chooseUpgrade": "Choose an upgrade",
     "takeUpgrade": "Take upgrade",
-    "briefingTitle": "Battle ahead",
-    "bossBattle": "Boss battle",
     "bossBlurb": "A flagship guards these waters. Sink it to sail on.",
     "huntBlurb": "Sea monsters and a Kraken, and treasure for whoever takes it. Leave through the shallows when you choose.",
-    "huntBriefing": "Sea monsters hold these waters, and a Kraken lies among them. Take the chests, sink what you can, and leave through the shallows with the haul: it pays in supplies, and the Kraken pays most. Sink first and the voyage is lost.",
     "huntAgainst": "The sea monsters, and the Kraken",
-    "youSail": "You sail",
     "against": "Against",
-    "cannonsSide_one": "{{count}} cannon a side",
     "victoryTitle": "Voyage complete!",
     "victoryBody": "You beat the last boss and crossed every sea.",
     "defeatTitle": "Voyage over",
@@ -480,7 +467,6 @@
         "name": "Provisions",
         "blurb": "+4 supplies."
       }
-    },
-    "cannonsSide_other": "{{count}} cannons a side"
+    }
   }
 }

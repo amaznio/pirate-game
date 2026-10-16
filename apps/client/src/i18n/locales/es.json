@@ -77,9 +77,6 @@
     "voyageBlurb": "Un mapa de batallas y puertos, con un jefe al final.",
     "comingSoon": "Próximamente",
     "advanced": "Avanzado",
-    "yourBattle": "Tu batalla",
-    "opponentsCount_one": "{{count}} rival",
-    "opponentsCount_other": "{{count}} rivales",
     "play": "Jugar",
     "chooseMode": "Elige un modo",
     "details": "Acerca de {{name}}"
@@ -389,11 +386,6 @@
     "homePort": "Puerto base",
     "port": "Puerto",
     "boss": "Jefe",
-    "kindStart": "Inicio",
-    "kindBattle": "Batalla",
-    "kindPort": "Reparación",
-    "kindHunt": "Caza",
-    "kindBoss": "Batalla de jefe",
     "cleared": "superado",
     "here": "estás aquí",
     "locked": "bloqueado",
@@ -424,15 +416,10 @@
     "reloaded": "Balas de cañón repuestas: +{{count}}",
     "chooseUpgrade": "Elige una mejora",
     "takeUpgrade": "Elegir mejora",
-    "briefingTitle": "Batalla a la vista",
-    "bossBattle": "Batalla de jefe",
     "bossBlurb": "Un buque insignia vigila estas aguas. Hunde para poder seguir.",
     "huntBlurb": "Monstruos marinos y un Kraken, y tesoro para quien lo coja. Sal por las aguas someras cuando quieras.",
-    "huntBriefing": "Monstruos marinos dominan estas aguas, y entre ellos acecha un Kraken. Coge los cofres, hunde lo que puedas y sal por las aguas someras con el botín: se paga en provisiones, y el Kraken paga más. Si te hundes antes, el viaje se pierde.",
     "huntAgainst": "Los monstruos marinos y el Kraken",
-    "youSail": "Navegas en",
     "against": "Contra",
-    "cannonsSide_one": "{{count}} cañón por banda",
     "victoryTitle": "¡Travesía completada!",
     "victoryBody": "Derrotaste al último jefe y cruzaste todos los mares.",
     "defeatTitle": "Fin de la travesía",
@@ -480,7 +467,6 @@
         "name": "Provisiones",
         "blurb": "+4 provisiones."
       }
-    },
-    "cannonsSide_other": "{{count}} cañones por banda"
+    }
   }
 }

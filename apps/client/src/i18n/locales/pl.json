@@ -77,11 +77,6 @@
     "voyageBlurb": "Mapa bitew i portów, a na końcu boss.",
     "comingSoon": "Wkrótce",
     "advanced": "Zaawansowane",
-    "yourBattle": "Twoja bitwa",
-    "opponentsCount_one": "{{count}} przeciwnik",
-    "opponentsCount_few": "{{count}} przeciwników",
-    "opponentsCount_many": "{{count}} przeciwników",
-    "opponentsCount_other": "{{count}} przeciwnika",
     "play": "Graj",
     "chooseMode": "Wybierz tryb",
     "details": "Informacje: {{name}}"
@@ -399,11 +394,6 @@
     "homePort": "Port macierzysty",
     "port": "Port",
     "boss": "Boss",
-    "kindStart": "Start",
-    "kindBattle": "Bitwa",
-    "kindPort": "Naprawa",
-    "kindHunt": "Łowy",
-    "kindBoss": "Bitwa z bossem",
     "cleared": "ukończone",
     "here": "jesteś tutaj",
     "locked": "zablokowane",
@@ -436,15 +426,10 @@
     "reloaded": "Kule armatnie uzupełnione: +{{count}}",
     "chooseUpgrade": "Wybierz ulepszenie",
     "takeUpgrade": "Weź ulepszenie",
-    "briefingTitle": "Bitwa przed nami",
-    "bossBattle": "Bitwa z bossem",
     "bossBlurb": "Okręt flagowy strzeże tych wód. Zatop go, by płynąć dalej.",
     "huntBlurb": "Morskie potwory i Kraken, a skarb dla tego, kto go zabierze. Opuść łowy przez płyciznę, kiedy zechcesz.",
-    "huntBriefing": "Te wody należą do morskich potworów, a wśród nich czai się Kraken. Zbieraj skrzynie, zatapiaj, co zdołasz, i wypłyń przez płyciznę z łupem: płaci się nim zapasami, a Kraken płaci najwięcej. Jeśli zatoniesz wcześniej, rejs jest przegrany.",
     "huntAgainst": "Morskie potwory i Kraken",
-    "youSail": "Płyniesz",
     "against": "Przeciwko",
-    "cannonsSide_one": "{{count}} działo na burtę",
     "victoryTitle": "Wyprawa zakończona!",
     "victoryBody": "Pokonałeś ostatniego bossa i przepłynąłeś wszystkie morza.",
     "defeatTitle": "Koniec wyprawy",
@@ -492,9 +477,6 @@
         "name": "Prowiant",
         "blurb": "+4 zapasy."
       }
-    },
-    "cannonsSide_other": "{{count}} dział na burtę",
-    "cannonsSide_few": "{{count}} działa na burtę",
-    "cannonsSide_many": "{{count}} dział na burtę"
+    }
   }
 }
