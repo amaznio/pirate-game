@@ -6,13 +6,12 @@ import type { MapStyle } from '@pirate/game-core/board/generateBoard';
 import { DEFAULT_SHIP_TYPE_ID } from '@pirate/game-core/config/shipTypes';
 import { SELECTABLE_MONSTER_TYPE_IDS } from '@pirate/game-core/config/monsterTypes';
 import type { MonsterTypeId } from '@pirate/game-core/domain/Monster';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { ChoiceGroup, ChoiceRow } from '@/kit/ChoiceRow';
-import { CardTitle, Field } from '@/kit/Field';
+import { CardHeading, Field } from '@/kit/Field';
 import { ScreenFrame } from '@/kit/ScreenFrame';
 import { Segmented } from '@/kit/Segmented';
 import { Stepper } from '@/kit/Stepper';
@@ -86,48 +85,27 @@ export function QuickBattleScreen({ onBack, onPlay }: QuickBattleScreenProps) {
         </Button>
       }
     >
-      {/* On a phone the summary comes first, then the choices, then Advanced. */}
+      {/* Two cards side by side on a wide screen, one under the other on a phone. */}
       <div className="grid gap-4 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-x-6">
-        <Card className="lg:col-start-2 lg:row-start-1">
-          <CardTitle>{t('menu.yourBattle')}</CardTitle>
-          <p className="font-head text-2xl font-bold">{objectiveLabel(t, objective)}</p>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">{t('menu.opponentsCount', { count: opponents })}</Badge>
-            <Badge variant="secondary">
-              {t('menu.skill')}: {aiLevelLabel(t, difficulty)}
-            </Badge>
-            <Badge variant="secondary">
-              {t('menu.seas')}: {mapStyleLabel(t, mapStyle)}
-            </Badge>
-            <Badge variant="secondary">
-              {t('common.loot')}: {loot ? t('common.lootOn') : t('common.lootOff')}
-            </Badge>
-            {monsters && <Badge variant="secondary">{t('common.monster')}</Badge>}
-            <Badge variant="secondary">
-              {t('menu.yourShip')}: {shipLabel(t, yourShip)}
-            </Badge>
-            <Badge variant="secondary">
-              {t('menu.theirShips')}: {shipLabel(t, theirShip)}
-            </Badge>
+        <Card className="gap-0 p-0 lg:col-start-1 lg:row-start-1">
+          <CardHeading>{t('menu.objective')}</CardHeading>
+          <div className="p-4">
+            <ChoiceGroup value={objective} onChange={setObjective} label={t('menu.objective')}>
+              {OBJECTIVE_CHOICES.map((choice) => (
+                <ChoiceRow
+                  key={choice}
+                  value={choice}
+                  title={objectiveLabel(t, choice)}
+                  rule={objectiveBlurb(t, choice)}
+                />
+              ))}
+            </ChoiceGroup>
           </div>
         </Card>
-        <section className="flex flex-col gap-3 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-          <CardTitle>{t('menu.objective')}</CardTitle>
-          <ChoiceGroup value={objective} onChange={setObjective} label={t('menu.objective')}>
-            {OBJECTIVE_CHOICES.map((choice) => (
-              <ChoiceRow
-                key={choice}
-                value={choice}
-                title={objectiveLabel(t, choice)}
-                rule={objectiveBlurb(t, choice)}
-              />
-            ))}
-          </ChoiceGroup>
-        </section>
         <Collapsible
           open={advancedOpen}
           onOpenChange={setAdvancedOpen}
-          className="lg:col-start-2 lg:row-start-2"
+          className="lg:col-start-2 lg:row-start-1"
         >
           <Card className="gap-0 p-0">
             <CollapsibleTrigger className="flex min-h-14 w-full items-center justify-between rounded-card px-4 text-left text-base font-bold outline-none focus-visible:ring-[3px] focus-visible:ring-ring">

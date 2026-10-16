@@ -22,6 +22,13 @@ export function Field({
   );
 }
 
+/** The heading row of a card that has none of its own padding: bold, with a rule under it (as Advanced has). */
+export function CardHeading({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="flex min-h-14 items-center border-b border-border px-4 text-base font-bold">{children}</h2>
+  );
+}
+
 /** A small caps heading for a card. */
 export function CardTitle({ children }: { children: ReactNode }) {
   return (
