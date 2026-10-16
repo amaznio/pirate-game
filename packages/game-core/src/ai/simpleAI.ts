@@ -587,10 +587,14 @@ function lootFor(
   me: Ship,
   playerId: PlayerId,
   weight: number,
+  only?: ReadonlySet<string>,
 ): { loot: Loot[]; lootAt: Map<string, number> } {
   const loot: Loot[] = [];
   const lootAt = new Map<string, number>();
   for (const key of Object.keys(state.pickups ?? {}).sort()) {
+    if (only && !only.has(key)) {
+      continue;
+    }
     const value = lootValue(state, me, playerId, state.pickups![key].kind, weight, state.pickups![key].value);
     if (value > 0 && loot.length < 30) {
       const [x, y] = key.split(',').map(Number);
@@ -599,6 +603,31 @@ function lootFor(
     }
   }
   return { loot, lootAt };
+}
+
+/** How many pickups a blocker in a salvage match keeps its eye on. */
+const GUARDED_PICKUPS = 2;
+
+/**
+ * In a salvage match the opposition collects nothing; it tries to stop the hero
+ * team hauling. It sails for the pickups lying nearest the hero ships (where the
+ * ships are is public, their plans are not) and sits on them: a ship on a
+ * pickup's cell keeps the hero off it. Undefined for the hero team and outside salvage.
+ */
+function guardedPickups(state: GameState, me: Ship): ReadonlySet<string> | undefined {
+  if (state.objective?.kind !== 'salvage' || heroTeams(state).has(me.teamId)) {
+    return undefined;
+  }
+  const heroes = heroTeams(state);
+  const hostile = getHostiles(state, me).filter((ship) => heroes.has(ship.teamId));
+  const nearHero = (key: string): number => {
+    const [x, y] = key.split(',').map(Number);
+    return Math.min(...hostile.map((ship) => manhattan(ship.position, { x, y })));
+  };
+  const keys = Object.keys(state.pickups ?? {})
+    .sort()
+    .sort((a, b) => nearHero(a) - nearHero(b));
+  return new Set(hostile.length > 0 ? keys.slice(0, GUARDED_PICKUPS) : []);
 }
 
 /** The merchant a hero-team ship should be hunting, while it is afloat. */
@@ -698,6 +727,7 @@ export function planAiActions(
     ? merchantProfile(profileFor(difficulty ?? player.aiDifficulty))
     : forObjective(profileFor(difficulty ?? player.aiDifficulty), state, me);
 
+  const guarded = guardedPickups(state, me);
   const plan: Planning = {
     state,
     me,
@@ -713,6 +743,7 @@ export function planAiActions(
       me,
       playerId,
       state.objective?.kind === 'salvage' ? profile.salvageWeight : profile.lootWeight,
+      guarded,
     ),
     salvageSlope: state.objective?.kind === 'salvage' ? SALVAGE_SLOPE * profile.salvageWeight : 0,
     ...(exit ? { exit } : {}),

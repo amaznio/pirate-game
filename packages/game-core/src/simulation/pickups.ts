@@ -6,6 +6,7 @@ import { EMPTY_PICKUP_TALLY } from '../domain/MatchResult';
 import { PICKUP_EFFECTS } from '../config/gameRules';
 import { getShipType, tokenEconomyOf } from '../config/shipTypes';
 import type { MutableGameState } from './internal';
+import { heroTeams } from './objectives';
 import { produceTokens } from './tokens';
 
 /**
@@ -77,9 +78,11 @@ export function collectPickups(
     return [];
   }
 
+  // In a salvage match only the hero team hauls cargo; the opposition leaves it afloat.
+  const haulers = state.objective?.kind === 'salvage' ? heroTeams(state) : null;
   const shipsByCell = new Map<string, Ship[]>();
   for (const ship of Object.values(state.ships)) {
-    if (ship.hp <= 0) {
+    if (ship.hp <= 0 || (haulers && !haulers.has(ship.teamId))) {
       continue;
     }
     const key = cellKey(ship.position);

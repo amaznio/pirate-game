@@ -161,11 +161,17 @@ export function evaluateObjective(state: GameState, endOfTurn: boolean): Outcome
   const ranked = [...taken.entries()].sort((a, b) => b[1] - a[1]);
   const best = ranked[0];
   const afloat = Object.keys(state.pickups ?? {}).length;
-  if (!best || (best[1] < objective.target && afloat > 0)) {
+  if (best && best[1] >= objective.target) {
+    if (ranked[1] && ranked[1][1] === best[1]) {
+      return { kind: 'draw', reason: 'salvaged' };
+    }
+    return { kind: 'win', teamId: best[0], reason: 'salvaged' };
+  }
+  if (afloat > 0) {
     return null;
   }
-  if (best[1] === 0 || (ranked[1] && ranked[1][1] === best[1])) {
-    return { kind: 'draw', reason: 'salvaged' };
-  }
-  return { kind: 'win', teamId: best[0], reason: 'salvaged' };
+  // The cargo is gone and the hero team is short: it lost the race to whoever stopped it.
+  const hero = living.find((ship) => heroes.has(ship.teamId));
+  const opposition = living.find((ship) => !heroes.has(ship.teamId));
+  return hero && opposition ? { kind: 'win', teamId: opposition.teamId, reason: 'objective_failed' } : null;
 }

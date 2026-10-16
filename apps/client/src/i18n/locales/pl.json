@@ -50,7 +50,7 @@
     "objectiveBlurb": {
       "standard": "Wygrywa ostatni statek na wodzie.",
       "survive": "Utrzymaj się na wodzie przez {{turns}} tur. Jeśli twój statek zatonie wcześniej, przegrywasz.",
-      "salvage": "Wyścig po pływający ładunek: wygrywa ten, kto pierwszy zbierze {{target}}.",
+      "salvage": "Zbierz {{target}} sztuk pływającego ładunku, zanim przepadnie, podczas gdy wróg próbuje cię zablokować.",
       "merchant": "Nieuzbrojony statek towarowy ucieka ku wschodniej krawędzi, a twoi przeciwnicy go eskortują. Zatop kupca w ciągu {{turns}} tur, inaczej ucieknie.",
       "ambush": "Najeźdźcy otaczają cię od początku, a w kolejnych turach pojawiają się następni z rogów mapy. Masz działa doświadczonego kapitana (+1 obrażeń). Zatop wszystkich w ciągu {{turns}} tur."
     },
@@ -329,7 +329,7 @@
       "survived": "Utrzymałeś się na wodzie do końca.",
       "objectiveFailed": "Twój statek zatonął przed upływem czasu.",
       "salvageWon": "Zebrałeś najwięcej ładunku.",
-      "salvageLost": "Rywal zebrał ładunek pierwszy.",
+      "salvageLost": "Wróg nie pozwolił ci dotrzeć do ładunku.",
       "salvageDraw": "Nikt nie wysunął się na prowadzenie w wyścigu po ładunek.",
       "intercepted": "Zatopiłeś kupca, zanim uciekł.",
       "escaped": "Kupiec uciekł.",

@@ -33,12 +33,12 @@ describe('the AI in a salvage race', () => {
   // A plank beside the enemy's path: worth nothing to a ship with a whole hull.
   const planks: PickupMap = { '10,6': { kind: 'plank' }, '8,6': { kind: 'plank' } };
 
-  it('takes cargo it has no use for, because every pickup counts', () => {
+  it('does not collect cargo: that is for the hero team alone', () => {
     expect(enemyCollects(duel(undefined, planks))).toHaveLength(0);
-    expect(enemyCollects(duel(salvage, planks))).toHaveLength(1);
+    expect(enemyCollects(duel(salvage, planks))).toHaveLength(0);
   });
 
-  it('heads for the nearest cargo when none is within reach this turn', () => {
+  it('heads for the cargo to guard when none is within reach this turn', () => {
     const far: PickupMap = { '9,11': { kind: 'barrel' }, '10,12': { kind: 'barrel' }, '2,2': { kind: 'crate' } };
     const state = duel(salvage, far);
     const plan = planAiActions(state, 'enemy');

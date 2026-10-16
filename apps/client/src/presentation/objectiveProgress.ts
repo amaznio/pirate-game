@@ -151,7 +151,7 @@ export function endNote(
     return null;
   }
   if (view.objective.kind === 'salvage') {
-    if (reason !== 'salvaged' && result !== 'draw') {
+    if (reason !== 'salvaged' && reason !== 'objective_failed' && result !== 'draw') {
       return null;
     }
     return result === 'win' ? 'salvageWon' : result === 'loss' ? 'salvageLost' : 'salvageDraw';

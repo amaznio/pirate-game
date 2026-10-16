@@ -101,20 +101,33 @@ describe('salvage race', () => {
     expect(evaluateOutcome(state)).toEqual({ kind: 'win', teamId: 'enemy', reason: 'salvaged' });
   });
 
-  it('ends when nothing is left afloat, and the most taken wins', () => {
+  it('is lost to the opposition when the cargo is gone and the hero team is short', () => {
     const state = withTaken(duel(salvage), { player: one }, {});
-    expect(evaluateOutcome(state)).toEqual({ kind: 'win', teamId: 'player', reason: 'salvaged' });
+    expect(evaluateOutcome(state)).toEqual({ kind: 'win', teamId: 'enemy', reason: 'objective_failed' });
+    expect(evaluateOutcome(withTaken(duel(salvage), {}, {}))).toEqual({
+      kind: 'win',
+      teamId: 'enemy',
+      reason: 'objective_failed',
+    });
   });
 
-  it('is a draw on a tie, or when nobody took anything', () => {
-    expect(evaluateOutcome(withTaken(duel(salvage), { player: one, enemy: one }, {}))).toEqual({
+  it('is a draw only when two teams reach the target together', () => {
+    expect(evaluateOutcome(withTaken(duel(salvage), { player: some, enemy: some }))).toEqual({
       kind: 'draw',
       reason: 'salvaged',
     });
-    expect(evaluateOutcome(withTaken(duel(salvage), {}, {}))).toEqual({
-      kind: 'draw',
-      reason: 'salvaged',
-    });
+  });
+
+  it('gives the opposition nothing: its ship on a pickup leaves it afloat', () => {
+    const base = duel(salvage);
+    const state: GameState = {
+      ...base,
+      ships: { ...base.ships, 'enemy-ship': { ...base.ships['enemy-ship'], position: { x: 8, y: 3 }, heading: 'WEST' } },
+      pickups: { '7,3': { kind: 'barrel' } },
+    };
+    const result = resolveTurn(state, submitted(['FORWARD', null, null, null]));
+    expect(result.events.filter((e) => e.type === 'PICKUP_COLLECTED')).toHaveLength(0);
+    expect(result.nextState.pickups).toEqual({ '7,3': { kind: 'barrel' } });
   });
 
   it('ends the match in the phase the target is reached', () => {

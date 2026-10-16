@@ -50,7 +50,7 @@
     "objectiveBlurb": {
       "standard": "The last ship afloat wins.",
       "survive": "Stay afloat for {{turns}} turns. If your ship sinks first, you lose.",
-      "salvage": "A race for floating cargo: the first to take {{target}} wins.",
+      "salvage": "Haul {{target}} floating cargo before it is lost while the enemy tries to block you.",
       "merchant": "An unarmed cargo ship runs for the east edge and your opponents escort it. Sink it within {{turns}} turns, or it gets away.",
       "ambush": "Raiders close in on you from the start, and more arrive from the corners on later turns. You have a veteran captain’s guns (+1 damage). Sink every raider within {{turns}} turns."
     },
@@ -321,7 +321,7 @@
       "survived": "You stayed afloat to the end.",
       "objectiveFailed": "Your ship went down before the time was up.",
       "salvageWon": "You took the most cargo.",
-      "salvageLost": "A rival took the cargo first.",
+      "salvageLost": "The enemy kept you from the cargo.",
       "salvageDraw": "Nobody pulled ahead in the race for cargo.",
       "intercepted": "You sank the merchant before it got away.",
       "escaped": "The merchant got away.",

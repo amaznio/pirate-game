@@ -84,7 +84,7 @@ export const UPGRADE_PRICE: Readonly<Record<UpgradeId, number>> = {
 export const BATTLE_REWARD: Readonly<Record<BattleKind | 'boss' | 'hunt', number>> = {
   standard: 3,
   survive: 4,
-  salvage: 4,
+  salvage: 6,
   merchant: 6,
   ambush: 6,
   boss: 8,

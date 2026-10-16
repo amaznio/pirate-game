@@ -130,17 +130,17 @@ exports[`golden matches > plays the same way: duel, open water, seed 2, hard 1`]
 
 exports[`golden matches > plays the same way: duel, salvage race to 3, seed 6 1`] = `
 {
-  "events": 431,
-  "hash": "177c431ef674b3",
+  "events": 323,
+  "hash": "0c79c75acdbad7",
   "hull": {
-    "enemy-ship": 0,
-    "player-ship": 1,
+    "enemy-ship": 2,
+    "player-ship": 0,
   },
   "outcome": {
     "kind": "win",
-    "teamId": "player",
+    "teamId": "enemy",
   },
-  "turns": 19,
+  "turns": 14,
 }
 `;
 

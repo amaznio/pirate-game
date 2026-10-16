@@ -165,7 +165,7 @@ function seaFor(
   if (!loot && count === undefined) {
     return { ...water, ...chosen };
   }
-  const pickups = generatePickups({ width, height, seed, spawns, ...water, ...(count === undefined ? {} : { count, fair: true }) });
+  const pickups = generatePickups({ width, height, seed, spawns, ...water, ...(count === undefined ? {} : { count }) });
   return { ...water, ...chosen, pickups };
 }
 

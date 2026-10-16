@@ -9,10 +9,12 @@ import type { Position } from './Position';
  *
  *  - `survive`: the hero team wins by still being afloat when turn `turns`
  *    ends; it loses if it is sunk first.
- *  - `salvage`: a race for the floating pickups. The match ends when a team has
- *    taken `target` of them, or when none are left afloat; the team that took
- *    the most wins (a tie is a draw). The board is given `2 * target - 1`
- *    pickups, so reaching the target means holding a majority.
+ *  - `salvage`: the hero team hauls floating pickups while the opposition tries to
+ *    stop it. Only the hero team collects (a ship of the opposition on a pickup
+ *    takes nothing and leaves it afloat). The hero team wins on taking `target`
+ *    of them; if none are left afloat before that, it has lost the race and the
+ *    opposition wins (`objective_failed`). The board is given `target + 3`
+ *    pickups, so a few can be lost to a blocker or a collision.
  *  - `merchant`: an unarmed cargo ship makes for the `exit` edge of the board.
  *    The hero team wins by sinking it first. It loses if the merchant reaches
  *    the edge, gets clean away when turn `turns` ends, or the hero team is sunk.
@@ -58,7 +60,7 @@ export const OBJECTIVE_KINDS: readonly ObjectiveKind[] = ['survive', 'salvage', 
 /** Default numbers when an objective is chosen from a menu (a solo run sets its own). */
 export const DEFAULT_OBJECTIVES: Readonly<Record<ObjectiveKind, Objective>> = {
   survive: { kind: 'survive', turns: 8 },
-  salvage: { kind: 'salvage', target: 2 },
+  salvage: { kind: 'salvage', target: 4 },
   merchant: { kind: 'merchant', turns: 12 },
   ambush: { kind: 'ambush', turns: 14 },
   hunt: { kind: 'hunt' },
@@ -77,7 +79,7 @@ export function merchantRoute(height: number): { spawn: Position; heading: Direc
 
 /** How many pickups a salvage board holds. */
 export function salvagePickupCount(target: number): number {
-  return Math.max(1, 2 * target - 1);
+  return Math.max(1, target + 3);
 }
 
 /** Why a match with an objective ended as it did (absent for the usual last-team-standing end). */
