@@ -314,3 +314,20 @@ describe('hunt: leaving', () => {
     expect(parsePlayerActions({ movement: [null, null, null, null], cannons: emptyCannons, leave: 'yes' })).toBeNull();
   });
 });
+
+describe('hunt: where the monsters are put', () => {
+  it('keeps the monsters well apart from one another', () => {
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+      const config = createHuntConfig({ seed, sea: 'normal' });
+      const placed = (config.monsters ?? []).filter((spawn) => spawn.typeId !== 'tentacle');
+      for (const a of placed) {
+        for (const b of placed) {
+          if (a !== b) {
+            const gap = Math.max(Math.abs(a.position.x - b.position.x), Math.abs(a.position.y - b.position.y));
+            expect(gap).toBeGreaterThanOrEqual(3);
+          }
+        }
+      }
+    }
+  });
+});

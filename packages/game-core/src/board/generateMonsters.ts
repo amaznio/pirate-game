@@ -34,10 +34,16 @@ export interface GenerateMonstersOptions {
 const SPAWN_CLEARANCE = 4;
 const TRIES = 600;
 
-/** How hard to look for room: first towards the middle with water to spare, then anywhere it fits. */
+/**
+ * How hard to look for room: first towards the middle with water to spare and a good gap
+ * to the other monsters (so a hunt is not one crowd), then closer together, then anywhere.
+ */
 const ATTEMPTS = [
-  { clearance: SPAWN_CLEARANCE, breathingRoom: 1, middle: true, apart: 2 },
-  { clearance: SPAWN_CLEARANCE, breathingRoom: 0, middle: true, apart: 2 },
+  { clearance: SPAWN_CLEARANCE, breathingRoom: 1, middle: true, apart: 5 },
+  { clearance: SPAWN_CLEARANCE, breathingRoom: 0, middle: true, apart: 4 },
+  { clearance: SPAWN_CLEARANCE, breathingRoom: 1, middle: false, apart: 5 },
+  { clearance: SPAWN_CLEARANCE, breathingRoom: 0, middle: false, apart: 4 },
+  { clearance: 3, breathingRoom: 0, middle: false, apart: 2 },
   { clearance: 3, breathingRoom: 0, middle: false, apart: 1 },
 ] as const;
 
@@ -48,7 +54,7 @@ function distance(a: Position, b: Position): number {
 /**
  * Places each monster on open water, one after another: preferably towards the
  * middle of the board with free water round it, never on a rock, wind or
- * whirlpool, never near a ship's start and never touching another monster. If
+ * whirlpool, never near a ship's start and kept well apart from the other monsters. If
  * the sea is too crowded for that, it looks again with less room to spare, then
  * anywhere. Pure and deterministic from the seed, with its own random stream, so a
  * monster never changes the rocks, winds or loot of a seed. A monster that finds no

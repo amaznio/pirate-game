@@ -763,7 +763,8 @@ describe('monsters: the ship AI', () => {
 
   it('with monsters on, the AI duels still end decisively and the monsters now get shot', () => {
     let sunk = 0;
-    for (const seed of [1, 2, 3, 4]) {
+    // Monsters are kept well apart, so a duel meets one only some of the time: look over more seeds.
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
       const record = runMatch(createDuelConfig({ seed, sea: 'normal', monsters: ['giant-squid', 'squid', 'shark'] }));
       sunk += record.events.filter((e) => e.type === 'MONSTER_DESTROYED').length;
     }
