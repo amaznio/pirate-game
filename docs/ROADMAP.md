@@ -1,9 +1,8 @@
 # Roadmap
 
-> **Picking this up fresh? Read `docs/HANDOFF.md` first.** It records what was
-> built and why, the user's way of working, tool gotchas on this machine, the
-> git state (commits after `9da7b0f` are not pushed) and the ordered next
-> steps.
+> **Picking this up fresh?** Read `CLAUDE.md` (how to work, standing rules, tool gotchas),
+> then the open issues in Linear (team Pirate Game). Work state and the dated log live
+> in Linear and git; this file keeps the plan and the decisions behind it.
 
 Where Battle Navigation is going: from the current tactical skirmish to a solo
 roguelite voyage. This file is the source of truth for the plan; update the
@@ -958,7 +957,7 @@ becomes a Brigantine and then a Galleon until you sail a fully upgraded ship.
         ladder should stretch over five areas (a higher hull cap, more cannon and
         damage levels, or a pool that offers fewer filler picks); and a play test
         by the user, since the bot cannot say how the fights feel.
-- [ ] F. Docs: this file and the handoff.
+- [x] F. Docs: this file, and a root `CLAUDE.md` in place of a handoff file (PIR-71).
 
 **Open questions.**
 - **How many upgrades a run gives** is now settled by ports and nodes rather than
@@ -1132,61 +1131,3 @@ database layer against an agreed profile interface; monsters (phase 9) next to
 runs and the server. Keep phases 1, 2, 4, 5 and 6 sequential: they all edit
 `simpleAI.ts`, `GameEvent.ts`, `EventAnimator.ts`, `createGame.ts`,
 `matchConfig.ts` and the protocol.
-
-## Log
-
-- 2026-10-16: the solo voyage's supplies became **plunder**, the voyage's money (PIR-140).
-  A leg no longer costs anything and there is no hold, cap or starvation. Fights, treasure and
-  bosses pay plunder; a port is a shop that sells the upgrades it offers for set prices
-  (repair 4, cannonballs 5, hull 8, cannon 12, damage 16), and the player buys any they can
-  afford and then sails on. The provisions upgrade is gone. The ship starts with 8. New
-  actions `buyUpgrade` and `leavePort` replace `chooseUpgrade`; save version 4. The same day:
-  areas of 7, 9, 10, 11 and 12 layers (about 31 battles, was 46), the damage upgrade capped
-  at +2 and offered later, and ordinary-fight fleets that step up later. The harness bot
-  shops greedily; it ends a voyage with about 12 plunder unspent and +0.3 damage, so the
-  budget is roughly right. All of it is a first guess for the user to play (PIR-67).
-
-- 2026-10-16: phase 9 (sea monsters and the hunt) is playable on `feature/sea-monster-hunting`:
-  monsters, the hunt objective with treasure, leaving and the Kraken, a hunt node on the voyage
-  map, the Hunt mode in the menu, redrawn monster art, an Atlantean ship sheet, a map you drag, a
-  new game over dialog and drag and drop for the plan. Tests: game-core 563, run-core 1150,
-  client 246, server 175 (a few slow game-core tests, the sea-depth test and one run-core test
-  can time out on a loaded machine and pass on their own).
-
-- 2026-10-12: phase 3b (i18n): `i18next` + `react-i18next` in the client, typed
-  catalogs, a language switcher, `?lang=`/`pirate:lang`/`navigator.language`
-  detection, all menu/lobby/HUD text extracted, server messages translated by
-  code (an optional `code` on `room:closed`), and machine-drafted Spanish and
-  Polish stubs. Tests: game-core 356, client 196, server 174.
-
-- 2026-10-12: phase 3 finished apart from the extras: sinking explosion, plan preview ghosts, `scallywag` the default art (`c63477e`), ship footprints, yards and emblems, and the Calm/Normal/Stormy look with a slow tide (spray built but off). Commits `cc93317`, `dc8389b`, `c63477e`, `e149fc1`, `a3a3a7b`, `a46f575`, not pushed. Tests: game-core 356, client 189, server 174.
-
-- 2026-10-12: phase 3: the sea's depth is worked out from the board (shelves round
-  rocks, deeper by whirlpools, open sea past the edge, four levels, about 10 ms), ripples
-  and rock surf are the default sea; swell bands are off (`?bands=on`); committed as
-  `49c9fa4`. Tests: game-core 354, client 181, server 174. Everything pushed.
-  `docs/HANDOFF.md` written for a fresh session.
-
-- 2026-10-12: phase 3: the sea as drifting noise layers instead of a tile, and surf on the rocks; tests: client 152.
-
-- 2026-10-12: phase 3: animated pixel-art sea; tests: client 118.
-
-- 2026-10-12: phase 3: whole-step zoom for the pixel art; tests: client 117.
-
-- 2026-10-12: stray horizontal lines under a ship's bow: the hull frames touch on the sheet, so a sprite on a fractional pixel shows a sliver of the frame below. The game now copies every ship frame onto its own sheet with a 2 px margin (`buildPaddedShipSheet`, `packFrames`). Not confirmed in WebGL.
-
-- 2026-10-12: phase 3: cannon fire, impacts and the wake in the new art; tests: client 107.
-
-- 2026-10-12: phase 3: rocks drawn as stones and wind and whirlpools redrawn in pixel art behind `?art=scallywag`; phase 1 menu and lobby checked in a browser (a galleon and a brigantine in one online room: hulls, tokens, cannonballs and what each player sees all right). tests: client 105.
-
-- 2026-10-10: the number of cannons fired per move is now chosen by the player (one toggle per cannon); 625 tests (game-core 354, client 97, server 174).
-- 2026-10-10: phase 2 reworked: all cannons fire from the ship's own cell along one line, in sequence; 611 tests (game-core 341, client 97, server 174).
-- 2026-10-10: phase 3: `?art=scallywag` draws the ships with the new art; tests 612 (game-core 341, client 97, server 174).
-- 2026-10-10: phase 3 started: art lab, frame data and ship builder; tests 605 (game-core 341, client 90, server 174).
-- 2026-10-10: phase 2 done, 599 tests (game-core 341, client 84, server 174).
-- 2026-10-10: art switched to the Scallywag packs; phase 3 is now the art swap; ship space measured (see Art).
-- 2026-10-10: a match now ends (outcome `eliminated`, shown as a loss) once the last human is sunk, and a player sunk while other humans fight on gets a "Keep watching / Leave" popup. 576 tests.
-- 2026-10-10: phase 1 done, 571 tests (game-core 313, client 84, server 174).
-- 2026-10-10: phase 0 done: 295 game-core tests (11 new), baseline above.
-- 2026-10-10: plan agreed. Baseline at `e65366d`: 529 tests green (game-core
-  284, client 77, server 168).
