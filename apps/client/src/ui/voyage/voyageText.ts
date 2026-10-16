@@ -47,24 +47,12 @@ export function nodeTitle(t: TFunction, node: RouteNode): string {
   return objectiveLabel(t, node.battle ?? 'standard');
 }
 
-/** The icon kind of a stop. */
+/** The picture a stop gets: its battle kind for a battle, else what the stop is. */
 export function mapKindOf(node: RouteNode): MapNodeKind {
-  return node.kind === 'port' && node.landfall ? 'start' : node.kind;
-}
-
-export function kindLabel(t: TFunction, kind: MapNodeKind): string {
-  switch (kind) {
-    case 'start':
-      return t('voyage.kindStart');
-    case 'battle':
-      return t('voyage.kindBattle');
-    case 'port':
-      return t('voyage.kindPort');
-    case 'boss':
-      return t('voyage.kindBoss');
-    case 'hunt':
-      return t('voyage.kindHunt');
+  if (node.kind === 'battle') {
+    return node.battle ?? 'standard';
   }
+  return node.kind === 'port' && node.landfall ? 'start' : node.kind;
 }
 
 export function stateLabel(t: TFunction, state: MapNodeState): string {

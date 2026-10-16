@@ -1,74 +1,98 @@
-import { Anchor, Check, Gem, House, Lock, Skull, Swords, Wrench } from 'lucide-react';
+import { Check } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
-export type MapNodeKind = 'start' | 'battle' | 'port' | 'boss' | 'hunt';
+/** Which picture a stop gets (the files in public/assets/map). */
+export type MapNodeKind =
+  | 'start'
+  | 'standard'
+  | 'survive'
+  | 'salvage'
+  | 'merchant'
+  | 'ambush'
+  | 'hunt'
+  | 'port'
+  | 'boss';
 export type MapNodeState = 'cleared' | 'current' | 'available' | 'locked';
 
-const KIND_ICONS = {
-  start: House,
-  battle: Swords,
-  port: Wrench,
-  boss: Skull,
-  hunt: Gem,
-} as const;
-
 /**
- * One stop on the voyage map. Its state is shown by a badge icon and its words
- * (a check for cleared, a lock for locked, an anchor for "you are here") as
- * well as by fill, so it never rests on colour alone.
+ * One stop on the voyage map: a pixel-art badge with its name under it. Its state shows in the
+ * badge (a ring and our ship for where we are, a check for cleared, bright and pressable when it
+ * is in reach, dim when it is further on) and in words for screen readers, never by colour alone.
+ * It is placed by `style` (left and top) inside the map.
  */
 export function MapNode({
   kind,
   state,
-  title,
-  detail,
+  label,
   stateLabel,
+  cost,
+  shipSrc,
   onSelect,
-  className,
+  style,
 }: {
   kind: MapNodeKind;
   state: MapNodeState;
-  title: string;
-  /** The kind and state in words, such as "Battle · cleared". */
-  detail: string;
-  /** The state alone, for screen readers. */
+  /** The stop's name, under the badge. */
+  label: string;
+  /** The state in words, for screen readers. */
   stateLabel: string;
-  /** Makes the stop something to press (a place the ship can sail to now). */
+  /** What the leg to this stop costs in supplies, when it is in reach. */
+  cost?: number | null;
+  /** The picture of our ship, shown in the badge of the stop we are at. */
+  shipSrc?: string;
   onSelect?: () => void;
-  className?: string;
+  style?: CSSProperties;
 }) {
-  const KindIcon = KIND_ICONS[kind];
-  const StateIcon = state === 'cleared' ? Check : state === 'locked' ? Lock : state === 'current' ? Anchor : null;
   const Body = onSelect ? 'button' : 'div';
   return (
-    <div role="listitem" aria-current={state === 'current' ? 'step' : undefined} className={cn('flex', className)}>
+    <div
+      role="listitem"
+      aria-current={state === 'current' ? 'step' : undefined}
+      style={style}
+      className="absolute flex w-24 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+    >
       <Body
         {...(onSelect ? { type: 'button' as const, onClick: onSelect } : {})}
-        aria-label={`${title}, ${stateLabel}`}
+        aria-label={`${label}, ${stateLabel}`}
         className={cn(
-          'relative flex min-h-16 w-full items-center gap-3 rounded-card border-2 px-3 py-2 text-left',
-          state === 'current' && 'border-primary bg-secondary ring-[3px] ring-ring ring-offset-2 ring-offset-background',
+          'relative flex size-20 items-center justify-center rounded-card border-2 outline-none',
+          state === 'current' && 'border-primary bg-sky-700/40 ring-[3px] ring-ring ring-offset-2 ring-offset-background',
           state === 'cleared' && 'border-border bg-card',
-          state === 'available' && 'border-border bg-card',
-          state === 'locked' && 'border-dashed border-border bg-card/50 text-muted-foreground',
+          state === 'available' && 'border-primary bg-card',
+          state === 'locked' && 'border-border/50 bg-ocean-deep',
           onSelect &&
-            'border-primary outline-none transition hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring active:scale-[0.98]',
+            'cursor-pointer transition hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring active:scale-95',
         )}
       >
-        <span
-          className={cn(
-            'flex size-10 shrink-0 items-center justify-center rounded-btn',
-            state === 'current' ? 'bg-primary text-primary-foreground' : 'bg-background/60',
-          )}
-        >
-          <KindIcon className="size-5" aria-hidden />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-base font-bold">{title}</span>
-          <span className="text-xs font-semibold text-muted-foreground">{detail}</span>
-        </span>
-        {StateIcon && <StateIcon className="size-5 shrink-0" aria-hidden />}
+        {state === 'current' && shipSrc ? (
+          <img src={shipSrc} alt="" className="map-bob max-h-16 w-auto [image-rendering:pixelated]" />
+        ) : (
+          <img
+            src={`/assets/map/stop-${kind}.png`}
+            alt=""
+            className={cn('size-16 [image-rendering:pixelated]', (state === 'locked' || state === 'cleared') && 'opacity-65')}
+          />
+        )}
+        {state === 'cleared' && (
+          <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Check className="size-3.5" aria-hidden />
+          </span>
+        )}
+        {state === 'available' && cost != null && (
+          <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
+            −{cost}
+          </span>
+        )}
       </Body>
+      <span
+        className={cn(
+          'rounded bg-background/85 px-1 text-center text-xs font-bold leading-tight',
+          state === 'locked' || state === 'cleared' ? 'text-muted-foreground' : 'text-foreground',
+        )}
+      >
+        {label}
+      </span>
     </div>
   );
 }

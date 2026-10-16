@@ -67,3 +67,24 @@ canvas {
   display: block;
   touch-action: none;
 }
+
+/* Our ship rocking on the voyage map. */
+@keyframes map-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(1.5deg);
+  }
+}
+
+.map-bob {
+  animation: map-bob 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-bob {
+    animation: none;
+  }
+}

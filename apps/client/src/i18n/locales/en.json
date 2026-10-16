@@ -412,6 +412,8 @@
     "legCost_one": "The leg costs {{count}} supply.",
     "legCost_other": "The leg costs {{count}} supplies.",
     "willStarve": "Not enough supplies: the hull will take 1 damage.",
+    "reward": "Reward: supplies +{{count}}.",
+    "rewardHunt": "Reward: supplies +{{count}}, and more for the treasure you bring out ({{per}} treasure is one supply), and +{{boss}} for the Kraken.",
     "landfall": "Landfall",
     "portArrival": "You reach {{name}}.",
     "repaired": "Hull mended: +{{count}}",

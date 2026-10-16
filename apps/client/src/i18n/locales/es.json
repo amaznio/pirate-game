@@ -412,6 +412,8 @@
     "legCost_one": "El tramo cuesta {{count}} provisión.",
     "legCost_other": "El tramo cuesta {{count}} provisiones.",
     "willStarve": "No hay provisiones suficientes: el casco recibirá 1 de daño.",
+    "reward": "Recompensa: provisiones +{{count}}.",
+    "rewardHunt": "Recompensa: provisiones +{{count}}, y más por el tesoro que saques (cada {{per}} de tesoro es una provisión), y +{{boss}} por el Kraken.",
     "landfall": "Arribada",
     "portArrival": "Llegas a {{name}}.",
     "repaired": "Casco reparado: +{{count}}",

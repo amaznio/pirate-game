@@ -424,6 +424,8 @@
     "legCost_many": "Ten odcinek kosztuje {{count}} zapasów.",
     "legCost_other": "Ten odcinek kosztuje {{count}} zapasu.",
     "willStarve": "Za mało zapasów: kadłub dostanie 1 obrażenie.",
+    "reward": "Nagroda: zapasy +{{count}}.",
+    "rewardHunt": "Nagroda: zapasy +{{count}}, a do tego za wywieziony skarb (każde {{per}} skarbu to jeden zapas) i +{{boss}} za Krakena.",
     "landfall": "Zawinięcie do portu",
     "portArrival": "Docierasz do portu: {{name}}.",
     "repaired": "Kadłub naprawiony: +{{count}}",
